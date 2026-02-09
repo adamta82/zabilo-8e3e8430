@@ -14,7 +14,6 @@ import Requests from "./pages/Requests";
 import Employees from "./pages/Employees";
 import Departments from "./pages/Departments";
 import Settings from "./pages/Settings";
-import Automations from "./pages/Automations";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -84,19 +83,9 @@ function AppRoutes() {
             </AppLayout>
           </ProtectedRoute>
         }
-      />
-      <Route
-        path="/automations"
-        element={
-          <ProtectedRoute requireAdmin>
-            <AppLayout>
-              <Automations />
-            </AppLayout>
-          </ProtectedRoute>
-        }
-      />
+        />
 
-      {/* 404 */}
+        {/* 404 */}
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
