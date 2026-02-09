@@ -5,9 +5,7 @@ import {
   Users,
   Building2,
   Settings,
-  Zap,
   LogOut,
-  Home,
 } from 'lucide-react';
 import {
   Sidebar,
@@ -51,14 +49,9 @@ const adminMenuItems = [
     icon: Building2,
   },
   {
-    title: 'הגדרות',
+    title: 'הגדרות Webhook',
     url: '/settings',
     icon: Settings,
-  },
-  {
-    title: 'אוטומציות',
-    url: '/automations',
-    icon: Zap,
   },
 ];
 
