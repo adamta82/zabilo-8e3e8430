@@ -34,7 +34,8 @@ import {
   AlertDescription,
 } from '@/components/ui/alert';
 import { cn } from '@/lib/utils';
-import { useCreateRequest, useRequests } from '@/hooks/useRequests';
+import { useCreateRequest } from '@/hooks/useRequests';
+import { Link } from 'react-router-dom';
 import type { Database } from '@/integrations/supabase/types';
 
 type RequestType = Database['public']['Enums']['request_type'];
@@ -43,6 +44,7 @@ interface WfhTask {
   id: string;
   description: string;
   estimatedHours: number;
+  reference: string;
 }
 
 interface Item {
@@ -65,14 +67,13 @@ interface CreateRequestDialogProps {
 
 export function CreateRequestDialog({ open, onOpenChange }: CreateRequestDialogProps) {
   const createRequest = useCreateRequest();
-  const { data: existingRequests } = useRequests();
   
   const [requestType, setRequestType] = useState<RequestType | ''>('');
   
   // WFH state
   const [wfhDate, setWfhDate] = useState<Date>();
   const [wfhTasks, setWfhTasks] = useState<WfhTask[]>([
-    { id: '1', description: '', estimatedHours: 1 },
+    { id: '1', description: '', estimatedHours: 1, reference: '' },
   ]);
   const [wfhChecklist, setWfhChecklist] = useState<Record<string, boolean>>({});
   
@@ -87,14 +88,13 @@ export function CreateRequestDialog({ open, onOpenChange }: CreateRequestDialogP
   const [items, setItems] = useState<Item[]>([
     { id: '1', name: '', quantity: 1 },
   ]);
-  const [duplicateWarnings, setDuplicateWarnings] = useState<string[]>([]);
   
   const [notes, setNotes] = useState('');
 
   const resetForm = () => {
     setRequestType('');
     setWfhDate(undefined);
-    setWfhTasks([{ id: '1', description: '', estimatedHours: 1 }]);
+    setWfhTasks([{ id: '1', description: '', estimatedHours: 1, reference: '' }]);
     setWfhChecklist({});
     setVacationStartDate(undefined);
     setVacationEndDate(undefined);
@@ -102,7 +102,6 @@ export function CreateRequestDialog({ open, onOpenChange }: CreateRequestDialogP
     setSingleDay(false);
     setUseVacationDays(false);
     setItems([{ id: '1', name: '', quantity: 1 }]);
-    setDuplicateWarnings([]);
     setNotes('');
   };
 
@@ -112,7 +111,7 @@ export function CreateRequestDialog({ open, onOpenChange }: CreateRequestDialogP
   };
 
   const addWfhTask = () => {
-    setWfhTasks([...wfhTasks, { id: Date.now().toString(), description: '', estimatedHours: 1 }]);
+    setWfhTasks([...wfhTasks, { id: Date.now().toString(), description: '', estimatedHours: 1, reference: '' }]);
   };
 
   const removeWfhTask = (id: string) => {
@@ -136,39 +135,7 @@ export function CreateRequestDialog({ open, onOpenChange }: CreateRequestDialogP
   };
 
   const updateItem = (id: string, field: keyof Item, value: string | number) => {
-    const updatedItems = items.map(i => i.id === id ? { ...i, [field]: value } : i);
-    setItems(updatedItems);
-    
-    // Check for duplicates when updating item names
-    if (field === 'name' && typeof value === 'string' && value.trim()) {
-      checkDuplicateItems(updatedItems);
-    }
-  };
-
-  const checkDuplicateItems = (currentItems: Item[]) => {
-    if (!existingRequests) return;
-    
-    const warnings: string[] = [];
-    const orderedRequests = existingRequests.filter(
-      r => (r.type === 'equipment' || r.type === 'groceries') && 
-           (r.status === 'pending' || r.status === 'approved' || r.status === 'ordered') &&
-           r.items
-    );
-
-    for (const item of currentItems) {
-      if (!item.name.trim()) continue;
-      const itemNameLower = item.name.trim().toLowerCase();
-      
-      for (const req of orderedRequests) {
-        const reqItems = req.items as Array<{ name: string; quantity: number }>;
-        const found = reqItems.find(ri => ri.name.toLowerCase().includes(itemNameLower) || itemNameLower.includes(ri.name.toLowerCase()));
-        if (found) {
-          warnings.push(`"${item.name}" כבר הוזמן בבקשה קודמת (סטטוס: ${req.status === 'pending' ? 'ממתין' : req.status === 'approved' ? 'מאושר' : 'הוזמן'})`);
-          break;
-        }
-      }
-    }
-    setDuplicateWarnings(warnings);
+    setItems(items.map(i => i.id === id ? { ...i, [field]: value } : i));
   };
 
   const getTotalHours = () => {
@@ -214,6 +181,7 @@ export function CreateRequestDialog({ open, onOpenChange }: CreateRequestDialogP
             id: t.id,
             description: t.description,
             estimatedHours: t.estimatedHours,
+            reference: t.reference,
           })) as unknown as null,
           wfh_checklist: wfhChecklist as unknown as null,
         };
@@ -333,29 +301,36 @@ export function CreateRequestDialog({ open, onOpenChange }: CreateRequestDialogP
                   </span>
                 </div>
                 {wfhTasks.map((task) => (
-                  <div key={task.id} className="flex gap-2">
+                  <div key={task.id} className="space-y-1">
+                    <div className="flex gap-2">
+                      <Input
+                        placeholder="תיאור המשימה"
+                        value={task.description}
+                        onChange={(e) => updateWfhTask(task.id, 'description', e.target.value)}
+                        className="flex-1"
+                      />
+                      <Input
+                        type="number"
+                        min={0.5}
+                        step={0.5}
+                        value={task.estimatedHours}
+                        onChange={(e) => updateWfhTask(task.id, 'estimatedHours', parseFloat(e.target.value) || 0)}
+                        className="w-20"
+                      />
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => removeWfhTask(task.id)}
+                        disabled={wfhTasks.length === 1}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                     <Input
-                      placeholder="תיאור המשימה"
-                      value={task.description}
-                      onChange={(e) => updateWfhTask(task.id, 'description', e.target.value)}
-                      className="flex-1"
+                      placeholder="רפרנס (אופציונלי)"
+                      value={task.reference}
+                      onChange={(e) => updateWfhTask(task.id, 'reference', e.target.value)}
                     />
-                    <Input
-                      type="number"
-                      min={0.5}
-                      step={0.5}
-                      value={task.estimatedHours}
-                      onChange={(e) => updateWfhTask(task.id, 'estimatedHours', parseFloat(e.target.value) || 0)}
-                      className="w-20"
-                    />
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => removeWfhTask(task.id)}
-                      disabled={wfhTasks.length === 1}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
                   </div>
                 ))}
                 <Button variant="outline" size="sm" onClick={addWfhTask} className="gap-2">
@@ -478,18 +453,21 @@ export function CreateRequestDialog({ open, onOpenChange }: CreateRequestDialogP
           {/* Equipment/Groceries Form */}
           {(requestType === 'equipment' || requestType === 'groceries') && (
             <div className="space-y-4">
-              {duplicateWarnings.length > 0 && (
-                <Alert variant="destructive" className="bg-warning/10 border-warning/30 text-warning">
-                  <AlertTriangle className="h-4 w-4" />
-                  <AlertDescription>
-                    <ul className="space-y-1">
-                      {duplicateWarnings.map((warning, i) => (
-                        <li key={i} className="text-sm">{warning}</li>
-                      ))}
-                    </ul>
-                  </AlertDescription>
-                </Alert>
-              )}
+              <Alert className="bg-muted/50 border-muted-foreground/20">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertDescription className="text-sm">
+                  לפני הגשת הבקשה, מומלץ לבדוק{' '}
+                  <Link
+                    to={`/requests?type=${requestType}&status=approved`}
+                    target="_blank"
+                    className="underline font-medium text-primary hover:text-primary/80"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    {requestType === 'equipment' ? 'רשימת ציוד משרדי שאושר/הוזמן' : 'רשימת מצרכים שאושרו/הוזמנו'}
+                  </Link>
+                  {' '}כדי לוודא שהפריט לא הוזמן כבר.
+                </AlertDescription>
+              </Alert>
               <div className="space-y-2">
                 <Label>
                   {requestType === 'equipment' ? 'פריטי ציוד' : 'רשימת מצרכים'}

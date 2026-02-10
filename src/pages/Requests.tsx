@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Plus, Search, Filter, Clock, Check, X, Home, Palmtree, Monitor, ShoppingCart, Eye, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { he } from 'date-fns/locale';
@@ -67,10 +68,11 @@ export default function Requests() {
   const { data: requests, isLoading } = useRequests();
   const { user, isAdmin } = useAuth();
   const deleteRequest = useDeleteRequest();
+  const [searchParams] = useSearchParams();
   
   const [searchQuery, setSearchQuery] = useState('');
-  const [typeFilter, setTypeFilter] = useState<string>('all');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [typeFilter, setTypeFilter] = useState<string>(searchParams.get('type') || 'all');
+  const [statusFilter, setStatusFilter] = useState<string>(searchParams.get('status') || 'all');
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState<RequestWithProfile | null>(null);
   const [deletingRequest, setDeletingRequest] = useState<RequestWithProfile | null>(null);
