@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { Plus, Search, MoreHorizontal, Edit, Trash2, Shield, User, Loader2 } from 'lucide-react';
+import { Search, MoreHorizontal, Edit, Trash2, Shield, User, Loader2, KeyRound } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -23,8 +24,18 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { useEmployees, useDeleteEmployee, type EmployeeWithRole } from '@/hooks/useEmployees';
 import { EditEmployeeDialog } from '@/components/employees/EditEmployeeDialog';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 const getInitials = (name: string) => {
   return name
@@ -38,10 +49,14 @@ const getInitials = (name: string) => {
 export default function Employees() {
   const { data: employees, isLoading } = useEmployees();
   const deleteEmployee = useDeleteEmployee();
+  const { toast } = useToast();
   
   const [searchQuery, setSearchQuery] = useState('');
   const [editingEmployee, setEditingEmployee] = useState<EmployeeWithRole | null>(null);
   const [deletingEmployee, setDeletingEmployee] = useState<EmployeeWithRole | null>(null);
+  const [passwordEmployee, setPasswordEmployee] = useState<EmployeeWithRole | null>(null);
+  const [newPassword, setNewPassword] = useState('');
+  const [isResettingPassword, setIsResettingPassword] = useState(false);
 
   const filteredEmployees = employees?.filter(employee =>
     employee.full_name.includes(searchQuery) ||
@@ -53,6 +68,28 @@ export default function Employees() {
     if (deletingEmployee) {
       await deleteEmployee.mutateAsync(deletingEmployee.id);
       setDeletingEmployee(null);
+    }
+  };
+
+  const handlePasswordReset = async () => {
+    if (!passwordEmployee || !newPassword) return;
+    setIsResettingPassword(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('reset-password', {
+        body: {
+          user_id: passwordEmployee.user_id,
+          new_password: newPassword,
+        },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      toast({ title: 'הסיסמה שונתה בהצלחה' });
+      setPasswordEmployee(null);
+      setNewPassword('');
+    } catch (err: any) {
+      toast({ title: 'שגיאה בשינוי הסיסמה', description: err.message, variant: 'destructive' });
+    } finally {
+      setIsResettingPassword(false);
     }
   };
 
@@ -155,6 +192,10 @@ export default function Employees() {
                               <Edit className="h-4 w-4 ml-2" />
                               עריכה
                             </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => setPasswordEmployee(employee)}>
+                              <KeyRound className="h-4 w-4 ml-2" />
+                              שינוי סיסמה
+                            </DropdownMenuItem>
                             <DropdownMenuItem 
                               className="text-destructive"
                               onClick={() => setDeletingEmployee(employee)}
@@ -191,6 +232,38 @@ export default function Employees() {
         open={!!editingEmployee}
         onOpenChange={(open) => !open && setEditingEmployee(null)}
       />
+
+      {/* Password Reset Dialog */}
+      <Dialog open={!!passwordEmployee} onOpenChange={(open) => { if (!open) { setPasswordEmployee(null); setNewPassword(''); } }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>שינוי סיסמה</DialogTitle>
+            <DialogDescription>
+              שינוי סיסמה עבור {passwordEmployee?.full_name}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>סיסמה חדשה</Label>
+              <Input
+                type="password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                placeholder="לפחות 6 תווים"
+                dir="ltr"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setPasswordEmployee(null); setNewPassword(''); }}>
+              ביטול
+            </Button>
+            <Button onClick={handlePasswordReset} disabled={newPassword.length < 6 || isResettingPassword}>
+              {isResettingPassword ? <Loader2 className="h-4 w-4 animate-spin" /> : 'שמור סיסמה'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Delete Confirmation */}
       <AlertDialog open={!!deletingEmployee} onOpenChange={(open) => !open && setDeletingEmployee(null)}>

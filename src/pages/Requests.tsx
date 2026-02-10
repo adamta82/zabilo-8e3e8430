@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, Search, Filter, Clock, Check, X, Home, Palmtree, Monitor, ShoppingCart, Eye, Loader2 } from 'lucide-react';
+import { Plus, Search, Filter, Clock, Check, X, Home, Palmtree, Monitor, ShoppingCart, Eye } from 'lucide-react';
 import { format } from 'date-fns';
 import { he } from 'date-fns/locale';
 import { Button } from '@/components/ui/button';
@@ -10,7 +10,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
-import { useAuth } from '@/contexts/AuthContext';
 import { useRequests, type RequestWithProfile } from '@/hooks/useRequests';
 import { CreateRequestDialog } from '@/components/requests/CreateRequestDialog';
 import { RequestDetailsDialog } from '@/components/requests/RequestDetailsDialog';
@@ -36,33 +35,24 @@ const STATUS_LABELS: Record<RequestStatus, string> = {
 
 const getTypeIcon = (type: RequestType) => {
   switch (type) {
-    case 'wfh':
-      return <Home className="h-4 w-4" />;
-    case 'vacation':
-      return <Palmtree className="h-4 w-4" />;
-    case 'equipment':
-      return <Monitor className="h-4 w-4" />;
-    case 'groceries':
-      return <ShoppingCart className="h-4 w-4" />;
+    case 'wfh': return <Home className="h-4 w-4" />;
+    case 'vacation': return <Palmtree className="h-4 w-4" />;
+    case 'equipment': return <Monitor className="h-4 w-4" />;
+    case 'groceries': return <ShoppingCart className="h-4 w-4" />;
   }
 };
 
 const getStatusIcon = (status: RequestStatus) => {
   switch (status) {
-    case 'pending':
-      return <Clock className="h-3 w-3" />;
+    case 'pending': return <Clock className="h-3 w-3" />;
     case 'approved':
-    case 'supplied':
-      return <Check className="h-3 w-3" />;
-    case 'rejected':
-      return <X className="h-3 w-3" />;
-    case 'ordered':
-      return <ShoppingCart className="h-3 w-3" />;
+    case 'supplied': return <Check className="h-3 w-3" />;
+    case 'rejected': return <X className="h-3 w-3" />;
+    case 'ordered': return <ShoppingCart className="h-3 w-3" />;
   }
 };
 
 export default function Requests() {
-  const { isAdmin } = useAuth();
   const { data: requests, isLoading } = useRequests();
   
   const [searchQuery, setSearchQuery] = useState('');
@@ -84,10 +74,15 @@ export default function Requests() {
 
   const getRequestDateDisplay = (request: RequestWithProfile) => {
     if (request.type === 'wfh' && request.wfh_date) {
-      return format(new Date(request.wfh_date), 'dd/MM/yyyy');
+      return format(new Date(request.wfh_date + 'T00:00:00'), 'dd/MM/yyyy');
     }
-    if (request.type === 'vacation' && request.vacation_start_date && request.vacation_end_date) {
-      return `${format(new Date(request.vacation_start_date), 'dd/MM')} - ${format(new Date(request.vacation_end_date), 'dd/MM/yyyy')}`;
+    if (request.type === 'vacation' && request.vacation_start_date) {
+      if (request.vacation_single_day || request.vacation_start_date === request.vacation_end_date) {
+        return format(new Date(request.vacation_start_date + 'T00:00:00'), 'dd/MM/yyyy');
+      }
+      if (request.vacation_end_date) {
+        return `${format(new Date(request.vacation_start_date + 'T00:00:00'), 'dd/MM')} - ${format(new Date(request.vacation_end_date + 'T00:00:00'), 'dd/MM/yyyy')}`;
+      }
     }
     return '-';
   };
@@ -104,10 +99,8 @@ export default function Requests() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold">{isAdmin ? 'ניהול בקשות' : 'הבקשות שלי'}</h1>
-          <p className="text-muted-foreground">
-            {isAdmin ? 'צפה ונהל את כל הבקשות בארגון' : 'צפה ונהל את כל הבקשות שלך'}
-          </p>
+          <h1 className="text-2xl font-bold">בקשות</h1>
+          <p className="text-muted-foreground">צפה ונהל בקשות</p>
         </div>
         <Button className="gap-2" onClick={() => setCreateDialogOpen(true)}>
           <Plus className="h-4 w-4" />
@@ -215,7 +208,7 @@ export default function Requests() {
               <TableHeader>
                 <TableRow>
                   <TableHead className="text-right">סוג</TableHead>
-                  {isAdmin && <TableHead className="text-right">עובד</TableHead>}
+                  <TableHead className="text-right">עובד</TableHead>
                   <TableHead className="text-right">תאריך</TableHead>
                   <TableHead className="text-right">סטטוס</TableHead>
                   <TableHead className="text-right">נוצר</TableHead>
@@ -231,11 +224,9 @@ export default function Requests() {
                         <span>{TYPE_LABELS[request.type]}</span>
                       </div>
                     </TableCell>
-                    {isAdmin && (
-                      <TableCell>
-                        {request.profiles?.full_name || '-'}
-                      </TableCell>
-                    )}
+                    <TableCell>
+                      {request.profiles?.full_name || '-'}
+                    </TableCell>
                     <TableCell>{getRequestDateDisplay(request)}</TableCell>
                     <TableCell>
                       <Badge

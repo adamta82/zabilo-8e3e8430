@@ -7,7 +7,6 @@ import type { Database } from '@/integrations/supabase/types';
 type Request = Database['public']['Tables']['requests']['Row'];
 type RequestInsert = Database['public']['Tables']['requests']['Insert'];
 type RequestStatus = Database['public']['Enums']['request_status'];
-type RequestType = Database['public']['Enums']['request_type'];
 
 export interface RequestWithProfile extends Request {
   profiles: {
@@ -19,24 +18,17 @@ export interface RequestWithProfile extends Request {
 }
 
 export function useRequests() {
-  const { user, isAdmin } = useAuth();
+  const { user } = useAuth();
 
   return useQuery({
-    queryKey: ['requests', user?.id, isAdmin],
+    queryKey: ['requests', user?.id],
     queryFn: async () => {
-      // First get requests
-      let query = supabase
+      // RLS now handles visibility: own requests + approved requests for all users
+      const { data: requests, error } = await supabase
         .from('requests')
         .select('*')
         .order('created_at', { ascending: false });
 
-      // If not admin, only show own requests
-      if (!isAdmin && user) {
-        query = query.eq('user_id', user.id);
-      }
-
-      const { data: requests, error } = await query;
-      
       if (error) throw error;
       if (!requests || requests.length === 0) return [];
 
@@ -49,10 +41,8 @@ export function useRequests() {
         .select('id, user_id, full_name, email, department_id')
         .in('user_id', userIds);
 
-      // Create a map for quick lookup
       const profileMap = new Map(profiles?.map(p => [p.user_id, p]) || []);
 
-      // Combine data
       const data = requests.map(request => ({
         ...request,
         profiles: profileMap.get(request.user_id) || null,
@@ -82,13 +72,9 @@ export function useCreateRequest() {
 
       if (error) throw error;
 
-      // Call webhook edge function
       try {
         await supabase.functions.invoke('send-webhook', {
-          body: {
-            event: 'request_created',
-            request_id: data.id,
-          },
+          body: { event: 'request_created', request_id: data.id },
         });
       } catch (webhookError) {
         console.error('Webhook error:', webhookError);
@@ -98,17 +84,10 @@ export function useCreateRequest() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['requests'] });
-      toast({
-        title: 'הבקשה נוצרה בהצלחה',
-        description: 'הבקשה נשלחה לאישור',
-      });
+      toast({ title: 'הבקשה נוצרה בהצלחה', description: 'הבקשה נשלחה לאישור' });
     },
     onError: (error) => {
-      toast({
-        title: 'שגיאה ביצירת הבקשה',
-        description: error.message,
-        variant: 'destructive',
-      });
+      toast({ title: 'שגיאה ביצירת הבקשה', description: error.message, variant: 'destructive' });
     },
   });
 }
@@ -119,19 +98,8 @@ export function useUpdateRequestStatus() {
   const { user } = useAuth();
 
   return useMutation({
-    mutationFn: async ({ 
-      requestId, 
-      status,
-      notes 
-    }: { 
-      requestId: string; 
-      status: RequestStatus;
-      notes?: string;
-    }) => {
-      const updateData: Partial<Request> = {
-        status,
-        notes,
-      };
+    mutationFn: async ({ requestId, status, notes }: { requestId: string; status: RequestStatus; notes?: string }) => {
+      const updateData: Partial<Request> = { status, notes };
 
       if (status === 'approved' || status === 'rejected') {
         updateData.approved_by = user!.id;
@@ -147,13 +115,9 @@ export function useUpdateRequestStatus() {
 
       if (error) throw error;
 
-      // Call webhook edge function
       try {
         await supabase.functions.invoke('send-webhook', {
-          body: {
-            event: `request_${status}`,
-            request_id: data.id,
-          },
+          body: { event: `request_${status}`, request_id: data.id },
         });
       } catch (webhookError) {
         console.error('Webhook error:', webhookError);
@@ -170,16 +134,10 @@ export function useUpdateRequestStatus() {
         ordered: 'הבקשה סומנה כהוזמנה',
         supplied: 'הבקשה סומנה כסופקה',
       };
-      toast({
-        title: statusMessages[status],
-      });
+      toast({ title: statusMessages[status] });
     },
     onError: (error) => {
-      toast({
-        title: 'שגיאה בעדכון הסטטוס',
-        description: error.message,
-        variant: 'destructive',
-      });
+      toast({ title: 'שגיאה בעדכון הסטטוס', description: error.message, variant: 'destructive' });
     },
   });
 }
@@ -190,25 +148,15 @@ export function useDeleteRequest() {
 
   return useMutation({
     mutationFn: async (requestId: string) => {
-      const { error } = await supabase
-        .from('requests')
-        .delete()
-        .eq('id', requestId);
-
+      const { error } = await supabase.from('requests').delete().eq('id', requestId);
       if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['requests'] });
-      toast({
-        title: 'הבקשה נמחקה',
-      });
+      toast({ title: 'הבקשה נמחקה' });
     },
     onError: (error) => {
-      toast({
-        title: 'שגיאה במחיקת הבקשה',
-        description: error.message,
-        variant: 'destructive',
-      });
+      toast({ title: 'שגיאה במחיקת הבקשה', description: error.message, variant: 'destructive' });
     },
   });
 }

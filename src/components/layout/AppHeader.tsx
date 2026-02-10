@@ -13,5 +13,17 @@ const pageTitles: Record<string, string> = {
 export function AppHeader() {
   const location = useLocation();
   const pageTitle = pageTitles[location.pathname] || 'Zabilo Book';
-  return;
+  return (
+    <header className="flex h-14 items-center gap-4 border-b bg-background px-6">
+      <SidebarTrigger />
+      <Separator orientation="vertical" className="h-6" />
+      <Breadcrumb>
+        <BreadcrumbList>
+          <BreadcrumbItem>
+            <BreadcrumbPage>{pageTitle}</BreadcrumbPage>
+          </BreadcrumbItem>
+        </BreadcrumbList>
+      </Breadcrumb>
+    </header>
+  );
 }

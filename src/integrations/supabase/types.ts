@@ -184,9 +184,11 @@ export type Database = {
           status: Database["public"]["Enums"]["request_status"]
           type: Database["public"]["Enums"]["request_type"]
           updated_at: string
+          use_vacation_days: boolean | null
           user_id: string
           vacation_end_date: string | null
           vacation_reason: string | null
+          vacation_single_day: boolean | null
           vacation_start_date: string | null
           wfh_checklist: Json | null
           wfh_date: string | null
@@ -202,9 +204,11 @@ export type Database = {
           status?: Database["public"]["Enums"]["request_status"]
           type: Database["public"]["Enums"]["request_type"]
           updated_at?: string
+          use_vacation_days?: boolean | null
           user_id: string
           vacation_end_date?: string | null
           vacation_reason?: string | null
+          vacation_single_day?: boolean | null
           vacation_start_date?: string | null
           wfh_checklist?: Json | null
           wfh_date?: string | null
@@ -220,9 +224,11 @@ export type Database = {
           status?: Database["public"]["Enums"]["request_status"]
           type?: Database["public"]["Enums"]["request_type"]
           updated_at?: string
+          use_vacation_days?: boolean | null
           user_id?: string
           vacation_end_date?: string | null
           vacation_reason?: string | null
+          vacation_single_day?: boolean | null
           vacation_start_date?: string | null
           wfh_checklist?: Json | null
           wfh_date?: string | null
