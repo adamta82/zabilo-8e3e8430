@@ -12,66 +12,64 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Checkbox } from '@/components/ui/checkbox';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Skeleton } from '@/components/ui/skeleton';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRequests, useDeleteRequest, type RequestWithProfile } from '@/hooks/useRequests';
 import { CreateRequestDialog } from '@/components/requests/CreateRequestDialog';
 import { RequestDetailsDialog } from '@/components/requests/RequestDetailsDialog';
 import type { Database } from '@/integrations/supabase/types';
-
 type RequestType = Database['public']['Enums']['request_type'];
 type RequestStatus = Database['public']['Enums']['request_status'];
-
 const TYPE_LABELS: Record<RequestType, string> = {
   wfh: 'עבודה מהבית',
   vacation: 'חופשה',
   equipment: 'ציוד משרדי',
-  groceries: 'מצרכים',
+  groceries: 'מצרכים'
 };
-
 const STATUS_LABELS: Record<RequestStatus, string> = {
   pending: 'ממתין לאישור',
   approved: 'מאושר',
   rejected: 'נדחה',
   ordered: 'הוזמן',
-  supplied: 'סופק',
+  supplied: 'סופק'
 };
-
 const getTypeIcon = (type: RequestType) => {
   switch (type) {
-    case 'wfh': return <Home className="h-4 w-4" />;
-    case 'vacation': return <Palmtree className="h-4 w-4" />;
-    case 'equipment': return <Monitor className="h-4 w-4" />;
-    case 'groceries': return <ShoppingCart className="h-4 w-4" />;
+    case 'wfh':
+      return <Home className="h-4 w-4" />;
+    case 'vacation':
+      return <Palmtree className="h-4 w-4" />;
+    case 'equipment':
+      return <Monitor className="h-4 w-4" />;
+    case 'groceries':
+      return <ShoppingCart className="h-4 w-4" />;
   }
 };
-
 const getStatusIcon = (status: RequestStatus) => {
   switch (status) {
-    case 'pending': return <Clock className="h-3 w-3" />;
+    case 'pending':
+      return <Clock className="h-3 w-3" />;
     case 'approved':
-    case 'supplied': return <Check className="h-3 w-3" />;
-    case 'rejected': return <X className="h-3 w-3" />;
-    case 'ordered': return <ShoppingCart className="h-3 w-3" />;
+    case 'supplied':
+      return <Check className="h-3 w-3" />;
+    case 'rejected':
+      return <X className="h-3 w-3" />;
+    case 'ordered':
+      return <ShoppingCart className="h-3 w-3" />;
   }
 };
-
 export default function Requests() {
-  const { data: requests, isLoading } = useRequests();
-  const { user, isAdmin } = useAuth();
+  const {
+    data: requests,
+    isLoading
+  } = useRequests();
+  const {
+    user,
+    isAdmin
+  } = useAuth();
   const deleteRequest = useDeleteRequest();
   const [searchParams] = useSearchParams();
-  
   const [searchQuery, setSearchQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState<string>(searchParams.get('type') || 'all');
   const [statusFilter, setStatusFilter] = useState<string[]>(() => {
@@ -82,7 +80,6 @@ export default function Requests() {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState<RequestWithProfile | null>(null);
   const [deletingRequest, setDeletingRequest] = useState<RequestWithProfile | null>(null);
-
   const filteredRequests = requests?.filter(request => {
     if (typeFilter !== 'all' && request.type !== typeFilter) return false;
     if (statusFilter.length > 0 && !statusFilter.includes(request.status)) return false;
@@ -93,7 +90,6 @@ export default function Requests() {
     }
     return true;
   }) || [];
-
   const getRequestDateDisplay = (request: RequestWithProfile) => {
     if (request.type === 'wfh' && request.wfh_date) {
       return format(new Date(request.wfh_date + 'T00:00:00'), 'dd/MM/yyyy');
@@ -108,16 +104,13 @@ export default function Requests() {
     }
     return '-';
   };
-
   const stats = {
     pending: requests?.filter(r => r.status === 'pending').length || 0,
     approved: requests?.filter(r => r.status === 'approved').length || 0,
     rejected: requests?.filter(r => r.status === 'rejected').length || 0,
-    total: requests?.length || 0,
+    total: requests?.length || 0
   };
-
-  return (
-    <div className="space-y-6">
+  return <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
@@ -170,7 +163,7 @@ export default function Requests() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">סה״כ</p>
-                <p className="text-2xl font-bold">{stats.total}</p>
+                
               </div>
               <Filter className="h-8 w-8 text-muted-foreground/50" />
             </div>
@@ -182,12 +175,7 @@ export default function Requests() {
       <div className="flex flex-col sm:flex-row gap-4">
         <div className="relative flex-1">
           <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="חיפוש לפי שם..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pr-9"
-          />
+          <Input placeholder="חיפוש לפי שם..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="pr-9" />
         </div>
         <Select value={typeFilter} onValueChange={setTypeFilter}>
           <SelectTrigger className="w-[180px]">
@@ -209,18 +197,12 @@ export default function Requests() {
             </Button>
           </PopoverTrigger>
           <PopoverContent className="w-[200px] p-2" align="start">
-            {(Object.entries(STATUS_LABELS) as [RequestStatus, string][]).map(([value, label]) => (
-              <div key={value} className="flex items-center gap-2 p-2 hover:bg-muted rounded cursor-pointer"
-                onClick={() => {
-                  setStatusFilter(prev => 
-                    prev.includes(value) ? prev.filter(s => s !== value) : [...prev, value]
-                  );
-                }}
-              >
+            {(Object.entries(STATUS_LABELS) as [RequestStatus, string][]).map(([value, label]) => <div key={value} className="flex items-center gap-2 p-2 hover:bg-muted rounded cursor-pointer" onClick={() => {
+            setStatusFilter(prev => prev.includes(value) ? prev.filter(s => s !== value) : [...prev, value]);
+          }}>
                 <Checkbox checked={statusFilter.includes(value)} />
                 <span className="text-sm">{label}</span>
-              </div>
-            ))}
+              </div>)}
           </PopoverContent>
         </Popover>
       </div>
@@ -228,14 +210,9 @@ export default function Requests() {
       {/* Requests Table */}
       <Card>
         <CardContent className="p-0">
-          {isLoading ? (
-            <div className="p-6 space-y-4">
-              {[1, 2, 3].map((i) => (
-                <Skeleton key={i} className="h-16 w-full" />
-              ))}
-            </div>
-          ) : (
-            <Table>
+          {isLoading ? <div className="p-6 space-y-4">
+              {[1, 2, 3].map(i => <Skeleton key={i} className="h-16 w-full" />)}
+            </div> : <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead className="text-right">סוג</TableHead>
@@ -247,8 +224,7 @@ export default function Requests() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredRequests.map((request) => (
-                  <TableRow key={request.id}>
+                {filteredRequests.map(request => <TableRow key={request.id}>
                     <TableCell>
                       <div className="flex items-center gap-2">
                         {getTypeIcon(request.type)}
@@ -260,74 +236,43 @@ export default function Requests() {
                     </TableCell>
                     <TableCell>{getRequestDateDisplay(request)}</TableCell>
                     <TableCell>
-                      <Badge
-                        variant="outline"
-                        className={cn(
-                          'gap-1',
-                          request.status === 'pending' && 'bg-warning/10 text-warning border-warning/30',
-                          request.status === 'approved' && 'bg-success/10 text-success border-success/30',
-                          request.status === 'rejected' && 'bg-destructive/10 text-destructive border-destructive/30',
-                          request.status === 'ordered' && 'bg-info/10 text-info border-info/30',
-                          request.status === 'supplied' && 'bg-success/10 text-success border-success/30'
-                        )}
-                      >
+                      <Badge variant="outline" className={cn('gap-1', request.status === 'pending' && 'bg-warning/10 text-warning border-warning/30', request.status === 'approved' && 'bg-success/10 text-success border-success/30', request.status === 'rejected' && 'bg-destructive/10 text-destructive border-destructive/30', request.status === 'ordered' && 'bg-info/10 text-info border-info/30', request.status === 'supplied' && 'bg-success/10 text-success border-success/30')}>
                         {getStatusIcon(request.status)}
                         {STATUS_LABELS[request.status]}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-muted-foreground">
-                      {format(new Date(request.created_at), 'dd/MM/yyyy', { locale: he })}
+                      {format(new Date(request.created_at), 'dd/MM/yyyy', {
+                  locale: he
+                })}
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-1">
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          className="gap-2"
-                          onClick={() => setSelectedRequest(request)}
-                        >
+                        <Button variant="ghost" size="sm" className="gap-2" onClick={() => setSelectedRequest(request)}>
                           <Eye className="h-4 w-4" />
                           צפה
                         </Button>
-                        {(isAdmin || request.user_id === user?.id) && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="text-destructive hover:text-destructive"
-                            onClick={() => setDeletingRequest(request)}
-                          >
+                        {(isAdmin || request.user_id === user?.id) && <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive" onClick={() => setDeletingRequest(request)}>
                             <Trash2 className="h-4 w-4" />
-                          </Button>
-                        )}
+                          </Button>}
                       </div>
                     </TableCell>
-                  </TableRow>
-                ))}
+                  </TableRow>)}
               </TableBody>
-            </Table>
-          )}
+            </Table>}
         </CardContent>
       </Card>
 
-      {filteredRequests.length === 0 && !isLoading && (
-        <div className="text-center py-12">
+      {filteredRequests.length === 0 && !isLoading && <div className="text-center py-12">
           <p className="text-muted-foreground">לא נמצאו בקשות</p>
-        </div>
-      )}
+        </div>}
 
       {/* Dialogs */}
-      <CreateRequestDialog 
-        open={createDialogOpen} 
-        onOpenChange={setCreateDialogOpen} 
-      />
-      <RequestDetailsDialog
-        request={selectedRequest}
-        open={!!selectedRequest}
-        onOpenChange={(open) => !open && setSelectedRequest(null)}
-      />
+      <CreateRequestDialog open={createDialogOpen} onOpenChange={setCreateDialogOpen} />
+      <RequestDetailsDialog request={selectedRequest} open={!!selectedRequest} onOpenChange={open => !open && setSelectedRequest(null)} />
 
       {/* Delete Confirmation */}
-      <AlertDialog open={!!deletingRequest} onOpenChange={(open) => !open && setDeletingRequest(null)}>
+      <AlertDialog open={!!deletingRequest} onOpenChange={open => !open && setDeletingRequest(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>האם למחוק את הבקשה?</AlertDialogTitle>
@@ -337,20 +282,16 @@ export default function Requests() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>ביטול</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={async () => {
-                if (deletingRequest) {
-                  await deleteRequest.mutateAsync(deletingRequest.id);
-                  setDeletingRequest(null);
-                }
-              }}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
+            <AlertDialogAction onClick={async () => {
+            if (deletingRequest) {
+              await deleteRequest.mutateAsync(deletingRequest.id);
+              setDeletingRequest(null);
+            }
+          }} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
               מחיקה
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
-  );
+    </div>;
 }
