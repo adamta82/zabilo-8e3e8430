@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { format } from 'date-fns';
 import { he } from 'date-fns/locale';
-import { CalendarIcon, Plus, Trash2, Home, Palmtree, Monitor, ShoppingCart } from 'lucide-react';
+import { CalendarIcon, Plus, Trash2, Home, Palmtree, Monitor, ShoppingCart, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Switch } from '@/components/ui/switch';
 import { Calendar } from '@/components/ui/calendar';
 import {
   Dialog,
@@ -28,8 +29,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  Alert,
+  AlertDescription,
+} from '@/components/ui/alert';
 import { cn } from '@/lib/utils';
-import { useCreateRequest } from '@/hooks/useRequests';
+import { useCreateRequest, useRequests } from '@/hooks/useRequests';
 import type { Database } from '@/integrations/supabase/types';
 
 type RequestType = Database['public']['Enums']['request_type'];
@@ -60,6 +65,7 @@ interface CreateRequestDialogProps {
 
 export function CreateRequestDialog({ open, onOpenChange }: CreateRequestDialogProps) {
   const createRequest = useCreateRequest();
+  const { data: existingRequests } = useRequests();
   
   const [requestType, setRequestType] = useState<RequestType | ''>('');
   
@@ -74,11 +80,14 @@ export function CreateRequestDialog({ open, onOpenChange }: CreateRequestDialogP
   const [vacationStartDate, setVacationStartDate] = useState<Date>();
   const [vacationEndDate, setVacationEndDate] = useState<Date>();
   const [vacationReason, setVacationReason] = useState('');
+  const [singleDay, setSingleDay] = useState(false);
+  const [useVacationDays, setUseVacationDays] = useState(false);
   
   // Equipment/Groceries state
   const [items, setItems] = useState<Item[]>([
     { id: '1', name: '', quantity: 1 },
   ]);
+  const [duplicateWarnings, setDuplicateWarnings] = useState<string[]>([]);
   
   const [notes, setNotes] = useState('');
 
@@ -90,7 +99,10 @@ export function CreateRequestDialog({ open, onOpenChange }: CreateRequestDialogP
     setVacationStartDate(undefined);
     setVacationEndDate(undefined);
     setVacationReason('');
+    setSingleDay(false);
+    setUseVacationDays(false);
     setItems([{ id: '1', name: '', quantity: 1 }]);
+    setDuplicateWarnings([]);
     setNotes('');
   };
 
@@ -124,7 +136,39 @@ export function CreateRequestDialog({ open, onOpenChange }: CreateRequestDialogP
   };
 
   const updateItem = (id: string, field: keyof Item, value: string | number) => {
-    setItems(items.map(i => i.id === id ? { ...i, [field]: value } : i));
+    const updatedItems = items.map(i => i.id === id ? { ...i, [field]: value } : i);
+    setItems(updatedItems);
+    
+    // Check for duplicates when updating item names
+    if (field === 'name' && typeof value === 'string' && value.trim()) {
+      checkDuplicateItems(updatedItems);
+    }
+  };
+
+  const checkDuplicateItems = (currentItems: Item[]) => {
+    if (!existingRequests) return;
+    
+    const warnings: string[] = [];
+    const orderedRequests = existingRequests.filter(
+      r => (r.type === 'equipment' || r.type === 'groceries') && 
+           (r.status === 'pending' || r.status === 'approved' || r.status === 'ordered') &&
+           r.items
+    );
+
+    for (const item of currentItems) {
+      if (!item.name.trim()) continue;
+      const itemNameLower = item.name.trim().toLowerCase();
+      
+      for (const req of orderedRequests) {
+        const reqItems = req.items as Array<{ name: string; quantity: number }>;
+        const found = reqItems.find(ri => ri.name.toLowerCase().includes(itemNameLower) || itemNameLower.includes(ri.name.toLowerCase()));
+        if (found) {
+          warnings.push(`"${item.name}" כבר הוזמן בבקשה קודמת (סטטוס: ${req.status === 'pending' ? 'ממתין' : req.status === 'approved' ? 'מאושר' : 'הוזמן'})`);
+          break;
+        }
+      }
+    }
+    setDuplicateWarnings(warnings);
   };
 
   const getTotalHours = () => {
@@ -142,7 +186,7 @@ export function CreateRequestDialog({ open, onOpenChange }: CreateRequestDialogP
           WFH_CHECKLIST.every(item => wfhChecklist[item.id])
         );
       case 'vacation':
-        return vacationStartDate && vacationEndDate;
+        return singleDay ? !!vacationStartDate : (!!vacationStartDate && !!vacationEndDate);
       case 'equipment':
       case 'groceries':
         return items.some(i => i.name.trim());
@@ -174,14 +218,18 @@ export function CreateRequestDialog({ open, onOpenChange }: CreateRequestDialogP
           wfh_checklist: wfhChecklist as unknown as null,
         };
         break;
-      case 'vacation':
+      case 'vacation': {
+        const endDate = singleDay ? vacationStartDate : vacationEndDate;
         requestData = {
           ...baseRequest,
           vacation_start_date: vacationStartDate ? format(vacationStartDate, 'yyyy-MM-dd') : null,
-          vacation_end_date: vacationEndDate ? format(vacationEndDate, 'yyyy-MM-dd') : null,
+          vacation_end_date: endDate ? format(endDate, 'yyyy-MM-dd') : null,
           vacation_reason: vacationReason || null,
+          vacation_single_day: singleDay,
+          use_vacation_days: useVacationDays,
         };
         break;
+      }
       case 'equipment':
       case 'groceries':
         requestData = {
@@ -284,7 +332,7 @@ export function CreateRequestDialog({ open, onOpenChange }: CreateRequestDialogP
                     סה״כ: {getTotalHours()} שעות
                   </span>
                 </div>
-                {wfhTasks.map((task, index) => (
+                {wfhTasks.map((task) => (
                   <div key={task.id} className="flex gap-2">
                     <Input
                       placeholder="תיאור המשימה"
@@ -339,9 +387,21 @@ export function CreateRequestDialog({ open, onOpenChange }: CreateRequestDialogP
           {/* Vacation Form */}
           {requestType === 'vacation' && (
             <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="single-day">יום חופש אחד</Label>
+                <Switch
+                  id="single-day"
+                  checked={singleDay}
+                  onCheckedChange={(checked) => {
+                    setSingleDay(checked);
+                    if (checked) setVacationEndDate(undefined);
+                  }}
+                />
+              </div>
+
+              <div className={cn('grid gap-4', singleDay ? 'grid-cols-1' : 'grid-cols-2')}>
                 <div className="space-y-2">
-                  <Label>מתאריך</Label>
+                  <Label>{singleDay ? 'תאריך החופש' : 'מתאריך'}</Label>
                   <Popover>
                     <PopoverTrigger asChild>
                       <Button
@@ -365,33 +425,45 @@ export function CreateRequestDialog({ open, onOpenChange }: CreateRequestDialogP
                     </PopoverContent>
                   </Popover>
                 </div>
-                <div className="space-y-2">
-                  <Label>עד תאריך</Label>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className={cn(
-                          'w-full justify-start text-right',
-                          !vacationEndDate && 'text-muted-foreground'
-                        )}
-                      >
-                        <CalendarIcon className="ml-2 h-4 w-4" />
-                        {vacationEndDate ? format(vacationEndDate, 'dd/MM/yyyy') : 'בחר'}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={vacationEndDate}
-                        onSelect={setVacationEndDate}
-                        disabled={(date) => vacationStartDate ? date < vacationStartDate : false}
-                        initialFocus
-                      />
-                    </PopoverContent>
-                  </Popover>
-                </div>
+                {!singleDay && (
+                  <div className="space-y-2">
+                    <Label>עד תאריך</Label>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className={cn(
+                            'w-full justify-start text-right',
+                            !vacationEndDate && 'text-muted-foreground'
+                          )}
+                        >
+                          <CalendarIcon className="ml-2 h-4 w-4" />
+                          {vacationEndDate ? format(vacationEndDate, 'dd/MM/yyyy') : 'בחר'}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={vacationEndDate}
+                          onSelect={setVacationEndDate}
+                          disabled={(date) => vacationStartDate ? date < vacationStartDate : false}
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+                )}
               </div>
+
+              <div className="flex items-center justify-between">
+                <Label htmlFor="use-vacation-days">שימוש בימי חופשה צבורים</Label>
+                <Switch
+                  id="use-vacation-days"
+                  checked={useVacationDays}
+                  onCheckedChange={setUseVacationDays}
+                />
+              </div>
+
               <div className="space-y-2">
                 <Label>סיבת החופשה (אופציונלי)</Label>
                 <Textarea
@@ -406,6 +478,18 @@ export function CreateRequestDialog({ open, onOpenChange }: CreateRequestDialogP
           {/* Equipment/Groceries Form */}
           {(requestType === 'equipment' || requestType === 'groceries') && (
             <div className="space-y-4">
+              {duplicateWarnings.length > 0 && (
+                <Alert variant="destructive" className="bg-warning/10 border-warning/30 text-warning">
+                  <AlertTriangle className="h-4 w-4" />
+                  <AlertDescription>
+                    <ul className="space-y-1">
+                      {duplicateWarnings.map((warning, i) => (
+                        <li key={i} className="text-sm">{warning}</li>
+                      ))}
+                    </ul>
+                  </AlertDescription>
+                </Alert>
+              )}
               <div className="space-y-2">
                 <Label>
                   {requestType === 'equipment' ? 'פריטי ציוד' : 'רשימת מצרכים'}

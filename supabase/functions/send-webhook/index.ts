@@ -60,17 +60,13 @@ Deno.serve(async (req) => {
       timestamp: new Date().toISOString(),
     };
 
-    // If it's a test, send a simple test payload
     if (event === 'test') {
       webhookData = {
         event: 'test',
         message: 'This is a test webhook from Zabilo Book',
         timestamp: new Date().toISOString(),
       };
-    } 
-    // For actual request events, fetch full request and user data
-    else if (request_id) {
-      // Fetch request with all details
+    } else if (request_id) {
       const { data: request } = await supabase
         .from('requests')
         .select('*')
@@ -78,25 +74,16 @@ Deno.serve(async (req) => {
         .single();
 
       if (request) {
-        // Fetch user profile
         const { data: profile } = await supabase
           .from('profiles')
           .select(`
-            id,
-            user_id,
-            username,
-            full_name,
-            email,
-            phone,
-            department_id,
-            approver_id,
-            calendar_emails,
+            id, user_id, username, full_name, email, phone,
+            department_id, approver_id, calendar_emails,
             departments (id, name, icon)
           `)
           .eq('user_id', request.user_id)
           .single();
 
-        // Fetch approver details if exists
         let approver = null;
         if (request.approved_by) {
           const { data: approverProfile } = await supabase
@@ -118,15 +105,14 @@ Deno.serve(async (req) => {
             updated_at: request.updated_at,
             approved_at: request.approved_at,
             notes: request.notes,
-            // WFH specific
             wfh_date: request.wfh_date,
             wfh_tasks: request.wfh_tasks,
             wfh_checklist: request.wfh_checklist,
-            // Vacation specific
             vacation_start_date: request.vacation_start_date,
             vacation_end_date: request.vacation_end_date,
             vacation_reason: request.vacation_reason,
-            // Equipment/Groceries specific
+            vacation_single_day: request.vacation_single_day,
+            use_vacation_days: request.use_vacation_days,
             items: request.items,
           },
           user: profile ? {
@@ -144,12 +130,9 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Send webhook
     const response = await fetch(webhookUrl, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(webhookData),
     });
 
@@ -158,25 +141,15 @@ Deno.serve(async (req) => {
     }
 
     return new Response(
-      JSON.stringify({ 
-        success: true, 
-        message: 'Webhook sent successfully',
-        status: response.status 
-      }),
+      JSON.stringify({ success: true, message: 'Webhook sent successfully', status: response.status }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
   } catch (error) {
     console.error('Webhook error:', error);
     return new Response(
-      JSON.stringify({ 
-        success: false, 
-        error: error.message 
-      }),
-      { 
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-      }
+      JSON.stringify({ success: false, error: error.message }),
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
 });

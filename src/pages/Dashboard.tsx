@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isToday, addMonths, subMonths, getDay, parseISO, isWithinInterval } from 'date-fns';
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, isToday, addMonths, subMonths, getDay, isWithinInterval, isSaturday } from 'date-fns';
 import { he } from 'date-fns/locale';
 import { ChevronRight, ChevronLeft, Clock, Home, Palmtree, Filter, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -11,19 +11,92 @@ import { cn } from '@/lib/utils';
 import { useRequests } from '@/hooks/useRequests';
 import { useDepartments } from '@/hooks/useDepartments';
 
-// Israeli holidays for 2026
+// Helper to format date to YYYY-MM-DD in local time (avoids timezone shifts)
+function formatDateString(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+// Helper to parse YYYY-MM-DD string into a local Date object
+function parseLocalDate(dateStr: string): Date {
+  const [year, month, day] = dateStr.split('-').map(Number);
+  return new Date(year, month - 1, day);
+}
+
+// Israeli holidays - comprehensive list for 2025-2027
 const israeliHolidays: Record<string, string> = {
-  '2026-03-17': 'פורים',
-  '2026-04-06': 'פסח',
-  '2026-04-12': 'שביעי של פסח',
-  '2026-04-20': 'יום הזיכרון',
-  '2026-04-21': 'יום העצמאות',
-  '2026-05-26': 'שבועות',
-  '2026-09-23': 'ראש השנה',
-  '2026-10-02': 'יום כיפור',
-  '2026-10-07': 'סוכות',
-  '2026-10-14': 'שמחת תורה',
-  '2026-12-15': 'חנוכה',
+  // 2025
+  '2025-03-14': 'פורים',
+  '2025-04-13': 'ערב פסח',
+  '2025-04-14': 'פסח',
+  '2025-04-15': 'פסח',
+  '2025-04-19': 'שביעי של פסח',
+  '2025-04-20': 'שביעי של פסח',
+  '2025-05-01': 'יום הזיכרון',
+  '2025-05-02': 'יום העצמאות',
+  '2025-06-02': 'שבועות',
+  '2025-06-03': 'שבועות',
+  '2025-09-23': 'ראש השנה',
+  '2025-09-24': 'ראש השנה',
+  '2025-10-02': 'יום כיפור',
+  '2025-10-07': 'סוכות',
+  '2025-10-08': 'סוכות',
+  '2025-10-13': 'הושענא רבה',
+  '2025-10-14': 'שמחת תורה',
+  '2025-12-15': 'חנוכה',
+  '2025-12-16': 'חנוכה',
+  '2025-12-17': 'חנוכה',
+  '2025-12-18': 'חנוכה',
+  '2025-12-19': 'חנוכה',
+  '2025-12-20': 'חנוכה',
+  '2025-12-21': 'חנוכה',
+  '2025-12-22': 'חנוכה',
+  // 2026
+  '2026-03-03': 'פורים',
+  '2026-04-02': 'ערב פסח',
+  '2026-04-03': 'פסח',
+  '2026-04-04': 'פסח',
+  '2026-04-08': 'שביעי של פסח',
+  '2026-04-09': 'שביעי של פסח',
+  '2026-04-22': 'יום הזיכרון',
+  '2026-04-23': 'יום העצמאות',
+  '2026-05-22': 'שבועות',
+  '2026-05-23': 'שבועות',
+  '2026-09-12': 'ראש השנה',
+  '2026-09-13': 'ראש השנה',
+  '2026-09-21': 'יום כיפור',
+  '2026-09-26': 'סוכות',
+  '2026-09-27': 'סוכות',
+  '2026-10-02': 'הושענא רבה',
+  '2026-10-03': 'שמחת תורה',
+  '2026-12-05': 'חנוכה',
+  '2026-12-06': 'חנוכה',
+  '2026-12-07': 'חנוכה',
+  '2026-12-08': 'חנוכה',
+  '2026-12-09': 'חנוכה',
+  '2026-12-10': 'חנוכה',
+  '2026-12-11': 'חנוכה',
+  '2026-12-12': 'חנוכה',
+  // 2027
+  '2027-03-23': 'פורים',
+  '2027-04-22': 'ערב פסח',
+  '2027-04-23': 'פסח',
+  '2027-04-24': 'פסח',
+  '2027-04-28': 'שביעי של פסח',
+  '2027-04-29': 'שביעי של פסח',
+  '2027-05-12': 'יום הזיכרון',
+  '2027-05-13': 'יום העצמאות',
+  '2027-06-11': 'שבועות',
+  '2027-06-12': 'שבועות',
+  '2027-10-02': 'ראש השנה',
+  '2027-10-03': 'ראש השנה',
+  '2027-10-11': 'יום כיפור',
+  '2027-10-16': 'סוכות',
+  '2027-10-17': 'סוכות',
+  '2027-10-22': 'הושענא רבה',
+  '2027-10-23': 'שמחת תורה',
 };
 
 const weekDays = ['א׳', 'ב׳', 'ג׳', 'ד׳', 'ה׳', 'ו׳', 'ש׳'];
@@ -60,15 +133,15 @@ export default function Dashboard() {
   }, [requests, selectedDepartment]);
 
   const getEventsForDay = (date: Date) => {
-    const dateStr = format(date, 'yyyy-MM-dd');
+    const dateStr = formatDateString(date);
     
     return calendarEvents.filter(request => {
       if (request.type === 'wfh') {
         return request.wfh_date === dateStr;
       }
       if (request.type === 'vacation' && request.vacation_start_date && request.vacation_end_date) {
-        const start = parseISO(request.vacation_start_date);
-        const end = parseISO(request.vacation_end_date);
+        const start = parseLocalDate(request.vacation_start_date);
+        const end = parseLocalDate(request.vacation_end_date);
         return isWithinInterval(date, { start, end });
       }
       return false;
@@ -76,14 +149,14 @@ export default function Dashboard() {
   };
 
   const getHoliday = (date: Date) => {
-    const dateStr = format(date, 'yyyy-MM-dd');
+    const dateStr = formatDateString(date);
     return israeliHolidays[dateStr];
   };
 
   // Calculate stats
-  const todayStr = format(new Date(), 'yyyy-MM-dd');
+  const todayStr = formatDateString(new Date());
   const stats = useMemo(() => {
-    if (!requests) return { wfhToday: 0, vacationToday: 0, pending: 0, nextHoliday: null };
+    if (!requests) return { wfhToday: 0, vacationToday: 0, pending: 0, nextHoliday: null as { date: Date; name: string } | null };
 
     const wfhToday = requests.filter(r => 
       r.type === 'wfh' && 
@@ -94,9 +167,10 @@ export default function Dashboard() {
     const vacationToday = requests.filter(r => {
       if (r.type !== 'vacation' || r.status !== 'approved') return false;
       if (!r.vacation_start_date || !r.vacation_end_date) return false;
-      return isWithinInterval(new Date(), {
-        start: parseISO(r.vacation_start_date),
-        end: parseISO(r.vacation_end_date),
+      const today = new Date();
+      return isWithinInterval(today, {
+        start: parseLocalDate(r.vacation_start_date),
+        end: parseLocalDate(r.vacation_end_date),
       });
     }).length;
 
@@ -104,9 +178,10 @@ export default function Dashboard() {
 
     // Find next holiday
     const today = new Date();
+    const todayDateStr = formatDateString(today);
     const futureHolidays = Object.entries(israeliHolidays)
-      .map(([date, name]) => ({ date: parseISO(date), name }))
-      .filter(h => h.date > today)
+      .filter(([date]) => date > todayDateStr)
+      .map(([date, name]) => ({ date: parseLocalDate(date), name }))
       .sort((a, b) => a.date.getTime() - b.date.getTime());
     
     const nextHoliday = futureHolidays[0] || null;
@@ -167,7 +242,7 @@ export default function Dashboard() {
         </div>
         <div className="flex items-center gap-2">
           <div className="h-3 w-3 rounded-full bg-holiday" />
-          <span>חג</span>
+          <span>חג / שבת</span>
         </div>
         <div className="flex items-center gap-2">
           <Clock className="h-3 w-3 text-warning" />
@@ -213,16 +288,18 @@ export default function Dashboard() {
                 {daysInMonth.map((day) => {
                   const dayEvents = getEventsForDay(day);
                   const holiday = getHoliday(day);
+                  const isShabbat = isSaturday(day);
+                  const isHolidayOrShabbat = !!holiday || isShabbat;
                   const isCurrentDay = isToday(day);
 
                   return (
                     <div
-                      key={day.toISOString()}
+                      key={formatDateString(day)}
                       className={cn(
                         'min-h-[100px] p-2 border rounded-lg transition-colors',
                         isCurrentDay && 'bg-primary/5 border-primary',
-                        holiday && 'bg-holiday/10',
-                        !isCurrentDay && !holiday && 'hover:bg-muted/50'
+                        isHolidayOrShabbat && !isCurrentDay && 'bg-holiday/10',
+                        !isCurrentDay && !isHolidayOrShabbat && 'hover:bg-muted/50'
                       )}
                     >
                       <div className="flex justify-between items-start mb-1">
@@ -237,6 +314,11 @@ export default function Dashboard() {
                         {holiday && (
                           <Badge variant="outline" className="text-[10px] px-1 bg-holiday/20 text-holiday border-holiday/30">
                             {holiday}
+                          </Badge>
+                        )}
+                        {isShabbat && !holiday && (
+                          <Badge variant="outline" className="text-[10px] px-1 bg-holiday/20 text-holiday border-holiday/30">
+                            שבת
                           </Badge>
                         )}
                       </div>
