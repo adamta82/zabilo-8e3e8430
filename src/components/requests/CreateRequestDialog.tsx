@@ -422,11 +422,10 @@ export function CreateRequestDialog({ open, onOpenChange }: CreateRequestDialogP
                 <AlertTriangle className="h-4 w-4" />
                 <AlertDescription className="text-sm">
                   לפני הגשת הבקשה, מומלץ לבדוק{" "}
-                  <Link
+                    <Link
                     to={`/requests?type=${requestType}&status=approved,ordered`}
-                    target="_blank"
                     className="underline font-medium text-primary hover:text-primary/80"
-                    onClick={(e) => e.stopPropagation()}
+                    onClick={() => onOpenChange(false)}
                   >
                     {requestType === "equipment" ? "רשימת ציוד משרדי שאושר/הוזמן" : "רשימת מצרכים שאושרו/הוזמנו"}
                   </Link>{" "}
