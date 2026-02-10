@@ -8,6 +8,8 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
@@ -72,14 +74,18 @@ export default function Requests() {
   
   const [searchQuery, setSearchQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState<string>(searchParams.get('type') || 'all');
-  const [statusFilter, setStatusFilter] = useState<string>(searchParams.get('status') || 'all');
+  const [statusFilter, setStatusFilter] = useState<string[]>(() => {
+    const param = searchParams.get('status');
+    if (!param) return [];
+    return param.split(',');
+  });
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState<RequestWithProfile | null>(null);
   const [deletingRequest, setDeletingRequest] = useState<RequestWithProfile | null>(null);
 
   const filteredRequests = requests?.filter(request => {
     if (typeFilter !== 'all' && request.type !== typeFilter) return false;
-    if (statusFilter !== 'all' && request.status !== statusFilter) return false;
+    if (statusFilter.length > 0 && !statusFilter.includes(request.status)) return false;
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
       const userName = request.profiles?.full_name?.toLowerCase() || '';
@@ -195,19 +201,28 @@ export default function Requests() {
             <SelectItem value="groceries">מצרכים</SelectItem>
           </SelectContent>
         </Select>
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="סטטוס" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">כל הסטטוסים</SelectItem>
-            <SelectItem value="pending">ממתין לאישור</SelectItem>
-            <SelectItem value="approved">מאושר</SelectItem>
-            <SelectItem value="rejected">נדחה</SelectItem>
-            <SelectItem value="ordered">הוזמן</SelectItem>
-            <SelectItem value="supplied">סופק</SelectItem>
-          </SelectContent>
-        </Select>
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button variant="outline" className="w-[180px] justify-start text-right">
+              <Filter className="ml-2 h-4 w-4" />
+              {statusFilter.length === 0 ? 'כל הסטטוסים' : `${statusFilter.length} נבחרו`}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-[200px] p-2" align="start">
+            {(Object.entries(STATUS_LABELS) as [RequestStatus, string][]).map(([value, label]) => (
+              <div key={value} className="flex items-center gap-2 p-2 hover:bg-muted rounded cursor-pointer"
+                onClick={() => {
+                  setStatusFilter(prev => 
+                    prev.includes(value) ? prev.filter(s => s !== value) : [...prev, value]
+                  );
+                }}
+              >
+                <Checkbox checked={statusFilter.includes(value)} />
+                <span className="text-sm">{label}</span>
+              </div>
+            ))}
+          </PopoverContent>
+        </Popover>
       </div>
 
       {/* Requests Table */}
