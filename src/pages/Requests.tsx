@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, Search, Filter, Clock, Check, X, Home, Palmtree, Monitor, ShoppingCart, Eye } from 'lucide-react';
+import { Plus, Search, Filter, Clock, Check, X, Home, Palmtree, Monitor, ShoppingCart, Eye, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { he } from 'date-fns/locale';
 import { Button } from '@/components/ui/button';
@@ -9,8 +9,19 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Skeleton } from '@/components/ui/skeleton';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { cn } from '@/lib/utils';
-import { useRequests, type RequestWithProfile } from '@/hooks/useRequests';
+import { useAuth } from '@/contexts/AuthContext';
+import { useRequests, useDeleteRequest, type RequestWithProfile } from '@/hooks/useRequests';
 import { CreateRequestDialog } from '@/components/requests/CreateRequestDialog';
 import { RequestDetailsDialog } from '@/components/requests/RequestDetailsDialog';
 import type { Database } from '@/integrations/supabase/types';
@@ -54,12 +65,15 @@ const getStatusIcon = (status: RequestStatus) => {
 
 export default function Requests() {
   const { data: requests, isLoading } = useRequests();
+  const { user, isAdmin } = useAuth();
+  const deleteRequest = useDeleteRequest();
   
   const [searchQuery, setSearchQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState<RequestWithProfile | null>(null);
+  const [deletingRequest, setDeletingRequest] = useState<RequestWithProfile | null>(null);
 
   const filteredRequests = requests?.filter(request => {
     if (typeFilter !== 'all' && request.type !== typeFilter) return false;
@@ -248,15 +262,27 @@ export default function Requests() {
                       {format(new Date(request.created_at), 'dd/MM/yyyy', { locale: he })}
                     </TableCell>
                     <TableCell>
-                      <Button 
-                        variant="ghost" 
-                        size="sm"
-                        className="gap-2"
-                        onClick={() => setSelectedRequest(request)}
-                      >
-                        <Eye className="h-4 w-4" />
-                        צפה
-                      </Button>
+                      <div className="flex items-center gap-1">
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          className="gap-2"
+                          onClick={() => setSelectedRequest(request)}
+                        >
+                          <Eye className="h-4 w-4" />
+                          צפה
+                        </Button>
+                        {(isAdmin || request.user_id === user?.id) && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-destructive hover:text-destructive"
+                            onClick={() => setDeletingRequest(request)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -282,6 +308,32 @@ export default function Requests() {
         open={!!selectedRequest}
         onOpenChange={(open) => !open && setSelectedRequest(null)}
       />
+
+      {/* Delete Confirmation */}
+      <AlertDialog open={!!deletingRequest} onOpenChange={(open) => !open && setDeletingRequest(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>האם למחוק את הבקשה?</AlertDialogTitle>
+            <AlertDialogDescription>
+              פעולה זו תמחק את הבקשה לצמיתות. לא ניתן לבטל פעולה זו.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>ביטול</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={async () => {
+                if (deletingRequest) {
+                  await deleteRequest.mutateAsync(deletingRequest.id);
+                  setDeletingRequest(null);
+                }
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              מחיקה
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

@@ -14,6 +14,7 @@ export interface RequestWithProfile extends Request {
     full_name: string;
     email: string;
     department_id: string | null;
+    approver_id: string | null;
   } | null;
 }
 
@@ -38,7 +39,7 @@ export function useRequests() {
       // Fetch profiles for all users
       const { data: profiles } = await supabase
         .from('profiles')
-        .select('id, user_id, full_name, email, department_id')
+        .select('id, user_id, full_name, email, department_id, approver_id')
         .in('user_id', userIds);
 
       const profileMap = new Map(profiles?.map(p => [p.user_id, p]) || []);
