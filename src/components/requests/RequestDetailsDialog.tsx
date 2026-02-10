@@ -54,8 +54,14 @@ interface RequestDetailsDialogProps {
 }
 
 export function RequestDetailsDialog({ request, open, onOpenChange }: RequestDetailsDialogProps) {
-  const { isAdmin } = useAuth();
+  const { isAdmin, profile } = useAuth();
   const updateStatus = useUpdateRequestStatus();
+
+  if (!request) return null;
+
+  // Check if current user is the approver for this request's submitter
+  const isApprover = !!(profile && request.profiles?.approver_id === profile.id);
+  const canChangeStatus = isAdmin || isApprover;
 
   if (!request) return null;
 
@@ -105,7 +111,7 @@ export function RequestDetailsDialog({ request, open, onOpenChange }: RequestDet
           {/* Status */}
           <div className="flex items-center justify-between">
             <span className="text-sm font-medium">סטטוס</span>
-            {isAdmin ? (
+            {canChangeStatus ? (
               <Select
                 value={request.status}
                 onValueChange={(v) => handleStatusChange(v as RequestStatus)}

@@ -43,7 +43,7 @@ export function EditEmployeeDialog({ employee, open, onOpenChange }: EditEmploye
     if (employee) {
       setFullName(employee.full_name);
       setPhone(employee.phone || '');
-      setDepartmentId(employee.department_id || '');
+      setDepartmentId(employee.department_id || 'none');
       setApproverId(employee.approver_id || '');
       setRole(employee.user_roles?.[0]?.role || 'employee');
     }
@@ -57,7 +57,7 @@ export function EditEmployeeDialog({ employee, open, onOpenChange }: EditEmploye
       updates: {
         full_name: fullName,
         phone: phone || null,
-        department_id: departmentId || null,
+        department_id: departmentId === 'none' ? null : departmentId || null,
         approver_id: approverId || null,
       },
       newRole: role,
@@ -114,7 +114,7 @@ export function EditEmployeeDialog({ employee, open, onOpenChange }: EditEmploye
                 <SelectValue placeholder="בחר מחלקה" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">ללא מחלקה</SelectItem>
+                <SelectItem value="none">ללא מחלקה</SelectItem>
                 {departments?.map((dept) => (
                   <SelectItem key={dept.id} value={dept.id}>
                     {dept.name}
