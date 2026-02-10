@@ -71,7 +71,11 @@ export default function Requests() {
   const deleteRequest = useDeleteRequest();
   const [searchParams] = useSearchParams();
   const [searchQuery, setSearchQuery] = useState('');
-  const [typeFilter, setTypeFilter] = useState<string>(searchParams.get('type') || 'all');
+  const [typeFilter, setTypeFilter] = useState<string[]>(() => {
+    const param = searchParams.get('type');
+    if (!param) return [];
+    return param.split(',');
+  });
   const [statusFilter, setStatusFilter] = useState<string[]>(() => {
     const param = searchParams.get('status');
     if (!param) return [];
@@ -81,7 +85,7 @@ export default function Requests() {
   const [selectedRequest, setSelectedRequest] = useState<RequestWithProfile | null>(null);
   const [deletingRequest, setDeletingRequest] = useState<RequestWithProfile | null>(null);
   const filteredRequests = requests?.filter(request => {
-    if (typeFilter !== 'all' && request.type !== typeFilter) return false;
+    if (typeFilter.length > 0 && !typeFilter.includes(request.type)) return false;
     if (statusFilter.length > 0 && !statusFilter.includes(request.status)) return false;
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
@@ -177,18 +181,22 @@ export default function Requests() {
           <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input placeholder="חיפוש לפי שם..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="pr-9" />
         </div>
-        <Select value={typeFilter} onValueChange={setTypeFilter}>
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="סוג בקשה" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">כל הסוגים</SelectItem>
-            <SelectItem value="wfh">עבודה מהבית</SelectItem>
-            <SelectItem value="vacation">חופשה</SelectItem>
-            <SelectItem value="equipment">ציוד משרדי</SelectItem>
-            <SelectItem value="groceries">מצרכים</SelectItem>
-          </SelectContent>
-        </Select>
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button variant="outline" className="w-[180px] justify-start text-right">
+              <Filter className="ml-2 h-4 w-4" />
+              {typeFilter.length === 0 ? 'כל הסוגים' : `${typeFilter.length} נבחרו`}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-[200px] p-2" align="start">
+            {(Object.entries(TYPE_LABELS) as [RequestType, string][]).map(([value, label]) => <div key={value} className="flex items-center gap-2 p-2 hover:bg-muted rounded cursor-pointer" onClick={() => {
+              setTypeFilter(prev => prev.includes(value) ? prev.filter(t => t !== value) : [...prev, value]);
+            }}>
+                <Checkbox checked={typeFilter.includes(value)} />
+                <span className="text-sm">{label}</span>
+              </div>)}
+          </PopoverContent>
+        </Popover>
         <Popover>
           <PopoverTrigger asChild>
             <Button variant="outline" className="w-[180px] justify-start text-right">
