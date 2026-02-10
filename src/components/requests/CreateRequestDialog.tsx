@@ -149,7 +149,7 @@ export function CreateRequestDialog({ open, onOpenChange }: CreateRequestDialogP
       case 'wfh':
         return (
           wfhDate &&
-          wfhTasks.some(t => t.description.trim()) &&
+          wfhTasks.some(t => t.description.trim() && t.reference.trim()) &&
           WFH_CHECKLIST.every(item => wfhChecklist[item.id])
         );
       case 'vacation':
@@ -302,7 +302,7 @@ export function CreateRequestDialog({ open, onOpenChange }: CreateRequestDialogP
                 </div>
                 {wfhTasks.map((task) => (
                   <div key={task.id} className="space-y-1">
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 items-center">
                       <Input
                         placeholder="תיאור המשימה"
                         value={task.description}
@@ -316,6 +316,13 @@ export function CreateRequestDialog({ open, onOpenChange }: CreateRequestDialogP
                         value={task.estimatedHours}
                         onChange={(e) => updateWfhTask(task.id, 'estimatedHours', parseFloat(e.target.value) || 0)}
                         className="w-20"
+                        placeholder="שעות"
+                      />
+                      <Input
+                        placeholder="רפרנס"
+                        value={task.reference}
+                        onChange={(e) => updateWfhTask(task.id, 'reference', e.target.value)}
+                        className="w-32"
                       />
                       <Button
                         variant="ghost"
@@ -326,11 +333,6 @@ export function CreateRequestDialog({ open, onOpenChange }: CreateRequestDialogP
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
-                    <Input
-                      placeholder="רפרנס (אופציונלי)"
-                      value={task.reference}
-                      onChange={(e) => updateWfhTask(task.id, 'reference', e.target.value)}
-                    />
                   </div>
                 ))}
                 <Button variant="outline" size="sm" onClick={addWfhTask} className="gap-2">
@@ -458,7 +460,7 @@ export function CreateRequestDialog({ open, onOpenChange }: CreateRequestDialogP
                 <AlertDescription className="text-sm">
                   לפני הגשת הבקשה, מומלץ לבדוק{' '}
                   <Link
-                    to={`/requests?type=${requestType}&status=approved`}
+                    to={`/requests?type=${requestType}&status=approved,ordered`}
                     target="_blank"
                     className="underline font-medium text-primary hover:text-primary/80"
                     onClick={(e) => e.stopPropagation()}
