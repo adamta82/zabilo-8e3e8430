@@ -6,6 +6,7 @@ import {
   Building2,
   Settings,
   LogOut,
+  ClipboardList,
 } from 'lucide-react';
 import {
   Sidebar,
@@ -38,6 +39,11 @@ const mainMenuItems = [
 ];
 
 const adminMenuItems = [
+  {
+    title: 'שיבוץ משמרות',
+    url: '/shifts',
+    icon: ClipboardList,
+  },
   {
     title: 'ניהול עובדים',
     url: '/employees',
