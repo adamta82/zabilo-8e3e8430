@@ -17,7 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { useUpdateEmployee, type EmployeeWithRole } from '@/hooks/useEmployees';
+import { useUpdateEmployee, useEmployees, type EmployeeWithRole } from '@/hooks/useEmployees';
 import { useDepartments } from '@/hooks/useDepartments';
 import type { Database } from '@/integrations/supabase/types';
 
@@ -32,6 +32,7 @@ interface EditEmployeeDialogProps {
 export function EditEmployeeDialog({ employee, open, onOpenChange }: EditEmployeeDialogProps) {
   const updateEmployee = useUpdateEmployee();
   const { data: departments } = useDepartments();
+  const { data: employees } = useEmployees();
   
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
@@ -118,6 +119,23 @@ export function EditEmployeeDialog({ employee, open, onOpenChange }: EditEmploye
                 {departments?.map((dept) => (
                   <SelectItem key={dept.id} value={dept.id}>
                     {dept.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label>גורם מאשר</Label>
+            <Select value={approverId || 'none'} onValueChange={(v) => setApproverId(v === 'none' ? '' : v)}>
+              <SelectTrigger>
+                <SelectValue placeholder="בחר גורם מאשר" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">ללא גורם מאשר</SelectItem>
+                {employees?.filter(e => e.id !== employee?.id).map((emp) => (
+                  <SelectItem key={emp.id} value={emp.id}>
+                    {emp.full_name}
                   </SelectItem>
                 ))}
               </SelectContent>
