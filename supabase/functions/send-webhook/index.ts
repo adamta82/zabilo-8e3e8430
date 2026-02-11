@@ -94,6 +94,22 @@ Deno.serve(async (req) => {
           approver = approverProfile;
         }
 
+        // Format WFH tasks as single string
+        let formattedTasks: string | null = null;
+        if (request.wfh_tasks && Array.isArray(request.wfh_tasks)) {
+          formattedTasks = (request.wfh_tasks as Array<{ task: string; hours: number; referent?: string }>)
+            .map(t => `משימה: ${t.task} | זמן: ${t.hours} שעות${t.referent ? ` | רפרנט: ${t.referent}` : ''}`)
+            .join('\n');
+        }
+
+        // Format items (equipment/groceries) as single string
+        let formattedItems: string | null = null;
+        if (request.items && Array.isArray(request.items)) {
+          formattedItems = (request.items as Array<{ name: string; quantity: number }>)
+            .map(i => `פריט: ${i.name} | כמות: ${i.quantity}`)
+            .join('\n');
+        }
+
         webhookData = {
           event,
           timestamp: new Date().toISOString(),
@@ -106,14 +122,14 @@ Deno.serve(async (req) => {
             approved_at: request.approved_at,
             notes: request.notes,
             wfh_date: request.wfh_date,
-            wfh_tasks: request.wfh_tasks,
+            wfh_tasks: formattedTasks,
             wfh_checklist: request.wfh_checklist,
             vacation_start_date: request.vacation_start_date,
             vacation_end_date: request.vacation_end_date,
             vacation_reason: request.vacation_reason,
             vacation_single_day: request.vacation_single_day,
             use_vacation_days: request.use_vacation_days,
-            items: request.items,
+            items: formattedItems,
           },
           user: profile ? {
             id: profile.id,
