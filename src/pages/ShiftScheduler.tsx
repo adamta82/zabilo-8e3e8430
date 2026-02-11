@@ -76,6 +76,7 @@ export default function ShiftScheduler() {
   const filteredEmployees = useMemo(() => {
     if (!employees) return [];
     return employees.filter(e => {
+      if ((e as any).show_in_shifts === false) return false;
       if (filterDept !== 'all' && e.department_id !== filterDept) return false;
       if (search && !e.full_name.includes(search)) return false;
       return true;

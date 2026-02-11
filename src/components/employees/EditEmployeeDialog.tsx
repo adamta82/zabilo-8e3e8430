@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import {
   Dialog,
   DialogContent,
@@ -39,6 +40,7 @@ export function EditEmployeeDialog({ employee, open, onOpenChange }: EditEmploye
   const [departmentId, setDepartmentId] = useState<string>('');
   const [approverId, setApproverId] = useState<string>('');
   const [role, setRole] = useState<AppRole>('employee');
+  const [showInShifts, setShowInShifts] = useState(true);
 
   useEffect(() => {
     if (employee) {
@@ -47,6 +49,7 @@ export function EditEmployeeDialog({ employee, open, onOpenChange }: EditEmploye
       setDepartmentId(employee.department_id || 'none');
       setApproverId(employee.approver_id || '');
       setRole(employee.user_roles?.[0]?.role || 'employee');
+      setShowInShifts((employee as any).show_in_shifts !== false);
     }
   }, [employee]);
 
@@ -60,7 +63,8 @@ export function EditEmployeeDialog({ employee, open, onOpenChange }: EditEmploye
         phone: phone || null,
         department_id: departmentId === 'none' ? null : departmentId || null,
         approver_id: approverId || null,
-      },
+        show_in_shifts: showInShifts,
+      } as any,
       newRole: role,
     });
 
@@ -153,6 +157,15 @@ export function EditEmployeeDialog({ employee, open, onOpenChange }: EditEmploye
                 <SelectItem value="admin">מנהל</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+
+          <div className="flex items-center justify-between py-2">
+            <Label htmlFor="show-in-shifts">הצג בניהול משמרות</Label>
+            <Switch
+              id="show-in-shifts"
+              checked={showInShifts}
+              onCheckedChange={setShowInShifts}
+            />
           </div>
         </div>
 

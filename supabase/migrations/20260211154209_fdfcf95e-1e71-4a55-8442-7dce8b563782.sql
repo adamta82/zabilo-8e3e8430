@@ -1,0 +1,1 @@
+ALTER TABLE public.profiles ADD COLUMN show_in_shifts boolean NOT NULL DEFAULT true;

@@ -124,6 +124,7 @@ export type Database = {
           full_name: string
           id: string
           phone: string | null
+          show_in_shifts: boolean
           updated_at: string
           user_id: string
           username: string
@@ -138,6 +139,7 @@ export type Database = {
           full_name: string
           id?: string
           phone?: string | null
+          show_in_shifts?: boolean
           updated_at?: string
           user_id: string
           username: string
@@ -152,6 +154,7 @@ export type Database = {
           full_name?: string
           id?: string
           phone?: string | null
+          show_in_shifts?: boolean
           updated_at?: string
           user_id?: string
           username?: string
