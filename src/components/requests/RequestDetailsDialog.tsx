@@ -170,9 +170,14 @@ export function RequestDetailsDialog({ request, open, onOpenChange }: RequestDet
                     <span className="text-muted-foreground">סה״כ {getTotalHours()} שעות</span>
                   </div>
                   <div className="space-y-1">
-                    {(request.wfh_tasks as Array<{ description: string; estimatedHours: number }>).map((task, i) => (
+                    {(request.wfh_tasks as Array<{ description: string; estimatedHours: number; reference?: string }>).map((task, i) => (
                       <div key={i} className="flex items-center justify-between text-sm bg-muted/50 rounded px-3 py-2">
-                        <span>{task.description}</span>
+                        <div className="flex items-center gap-2">
+                          <span>{task.description}</span>
+                          {task.reference && (
+                            <span className="text-muted-foreground text-xs">| רפרנט: {task.reference}</span>
+                          )}
+                        </div>
                         <span className="text-muted-foreground">{task.estimatedHours}ש׳</span>
                       </div>
                     ))}

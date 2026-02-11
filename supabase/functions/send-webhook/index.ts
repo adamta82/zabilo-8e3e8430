@@ -97,8 +97,8 @@ Deno.serve(async (req) => {
         // Format WFH tasks as single string
         let formattedTasks: string | null = null;
         if (request.wfh_tasks && Array.isArray(request.wfh_tasks)) {
-          formattedTasks = (request.wfh_tasks as Array<{ task: string; hours: number; referent?: string }>)
-            .map(t => `משימה: ${t.task} | זמן: ${t.hours} שעות${t.referent ? ` | רפרנט: ${t.referent}` : ''}`)
+          formattedTasks = (request.wfh_tasks as Array<{ description: string; estimatedHours: number; reference?: string }>)
+            .map(t => `משימה: ${t.description} | זמן: ${t.estimatedHours} שעות${t.reference ? ` | רפרנט: ${t.reference}` : ''}`)
             .join('\n');
         }
 
