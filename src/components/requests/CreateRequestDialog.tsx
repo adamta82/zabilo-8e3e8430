@@ -252,6 +252,28 @@ export function CreateRequestDialog({ open, onOpenChange }: CreateRequestDialogP
           {/* WFH Form */}
           {requestType === "wfh" && (
             <div className="space-y-4">
+              {/* Important Info */}
+              <div className="rounded-lg border border-border bg-muted/30 p-4 space-y-3 text-sm">
+                <p className="font-semibold flex items-center gap-1">📌 מידע חשוב</p>
+                <ul className="list-disc list-inside space-y-1 text-muted-foreground">
+                  <li><strong>יום עבודה:</strong> ציינו את התאריך המדויק שבו תעבדו מהבית</li>
+                  <li><strong>סיבת הבקשה:</strong> הסבירו בצורה ברורה מדוע יש צורך בעבודה מרחוק</li>
+                  <li><strong>תנאי סביבת עבודה:</strong> יש לאשר קיומו של מרחב ייעודי ושקט לעבודה ללא הפרעות</li>
+                  <li><strong>חיבור אינטרנט מאובטח:</strong> התחייבו להשתמש ברשת עם סיסמה בלבד. ⚠️ שימוש ברשתות ציבוריות/פתוחות אסור בהחלט</li>
+                  <li><strong>שימוש במחשב:</strong> השתמשו רק במחשב שסופק על ידי החברה ולצרכים הקשורים לעבודה בלבד. אין לגלוש לאתרים של סטרימינג, הימורים, קריפטו או אתרים שעלולים להזיק</li>
+                  <li><strong>אבטחת אימייל:</strong> יש להימנע מהקלקה על קישורים חשודים או ממקורות שאינם מאומתים</li>
+                  <li><strong>תיעוד תוכנית יומית:</strong> פרטו את המשימות המתוכננות ליום העבודה מהבית</li>
+                </ul>
+                <p className="font-semibold flex items-center gap-1 pt-2">📒 חוקים נוספים</p>
+                <ul className="list-disc list-inside space-y-1 text-muted-foreground">
+                  <li>ניתן לאשר עבודה מהבית לעובד אחד בלבד במחלקות גדולות (כגון לוגיסטיקה, שירות לקוחות) בכל זמן נתון</li>
+                  <li>ודאו שכל ההתחייבויות שמופיעות בטופס מתקיימות בפועל</li>
+                  <li>אי עמידה בהנחיות עלולה להוביל לשלילת האפשרות לעבוד מהבית</li>
+                  <li>אין לעבוד מהבית ביום שלפני או אחרי חג</li>
+                  <li>אין לעבוד מהבית ביום שלפני או אחרי חופשה</li>
+                </ul>
+              </div>
+
               <div className="space-y-2">
                 <Label>תאריך עבודה מהבית</Label>
                 <Popover>
@@ -337,6 +359,24 @@ export function CreateRequestDialog({ open, onOpenChange }: CreateRequestDialogP
           {/* Vacation Form */}
           {requestType === "vacation" && (
             <div className="space-y-4">
+              {/* Important Info */}
+              <div className="rounded-lg border border-border bg-muted/30 p-4 space-y-3 text-sm">
+                <p className="font-semibold flex items-center gap-1">📌 מידע חשוב</p>
+                <ul className="list-disc list-inside space-y-1 text-muted-foreground">
+                  <li><strong>תאריך החופש:</strong> ציינו את התאריך (או טווח התאריכים) שבו ברצונכם לצאת לחופש</li>
+                  <li><strong>סיבה לבקשה:</strong> אין חובה לפרט, אך ניתן להוסיף הסבר במידת הצורך</li>
+                  <li><strong>חלופות וגיבוי:</strong> יש לוודא שפעולות שוטפות לא יפגעו – ציינו מי מגבה אתכם במידת הצורך</li>
+                  <li><strong>היערכות מוקדמת:</strong> ודאו שכל המשימות הדחופות והמחויבויות מול לקוחות/ספקים/צוותים הוסדרו מראש</li>
+                </ul>
+                <p className="font-semibold flex items-center gap-1 pt-2">📒 חוקים נוספים</p>
+                <ul className="list-disc list-inside space-y-1 text-muted-foreground">
+                  <li>חופשה של יותר מ-4 ימים מחייבת הגשת בקשה לפחות חודש מראש</li>
+                  <li>אין להגיש בקשה לחופש ברגע האחרון, אלא במקרים חריגים ובאישור מיוחד</li>
+                  <li>חופשות בתקופות עומס או סמוכות לחגים יאושרו בהתאם לשיקולי הנהלה בלבד</li>
+                  <li>במקרה של חופשה ארוכה – נדרש תיאום מלא מול המנהל הישיר</li>
+                </ul>
+              </div>
+
               <div className="flex items-center justify-between">
                 <Label htmlFor="single-day">יום חופש אחד</Label>
                 <Switch

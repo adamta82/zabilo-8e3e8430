@@ -15,7 +15,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
-import { useRequests, useDeleteRequest, type RequestWithProfile } from '@/hooks/useRequests';
+import { useRequests, useDeleteRequest, useUpdateRequestStatus, type RequestWithProfile } from '@/hooks/useRequests';
 import { CreateRequestDialog } from '@/components/requests/CreateRequestDialog';
 import { RequestDetailsDialog } from '@/components/requests/RequestDetailsDialog';
 import type { Database } from '@/integrations/supabase/types';
@@ -66,9 +66,11 @@ export default function Requests() {
   } = useRequests();
   const {
     user,
-    isAdmin
+    isAdmin,
+    profile: currentProfile
   } = useAuth();
   const deleteRequest = useDeleteRequest();
+  const updateStatus = useUpdateRequestStatus();
   const [searchParams] = useSearchParams();
   const [searchQuery, setSearchQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState<string[]>(() => {
@@ -260,6 +262,16 @@ export default function Requests() {
                           <Eye className="h-4 w-4" />
                           צפה
                         </Button>
+                        {request.status === 'pending' && request.user_id !== user?.id && (isAdmin || request.profiles?.approver_id === currentProfile?.id) && (
+                          <>
+                            <Button variant="ghost" size="sm" className="text-success hover:text-success" onClick={() => updateStatus.mutate({ requestId: request.id, status: 'approved' })}>
+                              <Check className="h-4 w-4" />
+                            </Button>
+                            <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive" onClick={() => updateStatus.mutate({ requestId: request.id, status: 'rejected' })}>
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </>
+                        )}
                         {(isAdmin || request.user_id === user?.id) && <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive" onClick={() => setDeletingRequest(request)}>
                             <Trash2 className="h-4 w-4" />
                           </Button>}
