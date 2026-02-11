@@ -178,47 +178,49 @@ export default function Requests() {
       </div>
 
       {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-4">
+      <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
           <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input placeholder="חיפוש לפי שם..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="pr-9" />
         </div>
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button variant="outline" className="w-[180px] justify-start text-right">
-              <Filter className="ml-2 h-4 w-4" />
-              {typeFilter.length === 0 ? 'כל הסוגים' : `${typeFilter.length} נבחרו`}
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-[200px] p-2" align="start">
-            {(Object.entries(TYPE_LABELS) as [RequestType, string][]).map(([value, label]) => <div key={value} className="flex items-center gap-2 p-2 hover:bg-muted rounded cursor-pointer" onClick={() => {
-              setTypeFilter(prev => prev.includes(value) ? prev.filter(t => t !== value) : [...prev, value]);
+        <div className="flex gap-2">
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" className="flex-1 sm:flex-none sm:w-[180px] justify-start text-right">
+                <Filter className="ml-2 h-4 w-4" />
+                {typeFilter.length === 0 ? 'כל הסוגים' : `${typeFilter.length} נבחרו`}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-[200px] p-2" align="start">
+              {(Object.entries(TYPE_LABELS) as [RequestType, string][]).map(([value, label]) => <div key={value} className="flex items-center gap-2 p-2 hover:bg-muted rounded cursor-pointer" onClick={() => {
+                setTypeFilter(prev => prev.includes(value) ? prev.filter(t => t !== value) : [...prev, value]);
+              }}>
+                  <Checkbox checked={typeFilter.includes(value)} />
+                  <span className="text-sm">{label}</span>
+                </div>)}
+            </PopoverContent>
+          </Popover>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" className="flex-1 sm:flex-none sm:w-[180px] justify-start text-right">
+                <Filter className="ml-2 h-4 w-4" />
+                {statusFilter.length === 0 ? 'כל הסטטוסים' : `${statusFilter.length} נבחרו`}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-[200px] p-2" align="start">
+              {(Object.entries(STATUS_LABELS) as [RequestStatus, string][]).map(([value, label]) => <div key={value} className="flex items-center gap-2 p-2 hover:bg-muted rounded cursor-pointer" onClick={() => {
+              setStatusFilter(prev => prev.includes(value) ? prev.filter(s => s !== value) : [...prev, value]);
             }}>
-                <Checkbox checked={typeFilter.includes(value)} />
-                <span className="text-sm">{label}</span>
-              </div>)}
-          </PopoverContent>
-        </Popover>
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button variant="outline" className="w-[180px] justify-start text-right">
-              <Filter className="ml-2 h-4 w-4" />
-              {statusFilter.length === 0 ? 'כל הסטטוסים' : `${statusFilter.length} נבחרו`}
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-[200px] p-2" align="start">
-            {(Object.entries(STATUS_LABELS) as [RequestStatus, string][]).map(([value, label]) => <div key={value} className="flex items-center gap-2 p-2 hover:bg-muted rounded cursor-pointer" onClick={() => {
-            setStatusFilter(prev => prev.includes(value) ? prev.filter(s => s !== value) : [...prev, value]);
-          }}>
-                <Checkbox checked={statusFilter.includes(value)} />
-                <span className="text-sm">{label}</span>
-              </div>)}
-          </PopoverContent>
-        </Popover>
+                  <Checkbox checked={statusFilter.includes(value)} />
+                  <span className="text-sm">{label}</span>
+                </div>)}
+            </PopoverContent>
+          </Popover>
+        </div>
       </div>
 
-      {/* Requests Table */}
-      <Card>
+      {/* Requests Table - Desktop */}
+      <Card className="hidden md:block">
         <CardContent className="p-0">
           {isLoading ? <div className="p-6 space-y-4">
               {[1, 2, 3].map(i => <Skeleton key={i} className="h-16 w-full" />)}
@@ -282,6 +284,53 @@ export default function Requests() {
             </Table>}
         </CardContent>
       </Card>
+
+      {/* Requests Cards - Mobile */}
+      <div className="md:hidden space-y-3">
+        {isLoading ? (
+          [1, 2, 3].map(i => <Skeleton key={i} className="h-32 w-full rounded-lg" />)
+        ) : (
+          filteredRequests.map(request => (
+            <Card key={request.id} className="overflow-hidden">
+              <CardContent className="p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    {getTypeIcon(request.type)}
+                    <span className="font-medium">{TYPE_LABELS[request.type]}</span>
+                  </div>
+                  <Badge variant="outline" className={cn('gap-1 text-xs', request.status === 'pending' && 'bg-warning/10 text-warning border-warning/30', request.status === 'approved' && 'bg-success/10 text-success border-success/30', request.status === 'rejected' && 'bg-destructive/10 text-destructive border-destructive/30', request.status === 'ordered' && 'bg-info/10 text-info border-info/30', request.status === 'supplied' && 'bg-success/10 text-success border-success/30')}>
+                    {getStatusIcon(request.status)}
+                    {STATUS_LABELS[request.status]}
+                  </Badge>
+                </div>
+                <div className="flex items-center justify-between text-sm text-muted-foreground">
+                  <span>{request.profiles?.full_name || '-'}</span>
+                  <span>{getRequestDateDisplay(request)}</span>
+                </div>
+                <div className="flex items-center gap-1 pt-1 border-t">
+                  <Button variant="ghost" size="sm" className="gap-1 flex-1" onClick={() => setSelectedRequest(request)}>
+                    <Eye className="h-4 w-4" />
+                    צפה
+                  </Button>
+                  {request.status === 'pending' && request.user_id !== user?.id && (isAdmin || request.profiles?.approver_id === currentProfile?.id) && (
+                    <>
+                      <Button variant="ghost" size="sm" className="text-success hover:text-success" onClick={() => updateStatus.mutate({ requestId: request.id, status: 'approved' })}>
+                        <Check className="h-4 w-4" />
+                      </Button>
+                      <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive" onClick={() => updateStatus.mutate({ requestId: request.id, status: 'rejected' })}>
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </>
+                  )}
+                  {(isAdmin || request.user_id === user?.id) && <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive" onClick={() => setDeletingRequest(request)}>
+                      <Trash2 className="h-4 w-4" />
+                    </Button>}
+                </div>
+              </CardContent>
+            </Card>
+          ))
+        )}
+      </div>
 
       {filteredRequests.length === 0 && !isLoading && <div className="text-center py-12">
           <p className="text-muted-foreground">לא נמצאו בקשות</p>

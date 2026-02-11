@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Search, MoreHorizontal, Edit, Trash2, Shield, User, Loader2, KeyRound } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -115,7 +116,8 @@ export default function Employees() {
       </div>
 
       {/* Employees Table */}
-      <Card>
+      {/* Desktop Table */}
+      <Card className="hidden md:block">
         <CardContent className="p-0">
           {isLoading ? (
             <div className="p-6 space-y-4">
@@ -214,6 +216,72 @@ export default function Employees() {
           )}
         </CardContent>
       </Card>
+
+      {/* Mobile Cards */}
+      <div className="md:hidden space-y-3">
+        {isLoading ? (
+          [1, 2, 3].map((i) => <Skeleton key={i} className="h-28 w-full rounded-lg" />)
+        ) : (
+          filteredEmployees.map((employee) => {
+            const role = employee.user_roles?.[0]?.role || 'employee';
+            return (
+              <Card key={employee.id}>
+                <CardContent className="p-4">
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-center gap-3">
+                      <Avatar className="h-10 w-10">
+                        <AvatarFallback className="bg-primary/10 text-primary text-sm">
+                          {getInitials(employee.full_name)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <p className="font-medium">{employee.full_name}</p>
+                        <p className="text-sm text-muted-foreground">{employee.departments?.name || '-'}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Badge
+                        variant="outline"
+                        className={cn('text-xs', role === 'admin' ? 'bg-primary/10 text-primary border-primary/30' : 'bg-muted')}
+                      >
+                        {role === 'admin' ? 'מנהל' : 'עובד'}
+                      </Badge>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-8 w-8">
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => setEditingEmployee(employee)}>
+                            <Edit className="h-4 w-4 ml-2" />
+                            עריכה
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => setPasswordEmployee(employee)}>
+                            <KeyRound className="h-4 w-4 ml-2" />
+                            שינוי סיסמה
+                          </DropdownMenuItem>
+                          <DropdownMenuItem 
+                            className="text-destructive"
+                            onClick={() => setDeletingEmployee(employee)}
+                          >
+                            <Trash2 className="h-4 w-4 ml-2" />
+                            מחיקה
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  </div>
+                  <div className="mt-2 text-sm text-muted-foreground space-y-1">
+                    <p dir="ltr" className="text-left">{employee.email}</p>
+                    {employee.phone && <p dir="ltr" className="text-left">{employee.phone}</p>}
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })
+        )}
+      </div>
 
       {filteredEmployees.length === 0 && !isLoading && (
         <div className="text-center py-12">
