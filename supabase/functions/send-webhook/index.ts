@@ -84,11 +84,22 @@ Deno.serve(async (req) => {
           .eq('user_id', request.user_id)
           .single();
 
+        // Fetch designated approver for this employee
+        let designatedApprover = null;
+        if (profile?.approver_id) {
+          const { data: approverProfile } = await supabase
+            .from('profiles')
+            .select('id, full_name, email, phone')
+            .eq('id', profile.approver_id)
+            .single();
+          designatedApprover = approverProfile;
+        }
+
         let approver = null;
         if (request.approved_by) {
           const { data: approverProfile } = await supabase
             .from('profiles')
-            .select('id, full_name, email')
+            .select('id, full_name, email, phone')
             .eq('user_id', request.approved_by)
             .single();
           approver = approverProfile;
@@ -142,6 +153,11 @@ Deno.serve(async (req) => {
             calendar_emails: profile.calendar_emails,
           } : null,
           approved_by: approver,
+          designated_approver: designatedApprover ? {
+            full_name: designatedApprover.full_name,
+            email: designatedApprover.email,
+            phone: designatedApprover.phone,
+          } : null,
         };
       }
     }
