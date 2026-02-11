@@ -14,6 +14,7 @@ import Requests from "./pages/Requests";
 import Employees from "./pages/Employees";
 import Departments from "./pages/Departments";
 import Settings from "./pages/Settings";
+import ShiftScheduler from "./pages/ShiftScheduler";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -54,6 +55,16 @@ function AppRoutes() {
       />
 
       {/* Admin Routes */}
+      <Route
+        path="/shifts"
+        element={
+          <ProtectedRoute requireAdmin>
+            <AppLayout>
+              <ShiftScheduler />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
       <Route
         path="/employees"
         element={
