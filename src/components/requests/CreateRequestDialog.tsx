@@ -298,7 +298,7 @@ export function CreateRequestDialog({ open, onOpenChange }: CreateRequestDialogP
                   <span className="text-sm text-muted-foreground">סה״כ: {getTotalHours()} שעות</span>
                 </div>
                 {wfhTasks.map((task) => (
-                  <div key={task.id} className="space-y-1">
+                  <div key={task.id} className="space-y-2 border border-border rounded-lg p-3 sm:p-0 sm:border-0">
                     <div className="flex gap-2 items-center">
                       <Input
                         placeholder="תיאור המשימה"
@@ -306,6 +306,17 @@ export function CreateRequestDialog({ open, onOpenChange }: CreateRequestDialogP
                         onChange={(e) => updateWfhTask(task.id, "description", e.target.value)}
                         className="flex-1"
                       />
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => removeWfhTask(task.id)}
+                        disabled={wfhTasks.length === 1}
+                        className="shrink-0"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    <div className="flex gap-2">
                       <Input
                         type="number"
                         min={0.5}
@@ -319,16 +330,8 @@ export function CreateRequestDialog({ open, onOpenChange }: CreateRequestDialogP
                         placeholder="רפרנט"
                         value={task.reference}
                         onChange={(e) => updateWfhTask(task.id, "reference", e.target.value)}
-                        className="w-32"
+                        className="flex-1"
                       />
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => removeWfhTask(task.id)}
-                        disabled={wfhTasks.length === 1}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
                     </div>
                   </div>
                 ))}

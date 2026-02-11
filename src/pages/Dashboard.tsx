@@ -276,7 +276,7 @@ export default function Dashboard() {
               {/* Calendar days */}
               <div className="grid grid-cols-7 gap-1">
                 {emptySlots.map((_, index) => (
-                  <div key={`empty-${index}`} className="min-h-[100px] p-2" />
+                  <div key={`empty-${index}`} className="min-h-[60px] sm:min-h-[100px] p-1 sm:p-2" />
                 ))}
 
                 {daysInMonth.map((day) => {
@@ -290,7 +290,7 @@ export default function Dashboard() {
                     <div
                       key={formatDateString(day)}
                       className={cn(
-                        'min-h-[100px] p-2 border rounded-lg transition-colors',
+                        'min-h-[60px] sm:min-h-[100px] p-1 sm:p-2 border rounded-lg transition-colors',
                         isCurrentDay && 'bg-primary/5 border-primary',
                         isHolidayOrShabbat && !isCurrentDay && 'bg-holiday/10',
                         !isCurrentDay && !isHolidayOrShabbat && 'hover:bg-muted/50'
@@ -305,13 +305,13 @@ export default function Dashboard() {
                         >
                           {format(day, 'd')}
                         </span>
-                        {holiday && (
-                          <Badge variant="outline" className="text-[10px] px-1 bg-holiday/20 text-holiday border-holiday/30">
+                       {holiday && (
+                          <Badge variant="outline" className="text-[8px] sm:text-[10px] px-0.5 sm:px-1 bg-holiday/20 text-holiday border-holiday/30 max-w-[50px] sm:max-w-none truncate">
                             {holiday}
                           </Badge>
                         )}
                         {isShabbat && !holiday && (
-                          <Badge variant="outline" className="text-[10px] px-1 bg-holiday/20 text-holiday border-holiday/30">
+                          <Badge variant="outline" className="text-[8px] sm:text-[10px] px-0.5 sm:px-1 bg-holiday/20 text-holiday border-holiday/30">
                             שבת
                           </Badge>
                         )}
