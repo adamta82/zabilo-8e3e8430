@@ -1,4 +1,5 @@
 import { useState, useMemo, useCallback } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 import { format, addDays, startOfWeek, isSameDay, isToday as isTodayFn } from 'date-fns';
 import { he } from 'date-fns/locale';
 import { ChevronRight, ChevronLeft, Plus, Copy, Trash2, Search, Filter, Clock } from 'lucide-react';
@@ -123,13 +124,36 @@ export default function ShiftScheduler() {
     deleteShift.mutate(shiftId);
   };
 
-  const handleCopyPrevWeek = () => {
-    if (!shifts || !filteredEmployees.length) return;
-    const prevWeekStart = addDays(weekStartDate, -7);
-    const prevWeekEnd = addDays(weekStartDate, -1);
-    // We need prev week shifts - will use existing data if available
-    // For simplicity, show a toast that this needs the prev week loaded
-    toast({ title: 'יש לגלול לשבוע הקודם ולחזור כדי לטעון נתונים' });
+  const handleCopyPrevWeek = async () => {
+    if (!filteredEmployees.length) return;
+    const prevWeekStartStr = formatDateStr(addDays(weekStartDate, -7));
+    const prevWeekEndStr = formatDateStr(addDays(weekStartDate, -1));
+
+    // Fetch previous week shifts
+    const { data: prevShifts, error } = await supabase
+      .from('shifts')
+      .select('employee_id, date, start_time, end_time')
+      .gte('date', prevWeekStartStr)
+      .lte('date', prevWeekEndStr);
+
+    if (error || !prevShifts?.length) {
+      toast({ title: 'לא נמצאו משמרות בשבוע הקודם', variant: 'destructive' });
+      return;
+    }
+
+    // Map prev week dates to current week (add 7 days)
+    const newShifts = prevShifts.map(s => {
+      const oldDate = new Date(s.date);
+      const newDate = addDays(oldDate, 7);
+      return {
+        employee_id: s.employee_id,
+        date: formatDateStr(newDate),
+        start_time: s.start_time,
+        end_time: s.end_time,
+      };
+    });
+
+    bulkCreateShifts.mutate(newShifts);
   };
 
   const handleClearDay = (dateStr: string) => {
@@ -192,6 +216,9 @@ export default function ShiftScheduler() {
           </div>
 
           <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" className="h-7 text-xs" onClick={handleCopyPrevWeek}>
+              <Copy className="h-3 w-3 ml-1" /> העתק שבוע קודם
+            </Button>
             {view === 'day' && (
               <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => handleClearDay(selectedDate)}>
                 <Trash2 className="h-3 w-3 ml-1" /> נקה יום

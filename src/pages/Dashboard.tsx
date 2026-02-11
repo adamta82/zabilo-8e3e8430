@@ -226,32 +226,34 @@ export default function Dashboard() {
         />
       )}
 
-      {/* Quick Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card>
-          <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">עובדים מהבית היום</CardTitle></CardHeader>
-          <CardContent><div className="text-2xl font-bold text-info">{stats.wfhToday}</div></CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">בחופשה היום</CardTitle></CardHeader>
-          <CardContent><div className="text-2xl font-bold text-success">{stats.vacationToday}</div></CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">בקשות ממתינות</CardTitle></CardHeader>
-          <CardContent><div className="text-2xl font-bold text-warning">{stats.pending}</div></CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">החג הקרוב</CardTitle></CardHeader>
-          <CardContent>
-            {stats.nextHoliday ? (
-              <>
-                <div className="text-lg font-bold text-holiday">{stats.nextHoliday.name}</div>
-                <div className="text-xs text-muted-foreground">{format(stats.nextHoliday.date, 'dd בMMMM', { locale: he })}</div>
-              </>
-            ) : <div className="text-muted-foreground">-</div>}
-          </CardContent>
-        </Card>
-      </div>
+      {/* Quick Stats - hidden in day view */}
+      {viewMode !== 'day' && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <Card>
+            <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">עובדים מהבית היום</CardTitle></CardHeader>
+            <CardContent><div className="text-2xl font-bold text-info">{stats.wfhToday}</div></CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">בחופשה היום</CardTitle></CardHeader>
+            <CardContent><div className="text-2xl font-bold text-success">{stats.vacationToday}</div></CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">בקשות ממתינות</CardTitle></CardHeader>
+            <CardContent><div className="text-2xl font-bold text-warning">{stats.pending}</div></CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">החג הקרוב</CardTitle></CardHeader>
+            <CardContent>
+              {stats.nextHoliday ? (
+                <>
+                  <div className="text-lg font-bold text-holiday">{stats.nextHoliday.name}</div>
+                  <div className="text-xs text-muted-foreground">{format(stats.nextHoliday.date, 'dd בMMMM', { locale: he })}</div>
+                </>
+              ) : <div className="text-muted-foreground">-</div>}
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   );
 }
@@ -485,58 +487,47 @@ function DayView({ date, events, shifts, holiday, employees, departments, onBack
 
         {/* Sidebar */}
         <div className="space-y-4">
-          {/* Vacation */}
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm flex items-center gap-2">
-                🌴 בחופשה היום
-                {vacationEvents.length > 0 && <Badge className="bg-warning/10 text-warning text-xs">{vacationEvents.length}</Badge>}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {vacationEvents.length === 0 ? (
-                <div className="text-xs text-muted-foreground text-center py-2">אין עובדים בחופש</div>
-              ) : (
-                <div className="space-y-2">
-                  {vacationEvents.map((e: any) => (
-                    <div key={e.id} className="flex items-center gap-2 text-sm">
-                      <Palmtree className="h-3.5 w-3.5 text-success" />
-                      <span>{e.profiles?.full_name}</span>
-                      {e.status === 'pending' && <Clock className="h-3 w-3 text-warning" />}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* WFH */}
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm flex items-center gap-2">
-                🏠 עובדים מהבית
-                {wfhEvents.length > 0 && <Badge className="bg-info/10 text-info text-xs">{wfhEvents.length}</Badge>}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {wfhEvents.length === 0 ? (
-                <div className="text-xs text-muted-foreground text-center py-2">אין עובדים מהבית</div>
-              ) : (
-                <div className="space-y-2">
-                  {wfhEvents.map((e: any) => (
-                    <div key={e.id} className="flex items-center gap-2 text-sm">
-                      <Home className="h-3.5 w-3.5 text-info" />
-                      <span>{e.profiles?.full_name}</span>
-                      {e.status === 'pending' && <Clock className="h-3 w-3 text-warning" />}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
+          {/* Combined WFH + Vacation */}
+          {(vacationEvents.length > 0 || wfhEvents.length > 0) ? (
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm flex items-center gap-2">
+                  👤 חופשה ועבודה מהבית
+                  <Badge className="bg-muted text-muted-foreground text-xs">{vacationEvents.length + wfhEvents.length}</Badge>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-1">
+                {vacationEvents.map((e: any) => (
+                  <div key={e.id} className="flex items-center gap-2 text-sm py-0.5">
+                    <Palmtree className="h-3.5 w-3.5 text-success flex-shrink-0" />
+                    <span className="flex-1">{e.profiles?.full_name}</span>
+                    <Badge variant="outline" className="text-[10px] bg-success/10 text-success border-success/30">חופשה</Badge>
+                    {e.status === 'pending' && <Clock className="h-3 w-3 text-warning" />}
+                  </div>
+                ))}
+                {wfhEvents.map((e: any) => (
+                  <div key={e.id} className="flex items-center gap-2 text-sm py-0.5">
+                    <Home className="h-3.5 w-3.5 text-info flex-shrink-0" />
+                    <span className="flex-1">{e.profiles?.full_name}</span>
+                    <Badge variant="outline" className="text-[10px] bg-info/10 text-info border-info/30">מהבית</Badge>
+                    {e.status === 'pending' && <Clock className="h-3 w-3 text-warning" />}
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          ) : (
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm flex items-center gap-2">👤 חופשה ועבודה מהבית</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-xs text-muted-foreground text-center py-2">כולם במשרד היום 🎉</div>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Meetings placeholder */}
-          <Card>
+          <Card className="flex-1">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm flex items-center gap-2">
                 📅 פגישות היום
