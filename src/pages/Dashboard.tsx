@@ -216,10 +216,10 @@ export default function Dashboard() {
       {/* DAY VIEW */}
       {viewMode === 'day' && (
         <DayView
-          date={new Date(selectedDate)}
-          events={getEventsForDay(new Date(selectedDate))}
+          date={parseLocalDate(selectedDate)}
+          events={getEventsForDay(parseLocalDate(selectedDate))}
           shifts={getShiftsForDay(selectedDate)}
-          holiday={getHoliday(new Date(selectedDate))}
+          holiday={getHoliday(parseLocalDate(selectedDate))}
           employees={employees || []}
           departments={departments || []}
           onBackToCalendar={() => setViewMode('month')}
