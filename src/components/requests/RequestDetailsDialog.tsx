@@ -1,6 +1,6 @@
 import { format } from 'date-fns';
 import { he } from 'date-fns/locale';
-import { Home, Palmtree, Monitor, ShoppingCart, Clock, User, Calendar, FileText, Check } from 'lucide-react';
+import { Home, Palmtree, Monitor, ShoppingCart, Clock, User, Calendar, FileText, Check, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -146,10 +146,19 @@ export function RequestDetailsDialog({ request, open, onOpenChange }: RequestDet
 
           {/* User Info */}
           {request.profiles && (
-            <div className="flex items-center gap-2 text-sm">
-              <User className="h-4 w-4 text-muted-foreground" />
-              <span>{request.profiles.full_name}</span>
-              <span className="text-muted-foreground">({request.profiles.email})</span>
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 text-sm">
+                <User className="h-4 w-4 text-muted-foreground" />
+                <span>{request.profiles.full_name}</span>
+                <span className="text-muted-foreground">({request.profiles.email})</span>
+              </div>
+              {request.approver_profile && (
+                <div className="flex items-center gap-2 text-sm">
+                  <Shield className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-muted-foreground">גורם מאשר:</span>
+                  <span>{request.approver_profile.full_name}</span>
+                </div>
+              )}
             </div>
           )}
 
@@ -216,6 +225,20 @@ export function RequestDetailsDialog({ request, open, onOpenChange }: RequestDet
                 </span>
                 <Badge variant="outline">{getVacationDays()} ימים</Badge>
               </div>
+
+              {request.use_vacation_days !== null && (
+                <div className="flex items-center gap-2 text-sm">
+                  <FileText className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-muted-foreground">חופשה צבורה:</span>
+                  <Badge variant="outline" className={cn(
+                    request.use_vacation_days 
+                      ? 'bg-success/10 text-success border-success/30' 
+                      : 'bg-muted text-muted-foreground'
+                  )}>
+                    {request.use_vacation_days ? 'כן' : 'לא'}
+                  </Badge>
+                </div>
+              )}
 
               {request.vacation_reason && (
                 <div className="flex items-start gap-2 text-sm">

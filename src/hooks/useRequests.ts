@@ -16,6 +16,10 @@ export interface RequestWithProfile extends Request {
     department_id: string | null;
     approver_id: string | null;
   } | null;
+  approver_profile: {
+    id: string;
+    full_name: string;
+  } | null;
 }
 
 export function useRequests() {
@@ -44,10 +48,25 @@ export function useRequests() {
 
       const profileMap = new Map(profiles?.map(p => [p.user_id, p]) || []);
 
-      const data = requests.map(request => ({
-        ...request,
-        profiles: profileMap.get(request.user_id) || null,
-      }));
+      // Fetch approver profiles
+      const approverIds = [...new Set(profiles?.map(p => p.approver_id).filter(Boolean) || [])];
+      let approverMap = new Map<string, { id: string; full_name: string }>();
+      if (approverIds.length > 0) {
+        const { data: approvers } = await supabase
+          .from('profiles')
+          .select('id, full_name')
+          .in('id', approverIds);
+        approverMap = new Map(approvers?.map(a => [a.id, a]) || []);
+      }
+
+      const data = requests.map(request => {
+        const profile = profileMap.get(request.user_id) || null;
+        return {
+          ...request,
+          profiles: profile,
+          approver_profile: profile?.approver_id ? approverMap.get(profile.approver_id) || null : null,
+        };
+      });
       
       return data as RequestWithProfile[];
     },
