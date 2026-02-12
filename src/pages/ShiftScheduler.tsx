@@ -416,8 +416,8 @@ export default function ShiftScheduler() {
                 return (
                   <div key={dept.id} className="space-y-2">
                     <div className="flex items-center gap-2">
-                      <span className="text-sm">{dept.icon}</span>
                       <span className="text-sm font-bold text-foreground">{dept.name}</span>
+                      <span className="text-xs text-muted-foreground">({emps.length} משובצים)</span>
                       <span className="text-xs text-muted-foreground">({emps.length} משובצים)</span>
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
@@ -518,7 +518,6 @@ function DepartmentGroup({
       <tr className="bg-muted/30 border-t border-border">
         <td colSpan={8} className="px-3 py-1.5">
           <div className="flex items-center gap-2">
-            {deptIcon && <span className="text-xs">{deptIcon}</span>}
             <span className="text-xs font-bold text-foreground">{deptName}</span>
             <span className="text-[10px] text-muted-foreground">({employees.length})</span>
           </div>
@@ -622,8 +621,8 @@ function UnassignedPanel({
             return (
               <div key={deptId}>
                 {dept && (
-                  <div className="text-[11px] font-semibold text-muted-foreground mb-1 flex items-center gap-1">
-                    <span>{dept.icon}</span> {dept.name}
+                  <div className="text-[11px] font-semibold text-muted-foreground mb-1">
+                    {dept.name}
                   </div>
                 )}
                 <div className="flex flex-wrap gap-1.5">

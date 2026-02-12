@@ -457,7 +457,6 @@ function DayView({ date, events, shifts, holiday, employees, departments, onBack
                     return (
                       <div key={dept.id}>
                         <div className="flex items-center gap-2 mb-2">
-                          <span className="text-xs">{dept.icon}</span>
                           <span className="text-xs font-bold">{dept.name}</span>
                           <span className="text-[10px] text-muted-foreground">({deptShifts.length})</span>
                         </div>
