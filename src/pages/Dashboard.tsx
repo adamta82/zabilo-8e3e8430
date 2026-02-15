@@ -579,19 +579,20 @@ function MeetingsCard({ dateStr }: { dateStr: string }) {
           <div className="text-xs text-muted-foreground text-center py-2">אין פגישות מתוכננות</div>
         ) : (
           <div className="space-y-1.5">
-            {calendarEvents.map((evt) => (
-              <div key={evt.id} className="relative flex items-start gap-2 py-1.5 px-2 rounded-lg overflow-hidden">
+            {calendarEvents.map((evt) => {
+              const progress = evt.allDay ? 100 : getEventProgress(evt.start, evt.end);
+              const isDone = progress >= 100;
+              return (
+              <div key={evt.id} className={`relative flex items-start gap-2 py-1.5 px-2 rounded-lg overflow-hidden ${isDone ? 'opacity-60' : ''}`}>
+                {/* Background */}
+                <div className="absolute inset-0 bg-muted/40 rounded-lg" />
                 {/* Battery-style progress fill */}
-                {!evt.allDay && (
+                {!evt.allDay && progress > 0 && (
                   <div
-                    className="absolute inset-0 bg-primary/10 transition-all duration-1000 ease-linear rounded-lg"
-                    style={{
-                      width: `${getEventProgress(evt.start, evt.end)}%`,
-                    }}
+                    className={`absolute inset-y-0 right-0 transition-all duration-1000 ease-linear rounded-lg ${isDone ? 'bg-muted/50' : 'bg-primary/20'}`}
+                    style={{ width: `${progress}%` }}
                   />
                 )}
-                {evt.allDay && <div className="absolute inset-0 bg-muted/30 rounded-lg" />}
-                <div className="absolute inset-0 bg-muted/10 rounded-lg" />
                 <div className="flex flex-col items-center min-w-[45px] relative z-10">
                   {evt.allDay ? (
                     <span className="text-[10px] text-muted-foreground">כל היום</span>
@@ -618,7 +619,8 @@ function MeetingsCard({ dateStr }: { dateStr: string }) {
                   )}
                 </div>
               </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </CardContent>
