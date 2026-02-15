@@ -110,10 +110,11 @@ export default function Dashboard() {
   const todayStr = formatDateString(new Date());
   const stats = useMemo(() => {
     if (!requests) return { wfhToday: 0, vacationToday: 0, pending: 0, nextHoliday: null as { date: Date; name: string } | null };
+    const todayDate = parseLocalDate(todayStr);
     const wfhToday = requests.filter(r => r.type === 'wfh' && r.wfh_date === todayStr && r.status === 'approved').length;
     const vacationToday = requests.filter(r => {
       if (r.type !== 'vacation' || r.status !== 'approved' || !r.vacation_start_date || !r.vacation_end_date) return false;
-      return isWithinInterval(new Date(), { start: parseLocalDate(r.vacation_start_date), end: parseLocalDate(r.vacation_end_date) });
+      return isWithinInterval(todayDate, { start: parseLocalDate(r.vacation_start_date), end: parseLocalDate(r.vacation_end_date) });
     }).length;
     const pending = requests.filter(r => r.status === 'pending').length;
     const futureHolidays = Object.entries(israeliHolidays)
