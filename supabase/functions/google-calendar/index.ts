@@ -45,11 +45,19 @@ function parseICal(ical: string, filterDate: string): CalEvent[] {
     let uid = '', summary = '', location = '';
     let dtStart = '', dtEnd = '';
     let startAllDay = false, endAllDay = false;
+    const attendees: string[] = [];
 
     for (const line of lines) {
       if (line.startsWith('UID:')) uid = line.slice(4).trim();
       if (line.startsWith('SUMMARY:')) summary = line.slice(8).trim();
       if (line.startsWith('LOCATION:')) location = line.slice(9).trim();
+      if (line.startsWith('ATTENDEE')) {
+        // Extract CN (display name) or email
+        const cnMatch = line.match(/CN=([^;:]+)/i);
+        const mailtoMatch = line.match(/mailto:([^\s;]+)/i);
+        if (cnMatch) attendees.push(cnMatch[1].trim());
+        else if (mailtoMatch) attendees.push(mailtoMatch[1].trim());
+      }
       if (line.startsWith('DTSTART')) {
         const val = line.split(':').slice(1).join(':').trim();
         const parsed = parseICalDate(val);
@@ -83,6 +91,7 @@ function parseICal(ical: string, filterDate: string): CalEvent[] {
       end: dtEnd || dtStart,
       location: location || null,
       allDay: startAllDay,
+      attendees,
     });
   }
 

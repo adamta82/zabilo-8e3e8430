@@ -7,6 +7,7 @@ export interface CalendarEvent {
   end: string;
   location: string | null;
   allDay: boolean;
+  attendees?: string[];
 }
 
 export function useGoogleCalendarEvents(date: string) {
