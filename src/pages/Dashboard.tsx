@@ -537,6 +537,15 @@ function DayView({ date, dateStr, events, shifts, holiday, employees, department
 }
 
 // ========== MEETINGS CARD ==========
+function getEventProgress(start: string, end: string): number {
+  const now = Date.now();
+  const s = new Date(start).getTime();
+  const e = new Date(end).getTime();
+  if (now <= s) return 0;
+  if (now >= e) return 100;
+  return Math.round(((now - s) / (e - s)) * 100);
+}
+
 function MeetingsCard({ dateStr }: { dateStr: string }) {
   const { data: calendarEvents, isLoading, error } = useGoogleCalendarEvents(dateStr);
 
@@ -571,8 +580,19 @@ function MeetingsCard({ dateStr }: { dateStr: string }) {
         ) : (
           <div className="space-y-1.5">
             {calendarEvents.map((evt) => (
-              <div key={evt.id} className="flex items-start gap-2 py-1.5 px-2 bg-muted/30 rounded-lg">
-                <div className="flex flex-col items-center min-w-[45px]">
+              <div key={evt.id} className="relative flex items-start gap-2 py-1.5 px-2 rounded-lg overflow-hidden">
+                {/* Battery-style progress fill */}
+                {!evt.allDay && (
+                  <div
+                    className="absolute inset-0 bg-primary/10 transition-all duration-1000 ease-linear rounded-lg"
+                    style={{
+                      width: `${getEventProgress(evt.start, evt.end)}%`,
+                    }}
+                  />
+                )}
+                {evt.allDay && <div className="absolute inset-0 bg-muted/30 rounded-lg" />}
+                <div className="absolute inset-0 bg-muted/10 rounded-lg" />
+                <div className="flex flex-col items-center min-w-[45px] relative z-10">
                   {evt.allDay ? (
                     <span className="text-[10px] text-muted-foreground">כל היום</span>
                   ) : (
@@ -582,7 +602,7 @@ function MeetingsCard({ dateStr }: { dateStr: string }) {
                     </>
                   )}
                 </div>
-                <div className="flex-1 min-w-0">
+                <div className="flex-1 min-w-0 relative z-10">
                   <div className="text-sm font-medium truncate">{evt.summary}</div>
                   {evt.location && (
                     <div className="text-[10px] text-muted-foreground flex items-center gap-1 truncate">
