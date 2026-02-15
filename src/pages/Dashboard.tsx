@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isToday, addMonths, subMonths, getDay, isWithinInterval, isSaturday, startOfWeek, addDays, isSameDay } from 'date-fns';
 import { he } from 'date-fns/locale';
-import { ChevronRight, ChevronLeft, Clock, Home, Palmtree, Filter, ArrowRight } from 'lucide-react';
+import { ChevronRight, ChevronLeft, Clock, Home, Palmtree, Filter, ArrowRight, CalendarDays, MapPin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -14,6 +14,7 @@ import { useDepartments } from '@/hooks/useDepartments';
 import { useShifts } from '@/hooks/useShifts';
 import { useEmployees } from '@/hooks/useEmployees';
 import { israeliHolidays, formatDateString, parseLocalDate } from '@/lib/calendar-utils';
+import { useGoogleCalendarEvents, CalendarEvent } from '@/hooks/useGoogleCalendar';
 
 const weekDayNames = ['א׳', 'ב׳', 'ג׳', 'ד׳', 'ה׳', 'ו׳', 'ש׳'];
 const HEBREW_DAYS_FULL = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];
@@ -218,6 +219,7 @@ export default function Dashboard() {
       {viewMode === 'day' && (
         <DayView
           date={parseLocalDate(selectedDate)}
+          dateStr={selectedDate}
           events={getEventsForDay(parseLocalDate(selectedDate))}
           shifts={getShiftsForDay(selectedDate)}
           holiday={getHoliday(parseLocalDate(selectedDate))}
@@ -398,8 +400,9 @@ function WeekView({ weekDays, getEventsForDay, getHoliday, getShiftsForDay, isLo
 }
 
 // ========== DAY VIEW ==========
-function DayView({ date, events, shifts, holiday, employees, departments, onBackToCalendar }: {
+function DayView({ date, dateStr, events, shifts, holiday, employees, departments, onBackToCalendar }: {
   date: Date;
+  dateStr: string;
   events: any[];
   shifts: any[];
   holiday: string | undefined;
@@ -526,20 +529,73 @@ function DayView({ date, events, shifts, holiday, employees, departments, onBack
             </Card>
           )}
 
-          {/* Meetings placeholder */}
-          <Card className="flex-1">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm flex items-center gap-2">
-                📅 פגישות היום
-              </CardTitle>
-              <p className="text-[10px] text-muted-foreground">סנכרון Google Calendar - בקרוב</p>
-            </CardHeader>
-            <CardContent>
-              <div className="text-xs text-muted-foreground text-center py-2">אין פגישות מתוכננות</div>
-            </CardContent>
-          </Card>
+          <MeetingsCard dateStr={dateStr} />
         </div>
       </div>
     </div>
+  );
+}
+
+// ========== MEETINGS CARD ==========
+function MeetingsCard({ dateStr }: { dateStr: string }) {
+  const { data: calendarEvents, isLoading, error } = useGoogleCalendarEvents(dateStr);
+
+  const formatTime = (isoStr: string) => {
+    try {
+      const d = new Date(isoStr);
+      return d.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' });
+    } catch { return ''; }
+  };
+
+  return (
+    <Card className="flex-1">
+      <CardHeader className="pb-2">
+        <CardTitle className="text-sm flex items-center gap-2">
+          <CalendarDays className="h-4 w-4" />
+          פגישות היום
+          {calendarEvents && calendarEvents.length > 0 && (
+            <Badge className="bg-muted text-muted-foreground text-xs">{calendarEvents.length}</Badge>
+          )}
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        {isLoading ? (
+          <div className="space-y-2">
+            <Skeleton className="h-8 w-full" />
+            <Skeleton className="h-8 w-full" />
+          </div>
+        ) : error ? (
+          <div className="text-xs text-destructive text-center py-2">שגיאה בטעינת פגישות</div>
+        ) : !calendarEvents || calendarEvents.length === 0 ? (
+          <div className="text-xs text-muted-foreground text-center py-2">אין פגישות מתוכננות</div>
+        ) : (
+          <div className="space-y-1.5">
+            {calendarEvents.map((evt) => (
+              <div key={evt.id} className="flex items-start gap-2 py-1.5 px-2 bg-muted/30 rounded-lg">
+                <div className="flex flex-col items-center min-w-[45px]">
+                  {evt.allDay ? (
+                    <span className="text-[10px] text-muted-foreground">כל היום</span>
+                  ) : (
+                    <>
+                      <span className="text-xs font-semibold" dir="ltr">{formatTime(evt.start)}</span>
+                      <span className="text-[10px] text-muted-foreground" dir="ltr">{formatTime(evt.end)}</span>
+                    </>
+                  )}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm font-medium truncate">{evt.summary}</div>
+                  {evt.location && (
+                    <div className="text-[10px] text-muted-foreground flex items-center gap-1 truncate">
+                      <MapPin className="h-2.5 w-2.5 flex-shrink-0" />
+                      {evt.location}
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }
