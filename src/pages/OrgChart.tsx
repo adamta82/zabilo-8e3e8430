@@ -79,7 +79,10 @@ function DepartmentSection({ department, employees, allEmployees }: {
         className="flex items-center gap-2 w-full text-right group"
       >
         <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary/10 text-primary">
-          <Building2 className="h-4 w-4" />
+          {(() => {
+            const IconComp = department.icon ? (icons as any)[department.icon] : null;
+            return IconComp ? <IconComp className="h-4 w-4" /> : <Building2 className="h-4 w-4" />;
+          })()}
         </div>
         <h3 className="font-semibold text-base flex-1">{department.name}</h3>
         <Badge variant="secondary" className="text-xs">{employees.length}</Badge>
