@@ -62,10 +62,25 @@ export default function Departments() {
   
   const [name, setName] = useState('');
   const [icon, setIcon] = useState('building');
+  const [managerId, setManagerId] = useState<string>('none');
+
+  // Fetch all employees for manager selection
+  const { data: employees } = useQuery({
+    queryKey: ['all-employees'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, full_name')
+        .order('full_name');
+      if (error) throw error;
+      return data;
+    },
+  });
 
   const resetForm = () => {
     setName('');
     setIcon('building');
+    setManagerId('none');
   };
 
   const handleCreate = async () => {
