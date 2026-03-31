@@ -8,6 +8,7 @@ type DepartmentInsert = Database['public']['Tables']['departments']['Insert'];
 
 export interface DepartmentWithCount extends Department {
   employee_count: number;
+  manager_name?: string;
 }
 
 export function useDepartments() {
