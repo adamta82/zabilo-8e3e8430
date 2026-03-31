@@ -4,7 +4,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Crown, Star, Building2, ChevronDown } from 'lucide-react';
+import { Crown, Star, Building2, ChevronDown, icons } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
 
@@ -79,7 +79,10 @@ function DepartmentSection({ department, employees, allEmployees }: {
         className="flex items-center gap-2 w-full text-right group"
       >
         <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary/10 text-primary">
-          <Building2 className="h-4 w-4" />
+          {(() => {
+            const IconComp = department.icon ? (icons as any)[department.icon] : null;
+            return IconComp ? <IconComp className="h-4 w-4" /> : <Building2 className="h-4 w-4" />;
+          })()}
         </div>
         <h3 className="font-semibold text-base flex-1">{department.name}</h3>
         <Badge variant="secondary" className="text-xs">{employees.length}</Badge>
