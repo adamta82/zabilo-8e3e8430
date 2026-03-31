@@ -8,6 +8,7 @@ type DepartmentInsert = Database['public']['Tables']['departments']['Insert'];
 
 export interface DepartmentWithCount extends Department {
   employee_count: number;
+  manager_name?: string;
 }
 
 export function useDepartments() {
@@ -17,7 +18,7 @@ export function useDepartments() {
       // Get departments
       const { data: departments, error: deptError } = await supabase
         .from('departments')
-        .select('*')
+        .select('*, manager:profiles!departments_manager_id_fkey(full_name)')
         .order('name');
 
       if (deptError) throw deptError;
@@ -37,9 +38,10 @@ export function useDepartments() {
         return acc;
       }, {} as Record<string, number>);
 
-      return departments.map((dept) => ({
+      return departments.map((dept: any) => ({
         ...dept,
         employee_count: countMap[dept.id] || 0,
+        manager_name: dept.manager?.full_name || undefined,
       })) as DepartmentWithCount[];
     },
   });

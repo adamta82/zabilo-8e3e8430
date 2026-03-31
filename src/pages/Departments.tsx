@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { Plus, Edit, Trash2, Building2, Code, Megaphone, TrendingUp, Headphones, Users, Crown, Loader2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Plus, Edit, Trash2, Building2, Code, Megaphone, TrendingUp, Headphones, Users, Crown, Loader2, UserCircle } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Dialog,
@@ -26,6 +26,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Skeleton } from '@/components/ui/skeleton';
 import { LucideIcon } from 'lucide-react';
 import { useDepartments, useCreateDepartment, useUpdateDepartment, useDeleteDepartment, type DepartmentWithCount } from '@/hooks/useDepartments';
+import { supabase } from '@/integrations/supabase/client';
+import { Button } from '@/components/ui/button';
 
 // Icon mapping
 const iconMap: Record<string, LucideIcon> = {
@@ -60,14 +62,29 @@ export default function Departments() {
   
   const [name, setName] = useState('');
   const [icon, setIcon] = useState('building');
+  const [managerId, setManagerId] = useState<string>('none');
+
+  // Fetch all employees for manager selection
+  const { data: employees } = useQuery({
+    queryKey: ['all-employees'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, full_name')
+        .order('full_name');
+      if (error) throw error;
+      return data;
+    },
+  });
 
   const resetForm = () => {
     setName('');
     setIcon('building');
+    setManagerId('none');
   };
 
   const handleCreate = async () => {
-    await createDepartment.mutateAsync({ name, icon });
+    await createDepartment.mutateAsync({ name, icon, manager_id: managerId === 'none' ? null : managerId } as any);
     setIsCreateDialogOpen(false);
     resetForm();
   };
@@ -76,7 +93,7 @@ export default function Departments() {
     if (!editingDepartment) return;
     await updateDepartment.mutateAsync({
       id: editingDepartment.id,
-      updates: { name, icon },
+      updates: { name, icon, manager_id: managerId === 'none' ? null : managerId } as any,
     });
     setEditingDepartment(null);
     resetForm();
@@ -91,6 +108,7 @@ export default function Departments() {
   const openEditDialog = (dept: DepartmentWithCount) => {
     setName(dept.name);
     setIcon(dept.icon || 'building');
+    setManagerId((dept as any).manager_id || 'none');
     setEditingDepartment(dept);
   };
 
@@ -150,11 +168,17 @@ export default function Departments() {
                     </div>
                   </div>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="space-y-2">
                   <div className="flex items-center gap-2 text-muted-foreground">
                     <Users className="h-4 w-4" />
                     <span>{department.employee_count} עובדים</span>
                   </div>
+                  {department.manager_name && (
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <UserCircle className="h-4 w-4" />
+                      <span>מנהל: {department.manager_name}</span>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             );
@@ -221,6 +245,22 @@ export default function Departments() {
                 </SelectContent>
               </Select>
             </div>
+            <div className="space-y-2">
+              <Label>מנהל מחלקה</Label>
+              <Select value={managerId} onValueChange={setManagerId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="בחר מנהל מחלקה" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">ללא מנהל</SelectItem>
+                  {employees?.map((emp) => (
+                    <SelectItem key={emp.id} value={emp.id}>
+                      {emp.full_name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
@@ -272,6 +312,22 @@ export default function Departments() {
                         <opt.Icon className="h-4 w-4" />
                         {opt.label}
                       </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>מנהל מחלקה</Label>
+              <Select value={managerId} onValueChange={setManagerId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="בחר מנהל מחלקה" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">ללא מנהל</SelectItem>
+                  {employees?.map((emp) => (
+                    <SelectItem key={emp.id} value={emp.id}>
+                      {emp.full_name}
                     </SelectItem>
                   ))}
                 </SelectContent>
