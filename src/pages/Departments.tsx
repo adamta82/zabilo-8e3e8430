@@ -108,6 +108,7 @@ export default function Departments() {
   const openEditDialog = (dept: DepartmentWithCount) => {
     setName(dept.name);
     setIcon(dept.icon || 'building');
+    setManagerId((dept as any).manager_id || 'none');
     setEditingDepartment(dept);
   };
 
