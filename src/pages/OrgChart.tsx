@@ -83,7 +83,8 @@ function DepartmentSection({ department, employees, allEmployees }: {
       >
         <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary/10 text-primary">
           {(() => {
-            const IconComp = department.icon ? (icons as any)[department.icon] : null;
+            const iconKey = department.icon ? kebabToPascal(department.icon) : null;
+            const IconComp = iconKey ? (icons as any)[iconKey] : null;
             return IconComp ? <IconComp className="h-4 w-4" /> : <Building2 className="h-4 w-4" />;
           })()}
         </div>
