@@ -63,6 +63,7 @@ function AppRoutes() {
             </AppLayout>
           </ProtectedRoute>
         }
+      />
 
       {/* Admin Routes */}
       <Route
