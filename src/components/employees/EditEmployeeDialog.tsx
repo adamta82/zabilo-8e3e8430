@@ -42,6 +42,7 @@ export function EditEmployeeDialog({ employee, open, onOpenChange }: EditEmploye
   const [role, setRole] = useState<AppRole>('employee');
   const [showInShifts, setShowInShifts] = useState(true);
   const [isPartner, setIsPartner] = useState(false);
+  const [jobTitle, setJobTitle] = useState('');
 
   useEffect(() => {
     if (employee) {
@@ -52,6 +53,7 @@ export function EditEmployeeDialog({ employee, open, onOpenChange }: EditEmploye
       setRole(employee.user_roles?.[0]?.role || 'employee');
       setShowInShifts((employee as any).show_in_shifts !== false);
       setIsPartner((employee as any).is_partner || false);
+      setJobTitle((employee as any).job_title || '');
     }
   }, [employee]);
 
@@ -67,6 +69,7 @@ export function EditEmployeeDialog({ employee, open, onOpenChange }: EditEmploye
         approver_id: approverId || null,
         show_in_shifts: showInShifts,
         is_partner: isPartner,
+        job_title: jobTitle || null,
       } as any,
       newRole: role,
     });
@@ -112,6 +115,15 @@ export function EditEmployeeDialog({ employee, open, onOpenChange }: EditEmploye
               onChange={(e) => setPhone(e.target.value)}
               dir="ltr"
               placeholder="054-1234567"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label>כותרת תפקיד</Label>
+            <Input
+              value={jobTitle}
+              onChange={(e) => setJobTitle(e.target.value)}
+              placeholder="לדוגמה: מנכ״ל, סמנכ״ל, ראש צוות..."
             />
           </div>
 

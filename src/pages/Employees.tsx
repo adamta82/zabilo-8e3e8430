@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Search, MoreHorizontal, Edit, Trash2, Shield, User, Loader2, KeyRound, Star } from 'lucide-react';
+import { Search, MoreHorizontal, Edit, Trash2, Shield, User, Loader2, KeyRound, Star, Crown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -155,6 +155,12 @@ export default function Employees() {
                             <Badge variant="outline" className="bg-amber-500/10 text-amber-600 border-amber-500/30 text-xs">
                               <Star className="h-3 w-3 ml-1" />
                               שותף
+                            </Badge>
+                          )}
+                          {(employee as any).job_title && (
+                            <Badge variant="outline" className="bg-violet-500/10 text-violet-600 border-violet-500/30 text-xs">
+                              <Crown className="h-3 w-3 ml-1" />
+                              {(employee as any).job_title}
                             </Badge>
                           )}
                         </div>
