@@ -317,6 +317,22 @@ export default function Departments() {
                 </SelectContent>
               </Select>
             </div>
+            <div className="space-y-2">
+              <Label>מנהל מחלקה</Label>
+              <Select value={managerId} onValueChange={setManagerId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="בחר מנהל מחלקה" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">ללא מנהל</SelectItem>
+                  {employees?.map((emp) => (
+                    <SelectItem key={emp.id} value={emp.id}>
+                      {emp.full_name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditingDepartment(null)}>
