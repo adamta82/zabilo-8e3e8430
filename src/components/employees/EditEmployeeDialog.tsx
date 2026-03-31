@@ -170,6 +170,15 @@ export function EditEmployeeDialog({ employee, open, onOpenChange }: EditEmploye
               onCheckedChange={setShowInShifts}
             />
           </div>
+
+          <div className="flex items-center justify-between py-2">
+            <Label htmlFor="is-partner">שותף/ה בחברה</Label>
+            <Switch
+              id="is-partner"
+              checked={isPartner}
+              onCheckedChange={setIsPartner}
+            />
+          </div>
         </div>
 
         <DialogFooter>
