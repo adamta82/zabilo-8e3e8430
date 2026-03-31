@@ -119,6 +119,15 @@ export function EditEmployeeDialog({ employee, open, onOpenChange }: EditEmploye
           </div>
 
           <div className="space-y-2">
+            <Label>כותרת תפקיד</Label>
+            <Input
+              value={jobTitle}
+              onChange={(e) => setJobTitle(e.target.value)}
+              placeholder="לדוגמה: מנכ״ל, סמנכ״ל, ראש צוות..."
+            />
+          </div>
+
+          <div className="space-y-2">
             <Label>מחלקה</Label>
             <Select value={departmentId} onValueChange={setDepartmentId}>
               <SelectTrigger>
