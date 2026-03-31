@@ -69,6 +69,7 @@ export function EditEmployeeDialog({ employee, open, onOpenChange }: EditEmploye
         approver_id: approverId || null,
         show_in_shifts: showInShifts,
         is_partner: isPartner,
+        job_title: jobTitle || null,
       } as any,
       newRole: role,
     });
