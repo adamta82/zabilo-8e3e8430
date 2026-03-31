@@ -84,7 +84,7 @@ export default function Departments() {
   };
 
   const handleCreate = async () => {
-    await createDepartment.mutateAsync({ name, icon });
+    await createDepartment.mutateAsync({ name, icon, manager_id: managerId === 'none' ? null : managerId } as any);
     setIsCreateDialogOpen(false);
     resetForm();
   };
