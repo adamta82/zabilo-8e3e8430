@@ -18,7 +18,7 @@ export function useDepartments() {
       // Get departments
       const { data: departments, error: deptError } = await supabase
         .from('departments')
-        .select('*')
+        .select('*, manager:profiles!departments_manager_id_fkey(full_name)')
         .order('name');
 
       if (deptError) throw deptError;
