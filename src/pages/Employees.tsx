@@ -241,7 +241,15 @@ export default function Employees() {
                         </AvatarFallback>
                       </Avatar>
                       <div>
-                        <p className="font-medium">{employee.full_name}</p>
+                        <p className="font-medium">
+                          {employee.full_name}
+                          {(employee as any).is_partner && (
+                            <Badge variant="outline" className="bg-amber-500/10 text-amber-600 border-amber-500/30 text-xs mr-2">
+                              <Star className="h-3 w-3 ml-1" />
+                              שותף
+                            </Badge>
+                          )}
+                        </p>
                         <p className="text-sm text-muted-foreground">{employee.departments?.name || '-'}</p>
                       </div>
                     </div>
