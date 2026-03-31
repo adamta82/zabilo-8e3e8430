@@ -93,7 +93,7 @@ export default function Departments() {
     if (!editingDepartment) return;
     await updateDepartment.mutateAsync({
       id: editingDepartment.id,
-      updates: { name, icon },
+      updates: { name, icon, manager_id: managerId === 'none' ? null : managerId } as any,
     });
     setEditingDepartment(null);
     resetForm();
