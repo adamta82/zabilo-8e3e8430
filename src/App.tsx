@@ -54,6 +54,15 @@ function AppRoutes() {
           </ProtectedRoute>
         }
       />
+      <Route
+        path="/org-chart"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <OrgChart />
+            </AppLayout>
+          </ProtectedRoute>
+        }
 
       {/* Admin Routes */}
       <Route

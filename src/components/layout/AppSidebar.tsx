@@ -37,6 +37,11 @@ const mainMenuItems = [
     url: '/requests',
     icon: FileText,
   },
+  {
+    title: 'מבנה ארגוני',
+    url: '/org-chart',
+    icon: Network,
+  },
 ];
 
 const adminMenuItems = [
