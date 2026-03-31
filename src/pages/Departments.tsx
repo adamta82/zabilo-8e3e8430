@@ -26,6 +26,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Skeleton } from '@/components/ui/skeleton';
 import { LucideIcon } from 'lucide-react';
 import { useDepartments, useCreateDepartment, useUpdateDepartment, useDeleteDepartment, type DepartmentWithCount } from '@/hooks/useDepartments';
+import { supabase } from '@/integrations/supabase/client';
+import { Button } from '@/components/ui/button';
 
 // Icon mapping
 const iconMap: Record<string, LucideIcon> = {
