@@ -168,11 +168,17 @@ export default function Departments() {
                     </div>
                   </div>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="space-y-2">
                   <div className="flex items-center gap-2 text-muted-foreground">
                     <Users className="h-4 w-4" />
                     <span>{department.employee_count} עובדים</span>
                   </div>
+                  {department.manager_name && (
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <UserCircle className="h-4 w-4" />
+                      <span>מנהל: {department.manager_name}</span>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             );
