@@ -28,6 +28,9 @@ interface OrgDepartment {
 const getInitials = (name: string) =>
   name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
 
+const kebabToPascal = (str: string) =>
+  str.split('-').map(part => part.charAt(0).toUpperCase() + part.slice(1)).join('');
+
 function PersonCard({ person, isManager = false, isCEO = false }: { person: OrgEmployee; isManager?: boolean; isCEO?: boolean }) {
   return (
     <Card className={cn(
@@ -80,7 +83,8 @@ function DepartmentSection({ department, employees, allEmployees }: {
       >
         <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary/10 text-primary">
           {(() => {
-            const IconComp = department.icon ? (icons as any)[department.icon] : null;
+            const iconKey = department.icon ? kebabToPascal(department.icon) : null;
+            const IconComp = iconKey ? (icons as any)[iconKey] : null;
             return IconComp ? <IconComp className="h-4 w-4" /> : <Building2 className="h-4 w-4" />;
           })()}
         </div>
