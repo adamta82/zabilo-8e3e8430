@@ -38,9 +38,10 @@ export function useDepartments() {
         return acc;
       }, {} as Record<string, number>);
 
-      return departments.map((dept) => ({
+      return departments.map((dept: any) => ({
         ...dept,
         employee_count: countMap[dept.id] || 0,
+        manager_name: dept.manager?.full_name || undefined,
       })) as DepartmentWithCount[];
     },
   });
