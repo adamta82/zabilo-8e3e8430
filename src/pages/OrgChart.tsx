@@ -28,6 +28,9 @@ interface OrgDepartment {
 const getInitials = (name: string) =>
   name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
 
+const kebabToPascal = (str: string) =>
+  str.split('-').map(part => part.charAt(0).toUpperCase() + part.slice(1)).join('');
+
 function PersonCard({ person, isManager = false, isCEO = false }: { person: OrgEmployee; isManager?: boolean; isCEO?: boolean }) {
   return (
     <Card className={cn(
