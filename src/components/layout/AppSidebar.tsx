@@ -7,6 +7,7 @@ import {
   Settings,
   LogOut,
   ClipboardList,
+  Network,
 } from 'lucide-react';
 import {
   Sidebar,
