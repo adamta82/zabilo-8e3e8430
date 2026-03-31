@@ -51,6 +51,7 @@ export function EditEmployeeDialog({ employee, open, onOpenChange }: EditEmploye
       setApproverId(employee.approver_id || '');
       setRole(employee.user_roles?.[0]?.role || 'employee');
       setShowInShifts((employee as any).show_in_shifts !== false);
+      setIsPartner((employee as any).is_partner || false);
     }
   }, [employee]);
 
