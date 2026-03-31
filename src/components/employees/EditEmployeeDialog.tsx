@@ -53,6 +53,7 @@ export function EditEmployeeDialog({ employee, open, onOpenChange }: EditEmploye
       setRole(employee.user_roles?.[0]?.role || 'employee');
       setShowInShifts((employee as any).show_in_shifts !== false);
       setIsPartner((employee as any).is_partner || false);
+      setJobTitle((employee as any).job_title || '');
     }
   }, [employee]);
 
