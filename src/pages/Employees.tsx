@@ -157,10 +157,10 @@ export default function Employees() {
                               שותף
                             </Badge>
                           )}
-                          {employee.user_roles?.[0]?.role === 'admin' && employee.approver_id === null && (employee as any).is_partner && (
+                          {(employee as any).job_title && (
                             <Badge variant="outline" className="bg-violet-500/10 text-violet-600 border-violet-500/30 text-xs">
                               <Crown className="h-3 w-3 ml-1" />
-                              מנכ״ל
+                              {(employee as any).job_title}
                             </Badge>
                           )}
                         </div>
