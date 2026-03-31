@@ -7,6 +7,7 @@ import {
   Settings,
   LogOut,
   ClipboardList,
+  Network,
 } from 'lucide-react';
 import {
   Sidebar,
@@ -35,6 +36,11 @@ const mainMenuItems = [
     title: 'הבקשות שלי',
     url: '/requests',
     icon: FileText,
+  },
+  {
+    title: 'מבנה ארגוני',
+    url: '/org-chart',
+    icon: Network,
   },
 ];
 

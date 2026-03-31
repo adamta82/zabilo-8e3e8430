@@ -15,6 +15,7 @@ import Employees from "./pages/Employees";
 import Departments from "./pages/Departments";
 import Settings from "./pages/Settings";
 import ShiftScheduler from "./pages/ShiftScheduler";
+import OrgChart from "./pages/OrgChart";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -49,6 +50,16 @@ function AppRoutes() {
           <ProtectedRoute>
             <AppLayout>
               <Requests />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/org-chart"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <OrgChart />
             </AppLayout>
           </ProtectedRoute>
         }
