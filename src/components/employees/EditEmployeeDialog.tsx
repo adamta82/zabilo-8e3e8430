@@ -42,6 +42,7 @@ export function EditEmployeeDialog({ employee, open, onOpenChange }: EditEmploye
   const [role, setRole] = useState<AppRole>('employee');
   const [showInShifts, setShowInShifts] = useState(true);
   const [isPartner, setIsPartner] = useState(false);
+  const [jobTitle, setJobTitle] = useState('');
 
   useEffect(() => {
     if (employee) {
