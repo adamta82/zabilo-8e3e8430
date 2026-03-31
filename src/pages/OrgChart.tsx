@@ -4,7 +4,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Crown, Star, Building2, ChevronDown } from 'lucide-react';
+import { Crown, Star, Building2, ChevronDown, icons } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
 
