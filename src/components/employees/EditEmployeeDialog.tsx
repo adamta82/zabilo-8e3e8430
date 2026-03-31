@@ -41,6 +41,7 @@ export function EditEmployeeDialog({ employee, open, onOpenChange }: EditEmploye
   const [approverId, setApproverId] = useState<string>('');
   const [role, setRole] = useState<AppRole>('employee');
   const [showInShifts, setShowInShifts] = useState(true);
+  const [isPartner, setIsPartner] = useState(false);
 
   useEffect(() => {
     if (employee) {
@@ -50,6 +51,7 @@ export function EditEmployeeDialog({ employee, open, onOpenChange }: EditEmploye
       setApproverId(employee.approver_id || '');
       setRole(employee.user_roles?.[0]?.role || 'employee');
       setShowInShifts((employee as any).show_in_shifts !== false);
+      setIsPartner((employee as any).is_partner || false);
     }
   }, [employee]);
 
@@ -64,6 +66,7 @@ export function EditEmployeeDialog({ employee, open, onOpenChange }: EditEmploye
         department_id: departmentId === 'none' ? null : departmentId || null,
         approver_id: approverId || null,
         show_in_shifts: showInShifts,
+        is_partner: isPartner,
       } as any,
       newRole: role,
     });
@@ -165,6 +168,15 @@ export function EditEmployeeDialog({ employee, open, onOpenChange }: EditEmploye
               id="show-in-shifts"
               checked={showInShifts}
               onCheckedChange={setShowInShifts}
+            />
+          </div>
+
+          <div className="flex items-center justify-between py-2">
+            <Label htmlFor="is-partner">שותף/ה בחברה</Label>
+            <Switch
+              id="is-partner"
+              checked={isPartner}
+              onCheckedChange={setIsPartner}
             />
           </div>
         </div>

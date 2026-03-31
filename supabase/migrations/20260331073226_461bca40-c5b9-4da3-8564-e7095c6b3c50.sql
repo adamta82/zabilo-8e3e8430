@@ -1,0 +1,1 @@
+ALTER TABLE public.profiles ADD COLUMN is_partner boolean NOT NULL DEFAULT false;
