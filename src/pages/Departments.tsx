@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { Plus, Edit, Trash2, Building2, Code, Megaphone, TrendingUp, Headphones, Users, Crown, Loader2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Plus, Edit, Trash2, Building2, Code, Megaphone, TrendingUp, Headphones, Users, Crown, Loader2, UserCircle } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Dialog,
