@@ -151,6 +151,12 @@ export default function Employees() {
                             </AvatarFallback>
                           </Avatar>
                           <span className="font-medium">{employee.full_name}</span>
+                          {(employee as any).is_partner && (
+                            <Badge variant="outline" className="bg-amber-500/10 text-amber-600 border-amber-500/30 text-xs">
+                              <Star className="h-3 w-3 ml-1" />
+                              שותף
+                            </Badge>
+                          )}
                         </div>
                       </TableCell>
                       <TableCell dir="ltr" className="text-left">
