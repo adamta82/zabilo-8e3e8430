@@ -134,6 +134,7 @@ export type Database = {
           email: string
           full_name: string
           id: string
+          is_partner: boolean
           phone: string | null
           show_in_shifts: boolean
           updated_at: string
@@ -149,6 +150,7 @@ export type Database = {
           email: string
           full_name: string
           id?: string
+          is_partner?: boolean
           phone?: string | null
           show_in_shifts?: boolean
           updated_at?: string
@@ -164,6 +166,7 @@ export type Database = {
           email?: string
           full_name?: string
           id?: string
+          is_partner?: boolean
           phone?: string | null
           show_in_shifts?: boolean
           updated_at?: string
