@@ -20,7 +20,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { useQueryClient } from '@tanstack/react-query';
+
 
 const getInitials = (name: string) =>
   name.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2);
@@ -45,14 +45,14 @@ const docTypeIcon: Record<DocumentType, typeof FileText> = {
 };
 
 export default function MyArea() {
-  const { user, profile, isAdmin } = useAuth();
+  const { user, profile, isAdmin, refreshProfile } = useAuth();
   const { data: allRequests, isLoading: requestsLoading } = useRequests();
   const { data: documents, isLoading: docsLoading } = useEmployeeDocuments(profile?.id);
   const { data: shifts } = useShifts();
   const downloadDocument = useDownloadDocument();
   const deleteDocument = useDeleteDocument();
   const { toast } = useToast();
-  const queryClient = useQueryClient();
+  
 
   const [editingPersonal, setEditingPersonal] = useState(false);
   const [personalForm, setPersonalForm] = useState({
@@ -103,7 +103,7 @@ export default function MyArea() {
     } else {
       toast({ title: 'הפרטים עודכנו בהצלחה' });
       setEditingPersonal(false);
-      queryClient.invalidateQueries({ queryKey: ['profile'] });
+      await refreshProfile();
     }
   };
 
