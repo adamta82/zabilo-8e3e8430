@@ -52,7 +52,7 @@ export default function MyArea() {
   const downloadDocument = useDownloadDocument();
   const deleteDocument = useDeleteDocument();
   const { toast } = useToast();
-  const queryClient = useQueryClient();
+  
 
   const [editingPersonal, setEditingPersonal] = useState(false);
   const [personalForm, setPersonalForm] = useState({
