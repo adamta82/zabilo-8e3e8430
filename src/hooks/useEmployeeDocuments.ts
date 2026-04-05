@@ -22,7 +22,7 @@ export const DOCUMENT_TYPE_LABELS: Record<DocumentType, string> = {
   form_101: 'טופס 101',
   pay_slip: 'תלוש שכר',
   contract: 'חוזה העסקה',
-  certificate: 'אישור',
+  certificate: 'שיחה אישית',
   other: 'אחר',
 };
 
