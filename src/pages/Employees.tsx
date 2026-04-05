@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Search, MoreHorizontal, Edit, Trash2, Shield, User, Loader2, KeyRound, Star, Crown } from 'lucide-react';
+import { Search, MoreHorizontal, Edit, Trash2, Shield, User, Loader2, KeyRound, Star, Crown, Upload } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -35,6 +35,7 @@ import {
 } from '@/components/ui/dialog';
 import { useEmployees, useDeleteEmployee, type EmployeeWithRole } from '@/hooks/useEmployees';
 import { EditEmployeeDialog } from '@/components/employees/EditEmployeeDialog';
+import { UploadDocumentDialog } from '@/components/myarea/UploadDocumentDialog';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -56,6 +57,7 @@ export default function Employees() {
   const [editingEmployee, setEditingEmployee] = useState<EmployeeWithRole | null>(null);
   const [deletingEmployee, setDeletingEmployee] = useState<EmployeeWithRole | null>(null);
   const [passwordEmployee, setPasswordEmployee] = useState<EmployeeWithRole | null>(null);
+  const [uploadEmployee, setUploadEmployee] = useState<EmployeeWithRole | null>(null);
   const [newPassword, setNewPassword] = useState('');
   const [isResettingPassword, setIsResettingPassword] = useState(false);
 
@@ -210,6 +212,10 @@ export default function Employees() {
                               <KeyRound className="h-4 w-4 ml-2" />
                               שינוי סיסמה
                             </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => setUploadEmployee(employee)}>
+                              <Upload className="h-4 w-4 ml-2" />
+                              העלאת מסמך
+                            </DropdownMenuItem>
                             <DropdownMenuItem 
                               className="text-destructive"
                               onClick={() => setDeletingEmployee(employee)}
@@ -280,6 +286,10 @@ export default function Employees() {
                           <DropdownMenuItem onClick={() => setPasswordEmployee(employee)}>
                             <KeyRound className="h-4 w-4 ml-2" />
                             שינוי סיסמה
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => setUploadEmployee(employee)}>
+                            <Upload className="h-4 w-4 ml-2" />
+                            העלאת מסמך
                           </DropdownMenuItem>
                           <DropdownMenuItem 
                             className="text-destructive"
@@ -377,6 +387,16 @@ export default function Employees() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Upload Document Dialog */}
+      {uploadEmployee && (
+        <UploadDocumentDialog
+          open={!!uploadEmployee}
+          onOpenChange={(open) => !open && setUploadEmployee(null)}
+          employeeId={uploadEmployee.id}
+          employeeName={uploadEmployee.full_name}
+        />
+      )}
     </div>
   );
 }

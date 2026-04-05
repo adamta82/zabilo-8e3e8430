@@ -31,6 +31,10 @@ export interface Profile {
   approver_id: string | null;
   calendar_emails: string[];
   avatar_url: string | null;
+  address: string | null;
+  emergency_contact_name: string | null;
+  emergency_contact_phone: string | null;
+  hire_date: string | null;
   created_at: string;
   updated_at: string;
   // Joined fields

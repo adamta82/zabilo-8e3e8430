@@ -16,6 +16,7 @@ import Departments from "./pages/Departments";
 import Settings from "./pages/Settings";
 import ShiftScheduler from "./pages/ShiftScheduler";
 import OrgChart from "./pages/OrgChart";
+import MyArea from "./pages/MyArea";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -60,6 +61,17 @@ function AppRoutes() {
           <ProtectedRoute>
             <AppLayout>
               <OrgChart />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/my-area"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <MyArea />
             </AppLayout>
           </ProtectedRoute>
         }
