@@ -45,7 +45,7 @@ const docTypeIcon: Record<DocumentType, typeof FileText> = {
 };
 
 export default function MyArea() {
-  const { user, profile, isAdmin } = useAuth();
+  const { user, profile, isAdmin, refreshProfile } = useAuth();
   const { data: allRequests, isLoading: requestsLoading } = useRequests();
   const { data: documents, isLoading: docsLoading } = useEmployeeDocuments(profile?.id);
   const { data: shifts } = useShifts();
