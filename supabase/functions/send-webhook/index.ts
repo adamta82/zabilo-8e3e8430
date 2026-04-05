@@ -160,7 +160,7 @@ Deno.serve(async (req) => {
             full_name: profile.full_name,
             email: profile.email,
             phone: profile.phone,
-            department: profile.departments,
+            department: department,
             calendar_emails: profile.calendar_emails,
           } : null,
           approved_by: approver,
