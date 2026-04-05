@@ -103,7 +103,7 @@ export default function MyArea() {
     } else {
       toast({ title: 'הפרטים עודכנו בהצלחה' });
       setEditingPersonal(false);
-      queryClient.invalidateQueries({ queryKey: ['profile'] });
+      await refreshProfile();
     }
   };
 
