@@ -100,6 +100,53 @@ export type Database = {
           },
         ]
       }
+      employee_documents: {
+        Row: {
+          created_at: string
+          description: string | null
+          document_date: string | null
+          document_type: string
+          employee_id: string
+          file_name: string
+          file_path: string
+          id: string
+          updated_at: string
+          uploaded_by: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          document_date?: string | null
+          document_type: string
+          employee_id: string
+          file_name: string
+          file_path: string
+          id?: string
+          updated_at?: string
+          uploaded_by: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          document_date?: string | null
+          document_type?: string
+          employee_id?: string
+          file_name?: string
+          file_path?: string
+          id?: string
+          updated_at?: string
+          uploaded_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_documents_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       global_settings: {
         Row: {
           created_at: string
@@ -126,13 +173,17 @@ export type Database = {
       }
       profiles: {
         Row: {
+          address: string | null
           approver_id: string | null
           avatar_url: string | null
           calendar_emails: string[] | null
           created_at: string
           department_id: string | null
           email: string
+          emergency_contact_name: string | null
+          emergency_contact_phone: string | null
           full_name: string
+          hire_date: string | null
           id: string
           is_partner: boolean
           job_title: string | null
@@ -143,13 +194,17 @@ export type Database = {
           username: string
         }
         Insert: {
+          address?: string | null
           approver_id?: string | null
           avatar_url?: string | null
           calendar_emails?: string[] | null
           created_at?: string
           department_id?: string | null
           email: string
+          emergency_contact_name?: string | null
+          emergency_contact_phone?: string | null
           full_name: string
+          hire_date?: string | null
           id?: string
           is_partner?: boolean
           job_title?: string | null
@@ -160,13 +215,17 @@ export type Database = {
           username: string
         }
         Update: {
+          address?: string | null
           approver_id?: string | null
           avatar_url?: string | null
           calendar_emails?: string[] | null
           created_at?: string
           department_id?: string | null
           email?: string
+          emergency_contact_name?: string | null
+          emergency_contact_phone?: string | null
           full_name?: string
+          hire_date?: string | null
           id?: string
           is_partner?: boolean
           job_title?: string | null
