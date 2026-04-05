@@ -8,6 +8,7 @@ import {
   LogOut,
   ClipboardList,
   Network,
+  UserCircle,
 } from 'lucide-react';
 import {
   Sidebar,
@@ -41,6 +42,11 @@ const mainMenuItems = [
     title: 'מבנה ארגוני',
     url: '/org-chart',
     icon: Network,
+  },
+  {
+    title: 'האזור שלי',
+    url: '/my-area',
+    icon: UserCircle,
   },
 ];
 
