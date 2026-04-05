@@ -212,6 +212,10 @@ export default function Employees() {
                               <KeyRound className="h-4 w-4 ml-2" />
                               שינוי סיסמה
                             </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => setUploadEmployee(employee)}>
+                              <Upload className="h-4 w-4 ml-2" />
+                              העלאת מסמך
+                            </DropdownMenuItem>
                             <DropdownMenuItem 
                               className="text-destructive"
                               onClick={() => setDeletingEmployee(employee)}
