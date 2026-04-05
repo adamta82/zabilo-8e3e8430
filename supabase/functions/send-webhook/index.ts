@@ -67,22 +67,33 @@ Deno.serve(async (req) => {
         timestamp: new Date().toISOString(),
       };
     } else if (request_id) {
-      const { data: request } = await supabase
+      const { data: request, error: requestError } = await supabase
         .from('requests')
         .select('*')
         .eq('id', request_id)
         .single();
 
+      console.log('Request fetch result:', { request_id, request, error: requestError });
+
       if (request) {
-        const { data: profile } = await supabase
+        const { data: profile, error: profileError } = await supabase
           .from('profiles')
-          .select(`
-            id, user_id, username, full_name, email, phone,
-            department_id, approver_id, calendar_emails,
-            departments (id, name, icon)
-          `)
+          .select('id, user_id, username, full_name, email, phone, department_id, approver_id, calendar_emails')
           .eq('user_id', request.user_id)
           .single();
+
+        console.log('Profile fetch result:', { user_id: request.user_id, profile, error: profileError });
+
+        // Fetch department separately
+        let department = null;
+        if (profile?.department_id) {
+          const { data: dept } = await supabase
+            .from('departments')
+            .select('id, name, icon')
+            .eq('id', profile.department_id)
+            .single();
+          department = dept;
+        }
 
         // Fetch designated approver for this employee
         let designatedApprover = null;
@@ -149,7 +160,7 @@ Deno.serve(async (req) => {
             full_name: profile.full_name,
             email: profile.email,
             phone: profile.phone,
-            department: profile.departments,
+            department: department,
             calendar_emails: profile.calendar_emails,
           } : null,
           approved_by: approver,
