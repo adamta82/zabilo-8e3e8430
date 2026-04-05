@@ -2,7 +2,7 @@ import { useState } from 'react';
 import {
   User, FileText, Receipt, Briefcase, Calendar, Phone, Mail,
   MapPin, Clock, Download, Trash2, Upload, Shield, Heart,
-  TrendingUp, Award, Loader2
+  TrendingUp, Award, Loader2, Eye
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRequests, type RequestWithProfile } from '@/hooks/useRequests';
@@ -40,7 +40,7 @@ const docTypeIcon: Record<DocumentType, typeof FileText> = {
   form_101: FileText,
   pay_slip: Receipt,
   contract: Briefcase,
-  certificate: Award,
+  certificate: User,
   other: FileText,
 };
 
@@ -388,14 +388,31 @@ export default function MyArea() {
                                   {doc.description && <span>{doc.description}</span>}
                                 </div>
                               </div>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8"
-                                onClick={() => downloadDocument(doc)}
-                              >
-                                <Download className="h-4 w-4" />
-                              </Button>
+                              <div className="flex gap-1">
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8"
+                                  title="צפייה"
+                                  onClick={() => downloadDocument(doc)}
+                                >
+                                  <Eye className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8"
+                                  title="הורדה"
+                                  onClick={async () => {
+                                    const { data, error } = await supabase.storage
+                                      .from('employee-documents')
+                                      .createSignedUrl(doc.file_path, 60, { download: true });
+                                    if (!error && data) window.open(data.signedUrl, '_blank');
+                                  }}
+                                >
+                                  <Download className="h-4 w-4" />
+                                </Button>
+                              </div>
                             </div>
                           ))}
                         </div>
