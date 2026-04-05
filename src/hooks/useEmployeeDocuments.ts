@@ -68,7 +68,8 @@ export function useUploadDocument() {
       description?: string;
       documentDate?: string;
     }) => {
-      const filePath = `${employeeId}/${documentType}/${Date.now()}_${file.name}`;
+      const sanitizedName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+      const filePath = `${employeeId}/${documentType}/${Date.now()}_${sanitizedName}`;
 
       const { error: uploadError } = await supabase.storage
         .from('employee-documents')
