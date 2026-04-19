@@ -267,6 +267,7 @@ export type Database = {
           approver_id: string | null
           avatar_url: string | null
           calendar_emails: string[] | null
+          can_manage_shifts: boolean
           created_at: string
           department_id: string | null
           email: string
@@ -288,6 +289,7 @@ export type Database = {
           approver_id?: string | null
           avatar_url?: string | null
           calendar_emails?: string[] | null
+          can_manage_shifts?: boolean
           created_at?: string
           department_id?: string | null
           email: string
@@ -309,6 +311,7 @@ export type Database = {
           approver_id?: string | null
           avatar_url?: string | null
           calendar_emails?: string[] | null
+          can_manage_shifts?: boolean
           created_at?: string
           department_id?: string | null
           email?: string
@@ -466,6 +469,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_manage_shifts: { Args: { _user_id: string }; Returns: boolean }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
