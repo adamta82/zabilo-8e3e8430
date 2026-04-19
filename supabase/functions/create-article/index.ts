@@ -7,15 +7,16 @@ const corsHeaders = {
 };
 
 interface CreateArticleBody {
+  text: string;
+  author_email?: string;
+  department_name?: string;
+}
+
+interface AiArticle {
   title: string;
   content: string;
-  article_type?: 'article' | 'update' | 'procedure';
-  department_name?: string;
-  department_id?: string;
-  author_email?: string;
-  author_id?: string;
-  is_pinned?: boolean;
-  is_published?: boolean;
+  article_type: 'article' | 'update' | 'procedure';
+  department_guess?: string;
 }
 
 Deno.serve(async (req) => {
@@ -43,18 +44,9 @@ Deno.serve(async (req) => {
 
     const body: CreateArticleBody = await req.json();
 
-    // Validate required fields
-    if (!body.title || !body.content) {
+    if (!body.text || typeof body.text !== 'string' || body.text.trim().length < 5) {
       return new Response(
-        JSON.stringify({ error: 'Missing required fields: title, content' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    const articleType = body.article_type || 'article';
-    if (!['article', 'update', 'procedure'].includes(articleType)) {
-      return new Response(
-        JSON.stringify({ error: 'article_type must be: article | update | procedure' }),
+        JSON.stringify({ error: 'Missing or too short field: text' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -64,51 +56,113 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     );
 
-    // Resolve department
-    let departmentId: string | null = body.department_id || null;
-    if (!departmentId && body.department_name) {
-      const { data: dept, error: deptErr } = await supabase
-        .from('departments')
-        .select('id')
-        .ilike('name', body.department_name)
-        .maybeSingle();
-      if (deptErr) throw deptErr;
-      if (!dept) {
-        return new Response(
-          JSON.stringify({ error: `Department not found: ${body.department_name}` }),
-          { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
+    // Load departments list to help the AI choose
+    const { data: allDepartments } = await supabase
+      .from('departments')
+      .select('id, name');
+    const deptNames = (allDepartments || []).map((d) => d.name);
+
+    // Call Lovable AI to extract structured article
+    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
+    if (!LOVABLE_API_KEY) throw new Error('LOVABLE_API_KEY is not configured');
+
+    const aiResp = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'google/gemini-2.5-flash',
+        messages: [
+          {
+            role: 'system',
+            content:
+              'אתה עוזר שמייצר מאמרים למרכז ידע פנימי בעברית. קבל טקסט גולמי והפק ממנו מאמר מסודר. הכותרת קצרה וברורה, התוכן ב-HTML פשוט (פסקאות <p>, רשימות <ul><li>, הדגשות <strong>). זהה את סוג המאמר: "update" לעדכון/חדשות, "procedure" לנוהל/הוראת עבודה, "article" למאמר כללי. אם רלוונטי, נחש לאיזו מחלקה זה שייך מתוך הרשימה הנתונה.',
+          },
+          {
+            role: 'user',
+            content: `מחלקות זמינות: ${deptNames.join(', ') || '(אין)'}\n\nטקסט גולמי:\n${body.text}`,
+          },
+        ],
+        tools: [
+          {
+            type: 'function',
+            function: {
+              name: 'create_article',
+              description: 'Create a structured knowledge article from raw text',
+              parameters: {
+                type: 'object',
+                properties: {
+                  title: { type: 'string', description: 'כותרת קצרה וברורה בעברית' },
+                  content: { type: 'string', description: 'תוכן המאמר ב-HTML פשוט בעברית' },
+                  article_type: {
+                    type: 'string',
+                    enum: ['article', 'update', 'procedure'],
+                    description: 'סוג המאמר',
+                  },
+                  department_guess: {
+                    type: 'string',
+                    description: 'שם המחלקה המתאימה מתוך הרשימה הזמינה, אם ניתן לזהות',
+                  },
+                },
+                required: ['title', 'content', 'article_type'],
+                additionalProperties: false,
+              },
+            },
+          },
+        ],
+        tool_choice: { type: 'function', function: { name: 'create_article' } },
+      }),
+    });
+
+    if (!aiResp.ok) {
+      if (aiResp.status === 429) {
+        return new Response(JSON.stringify({ error: 'AI rate limit exceeded, try again later' }), {
+          status: 429,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
       }
-      departmentId = dept.id;
+      if (aiResp.status === 402) {
+        return new Response(JSON.stringify({ error: 'AI credits exhausted' }), {
+          status: 402,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      const t = await aiResp.text();
+      console.error('AI error:', aiResp.status, t);
+      throw new Error('AI generation failed');
     }
 
-    if (!departmentId) {
-      return new Response(
-        JSON.stringify({ error: 'department_id or department_name is required' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    const aiData = await aiResp.json();
+    const toolCall = aiData?.choices?.[0]?.message?.tool_calls?.[0];
+    if (!toolCall?.function?.arguments) {
+      console.error('No tool call in AI response:', JSON.stringify(aiData));
+      throw new Error('AI did not return structured article');
+    }
+    const article: AiArticle = JSON.parse(toolCall.function.arguments);
+
+    // Resolve department: prefer explicit, then AI guess
+    let departmentId: string | null = null;
+    const wantedDept = body.department_name || article.department_guess;
+    if (wantedDept) {
+      const match = (allDepartments || []).find(
+        (d) => d.name.trim().toLowerCase() === wantedDept.trim().toLowerCase()
       );
+      if (match) departmentId = match.id;
     }
 
-    // Resolve author
-    let authorId: string | null = body.author_id || null;
-    if (!authorId && body.author_email) {
-      const { data: author, error: authorErr } = await supabase
+    // Resolve author by email, fallback to first admin
+    let authorId: string | null = null;
+    if (body.author_email) {
+      const { data: author } = await supabase
         .from('profiles')
         .select('id')
         .ilike('email', body.author_email)
         .maybeSingle();
-      if (authorErr) throw authorErr;
-      if (!author) {
-        return new Response(
-          JSON.stringify({ error: `Author not found: ${body.author_email}` }),
-          { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-      authorId = author.id;
+      if (author) authorId = author.id;
     }
-
     if (!authorId) {
-      // Fallback: pick first admin profile
       const { data: anyAdmin } = await supabase
         .from('user_roles')
         .select('user_id')
@@ -124,24 +178,23 @@ Deno.serve(async (req) => {
         if (adminProfile) authorId = adminProfile.id;
       }
     }
-
     if (!authorId) {
       return new Response(
-        JSON.stringify({ error: 'author_id or author_email is required (no admin fallback found)' }),
+        JSON.stringify({ error: 'Could not resolve author (no matching email and no admin fallback)' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    const { data: article, error: insertErr } = await supabase
+    const { data: inserted, error: insertErr } = await supabase
       .from('knowledge_articles')
       .insert({
-        title: body.title,
-        content: body.content,
-        article_type: articleType,
+        title: article.title,
+        content: article.content,
+        article_type: article.article_type,
         department_id: departmentId,
         author_id: authorId,
-        is_pinned: body.is_pinned ?? false,
-        is_published: body.is_published ?? true,
+        is_pinned: false,
+        is_published: true,
       })
       .select('id')
       .single();
@@ -149,7 +202,13 @@ Deno.serve(async (req) => {
     if (insertErr) throw insertErr;
 
     return new Response(
-      JSON.stringify({ success: true, article_id: article.id }),
+      JSON.stringify({
+        success: true,
+        article_id: inserted.id,
+        title: article.title,
+        article_type: article.article_type,
+        department_id: departmentId,
+      }),
       { status: 201, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {
