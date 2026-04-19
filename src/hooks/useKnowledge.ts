@@ -3,15 +3,13 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 
-export type ArticleType = 'article' | 'update' | 'announcement' | 'procedure';
+export type ArticleType = 'article' | 'update' | 'procedure';
 
 export interface KnowledgeArticle {
   id: string;
   title: string;
   content: string;
-  summary: string | null;
   department_id: string | null;
-  topic: string;
   article_type: ArticleType;
   author_id: string;
   is_published: boolean;
@@ -27,14 +25,12 @@ export interface KnowledgeArticle {
 export const ARTICLE_TYPE_LABELS: Record<ArticleType, string> = {
   article: 'מאמר',
   update: 'עדכון',
-  announcement: 'הודעה',
   procedure: 'נוהל',
 };
 
 export const ARTICLE_TYPE_COLORS: Record<ArticleType, string> = {
   article: 'bg-blue-100 text-blue-700 hover:bg-blue-100',
   update: 'bg-orange-100 text-orange-700 hover:bg-orange-100',
-  announcement: 'bg-purple-100 text-purple-700 hover:bg-purple-100',
   procedure: 'bg-green-100 text-green-700 hover:bg-green-100',
 };
 
@@ -56,7 +52,6 @@ export function useArticles() {
 
       if (error) throw error;
 
-      // Read counts (admin only) + my reads
       const { data: reads } = await supabase
         .from('article_reads')
         .select('article_id, user_id');

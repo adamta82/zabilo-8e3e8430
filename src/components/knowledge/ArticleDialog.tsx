@@ -20,8 +20,6 @@ import {
 } from '@/components/ui/select';
 import { ArticleType, KnowledgeArticle, useSaveArticle } from '@/hooks/useKnowledge';
 import { useDepartments } from '@/hooks/useDepartments';
-import ReactQuill from 'react-quill';
-import 'react-quill/dist/quill.snow.css';
 
 interface Props {
   open: boolean;
@@ -36,8 +34,6 @@ export function ArticleDialog({ open, onOpenChange, article }: Props) {
   const [title, setTitle] = useState('');
   const [articleType, setArticleType] = useState<ArticleType>('article');
   const [departmentId, setDepartmentId] = useState<string>('none');
-  const [topic, setTopic] = useState('');
-  const [summary, setSummary] = useState('');
   const [content, setContent] = useState('');
   const [isPinned, setIsPinned] = useState(false);
   const [isPublished, setIsPublished] = useState(true);
@@ -47,8 +43,6 @@ export function ArticleDialog({ open, onOpenChange, article }: Props) {
       setTitle(article?.title || '');
       setArticleType((article?.article_type as ArticleType) || 'article');
       setDepartmentId(article?.department_id || 'none');
-      setTopic(article?.topic || '');
-      setSummary(article?.summary || '');
       setContent(article?.content || '');
       setIsPinned(article?.is_pinned || false);
       setIsPublished(article?.is_published ?? true);
@@ -56,15 +50,13 @@ export function ArticleDialog({ open, onOpenChange, article }: Props) {
   }, [open, article]);
 
   const handleSave = async () => {
-    if (!title.trim() || !topic.trim() || !content.trim()) return;
+    if (!title.trim() || !content.trim()) return;
     await save.mutateAsync({
       id: article?.id,
       title: title.trim(),
       article_type: articleType,
       department_id: departmentId === 'none' ? null : departmentId,
-      topic: topic.trim(),
-      summary: summary.trim() || null,
-      content,
+      content: content.trim(),
       is_pinned: isPinned,
       is_published: isPublished,
     });
@@ -73,7 +65,7 @@ export function ArticleDialog({ open, onOpenChange, article }: Props) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto" dir="rtl">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto" dir="rtl">
         <DialogHeader>
           <DialogTitle>{article ? 'עריכת מאמר' : 'מאמר חדש'}</DialogTitle>
         </DialogHeader>
@@ -92,7 +84,6 @@ export function ArticleDialog({ open, onOpenChange, article }: Props) {
                 <SelectContent>
                   <SelectItem value="article">מאמר</SelectItem>
                   <SelectItem value="update">עדכון</SelectItem>
-                  <SelectItem value="announcement">הודעה</SelectItem>
                   <SelectItem value="procedure">נוהל</SelectItem>
                 </SelectContent>
               </Select>
@@ -112,40 +103,15 @@ export function ArticleDialog({ open, onOpenChange, article }: Props) {
           </div>
 
           <div className="grid gap-2">
-            <Label>נושא * (לדוגמה: שכר, לוגיסטיקה)</Label>
-            <Input value={topic} onChange={(e) => setTopic(e.target.value)} maxLength={100} />
-          </div>
-
-          <div className="grid gap-2">
-            <Label>תקציר (עד 200 תווים)</Label>
-            <Textarea
-              value={summary}
-              onChange={(e) => setSummary(e.target.value)}
-              maxLength={200}
-              rows={2}
-            />
-          </div>
-
-          <div className="grid gap-2">
             <Label>תוכן *</Label>
-            <div dir="rtl" className="bg-background">
-              <ReactQuill
-                theme="snow"
-                value={content}
-                onChange={setContent}
-                modules={{
-                  toolbar: [
-                    [{ header: [1, 2, 3, false] }],
-                    ['bold', 'italic', 'underline', 'strike'],
-                    [{ list: 'ordered' }, { list: 'bullet' }],
-                    ['link', 'blockquote'],
-                    [{ color: [] }, { background: [] }],
-                    ['clean'],
-                  ],
-                }}
-                style={{ minHeight: 200 }}
-              />
-            </div>
+            <Textarea
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+              rows={10}
+              dir="rtl"
+              className="resize-y min-h-[200px]"
+              placeholder="כתוב כאן את תוכן המאמר..."
+            />
           </div>
 
           <div className="flex gap-6">
