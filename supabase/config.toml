@@ -8,3 +8,6 @@ verify_jwt = false
 
 [functions.google-calendar]
 verify_jwt = false
+
+[functions.create-article]
+verify_jwt = false
