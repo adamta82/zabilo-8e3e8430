@@ -50,12 +50,12 @@ export function ArticleDialog({ open, onOpenChange, article }: Props) {
   }, [open, article]);
 
   const handleSave = async () => {
-    if (!title.trim() || !content.trim()) return;
+    if (!title.trim() || !content.trim() || departmentId === 'none' || !departmentId) return;
     await save.mutateAsync({
       id: article?.id,
       title: title.trim(),
       article_type: articleType,
-      department_id: departmentId === 'none' ? null : departmentId,
+      department_id: departmentId,
       content: content.trim(),
       is_pinned: isPinned,
       is_published: isPublished,
@@ -89,11 +89,10 @@ export function ArticleDialog({ open, onOpenChange, article }: Props) {
               </Select>
             </div>
             <div className="grid gap-2">
-              <Label>מחלקה</Label>
+              <Label>מחלקה *</Label>
               <Select value={departmentId} onValueChange={setDepartmentId}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger><SelectValue placeholder="בחר מחלקה" /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="none">כללי</SelectItem>
                   {departments?.map((d) => (
                     <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>
                   ))}
