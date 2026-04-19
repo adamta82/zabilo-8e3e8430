@@ -93,8 +93,8 @@ export function ArticleCard({ article, onEdit }: Props) {
       </CardHeader>
 
       <CardContent className="flex-1 flex flex-col">
-        <p className="text-sm text-muted-foreground line-clamp-3 mb-4 whitespace-pre-wrap">
-          {article.content}
+        <p className="text-sm text-muted-foreground line-clamp-3 mb-4">
+          {article.content.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()}
         </p>
 
         <div className="mt-auto space-y-3">
