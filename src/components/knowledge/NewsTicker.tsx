@@ -41,7 +41,7 @@ export function NewsTicker({ articles }: Props) {
               </div>
               <h4 className="text-sm font-medium line-clamp-2 mb-1">{a.title}</h4>
               <p className="text-xs text-muted-foreground line-clamp-2 mb-1">
-                {a.content}
+                {a.content.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()}
               </p>
               <span className="text-[11px] text-muted-foreground">
                 {formatDistanceToNow(new Date(a.created_at), { addSuffix: true, locale: he })}
