@@ -14,6 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
+      article_reads: {
+        Row: {
+          article_id: string
+          id: string
+          read_at: string
+          user_id: string
+        }
+        Insert: {
+          article_id: string
+          id?: string
+          read_at?: string
+          user_id: string
+        }
+        Update: {
+          article_id?: string
+          id?: string
+          read_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "article_reads_article_id_fkey"
+            columns: ["article_id"]
+            isOneToOne: false
+            referencedRelation: "knowledge_articles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "article_reads_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       automations: {
         Row: {
           action_type: Database["public"]["Enums"]["automation_action"]
@@ -170,6 +206,66 @@ export type Database = {
           value?: Json
         }
         Relationships: []
+      }
+      knowledge_articles: {
+        Row: {
+          article_type: string
+          author_id: string
+          content: string
+          created_at: string
+          department_id: string | null
+          id: string
+          is_pinned: boolean
+          is_published: boolean
+          summary: string | null
+          title: string
+          topic: string
+          updated_at: string
+        }
+        Insert: {
+          article_type?: string
+          author_id: string
+          content: string
+          created_at?: string
+          department_id?: string | null
+          id?: string
+          is_pinned?: boolean
+          is_published?: boolean
+          summary?: string | null
+          title: string
+          topic: string
+          updated_at?: string
+        }
+        Update: {
+          article_type?: string
+          author_id?: string
+          content?: string
+          created_at?: string
+          department_id?: string | null
+          id?: string
+          is_pinned?: boolean
+          is_published?: boolean
+          summary?: string | null
+          title?: string
+          topic?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "knowledge_articles_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "knowledge_articles_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
