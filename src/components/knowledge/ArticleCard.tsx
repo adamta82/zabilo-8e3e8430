@@ -89,14 +89,13 @@ export function ArticleCard({ article, onEdit }: Props) {
             </DropdownMenu>
           )}
         </div>
-        <h3 className="font-bold text-lg line-clamp-1">{article.title}</h3>
-        <p className="text-xs text-muted-foreground">{article.topic}</p>
+        <h3 className="font-bold text-lg line-clamp-2">{article.title}</h3>
       </CardHeader>
 
       <CardContent className="flex-1 flex flex-col">
-        {article.summary && (
-          <p className="text-sm text-muted-foreground line-clamp-2 mb-4">{article.summary}</p>
-        )}
+        <p className="text-sm text-muted-foreground line-clamp-3 mb-4 whitespace-pre-wrap">
+          {article.content}
+        </p>
 
         <div className="mt-auto space-y-3">
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
