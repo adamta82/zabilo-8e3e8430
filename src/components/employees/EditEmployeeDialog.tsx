@@ -43,6 +43,7 @@ export function EditEmployeeDialog({ employee, open, onOpenChange }: EditEmploye
   const [showInShifts, setShowInShifts] = useState(true);
   const [isPartner, setIsPartner] = useState(false);
   const [jobTitle, setJobTitle] = useState('');
+  const [canManageShifts, setCanManageShifts] = useState(false);
 
   useEffect(() => {
     if (employee) {
@@ -54,6 +55,7 @@ export function EditEmployeeDialog({ employee, open, onOpenChange }: EditEmploye
       setShowInShifts((employee as any).show_in_shifts !== false);
       setIsPartner((employee as any).is_partner || false);
       setJobTitle((employee as any).job_title || '');
+      setCanManageShifts((employee as any).can_manage_shifts === true);
     }
   }, [employee]);
 
@@ -70,6 +72,7 @@ export function EditEmployeeDialog({ employee, open, onOpenChange }: EditEmploye
         show_in_shifts: showInShifts,
         is_partner: isPartner,
         job_title: jobTitle || null,
+        can_manage_shifts: canManageShifts,
       } as any,
       newRole: role,
     });
@@ -189,6 +192,20 @@ export function EditEmployeeDialog({ employee, open, onOpenChange }: EditEmploye
               id="is-partner"
               checked={isPartner}
               onCheckedChange={setIsPartner}
+            />
+          </div>
+
+          <div className="flex items-center justify-between py-2">
+            <div className="space-y-0.5">
+              <Label htmlFor="can-manage-shifts">הרשאה לשיבוץ משמרות</Label>
+              <p className="text-xs text-muted-foreground">
+                יאפשר לעובד גישה לעמוד שיבוץ המשמרות וניהולן
+              </p>
+            </div>
+            <Switch
+              id="can-manage-shifts"
+              checked={canManageShifts}
+              onCheckedChange={setCanManageShifts}
             />
           </div>
         </div>

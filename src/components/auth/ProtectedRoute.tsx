@@ -5,10 +5,11 @@ import { Loader2 } from 'lucide-react';
 interface ProtectedRouteProps {
   children: React.ReactNode;
   requireAdmin?: boolean;
+  requireShiftManager?: boolean;
 }
 
-export function ProtectedRoute({ children, requireAdmin = false }: ProtectedRouteProps) {
-  const { user, isAdmin, isLoading } = useAuth();
+export function ProtectedRoute({ children, requireAdmin = false, requireShiftManager = false }: ProtectedRouteProps) {
+  const { user, isAdmin, canManageShifts, isLoading } = useAuth();
   const location = useLocation();
 
   if (isLoading) {
@@ -24,6 +25,10 @@ export function ProtectedRoute({ children, requireAdmin = false }: ProtectedRout
   }
 
   if (requireAdmin && !isAdmin) {
+    return <Navigate to="/" replace />;
+  }
+
+  if (requireShiftManager && !canManageShifts) {
     return <Navigate to="/" replace />;
   }
 
