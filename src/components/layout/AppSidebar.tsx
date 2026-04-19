@@ -46,9 +46,11 @@ const adminMenuItems = [
   { title: 'הגדרות Webhook', url: '/settings', icon: Settings },
 ];
 
+const shiftManagerMenuItem = { title: 'שיבוץ משמרות', url: '/shifts', icon: ClipboardList };
+
 export function AppSidebar() {
   const location = useLocation();
-  const { profile, isAdmin, signOut } = useAuth();
+  const { profile, isAdmin, canManageShifts, signOut } = useAuth();
   const { data: unreadCount = 0 } = useUnreadCount();
 
   const getInitials = (name: string) =>
@@ -107,6 +109,24 @@ export function AppSidebar() {
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
+
+        {!isAdmin && canManageShifts && (
+          <SidebarGroup>
+            <SidebarGroupLabel>ניהול</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild isActive={location.pathname === shiftManagerMenuItem.url}>
+                    <Link to={shiftManagerMenuItem.url}>
+                      <shiftManagerMenuItem.icon className="h-4 w-4" />
+                      <span>{shiftManagerMenuItem.title}</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
