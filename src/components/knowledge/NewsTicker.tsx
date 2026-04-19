@@ -17,7 +17,7 @@ export function NewsTicker({ articles }: Props) {
 
   return (
     <aside className="rounded-lg border bg-card overflow-hidden sticky top-4">
-      <div className="flex items-center gap-2 px-4 py-3 bg-[#1e3a5f] text-white">
+      <div className="flex items-center gap-2 px-4 py-3 bg-primary text-primary-foreground">
         <Megaphone className="h-4 w-4" />
         <h3 className="text-sm font-semibold">עדכונים אחרונים</h3>
       </div>
