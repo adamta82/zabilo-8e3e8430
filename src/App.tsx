@@ -17,6 +17,9 @@ import Settings from "./pages/Settings";
 import ShiftScheduler from "./pages/ShiftScheduler";
 import OrgChart from "./pages/OrgChart";
 import MyArea from "./pages/MyArea";
+import KnowledgeHub from "./pages/KnowledgeHub";
+import ArticleView from "./pages/ArticleView";
+import ReadTracking from "./pages/ReadTracking";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -40,7 +43,37 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <AppLayout>
+              <KnowledgeHub />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/dashboard"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
               <Dashboard />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/knowledge/:id"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <ArticleView />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/knowledge/tracking"
+        element={
+          <ProtectedRoute requireAdmin>
+            <AppLayout>
+              <ReadTracking />
             </AppLayout>
           </ProtectedRoute>
         }

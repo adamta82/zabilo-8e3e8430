@@ -1,0 +1,139 @@
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Check, Eye, Pin, MoreVertical, Pencil, Trash2 } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import {
+  ARTICLE_TYPE_COLORS,
+  ARTICLE_TYPE_LABELS,
+  KnowledgeArticle,
+  useDeleteArticle,
+  useMarkAsRead,
+} from '@/hooks/useKnowledge';
+import { useAuth } from '@/contexts/AuthContext';
+import { formatDistanceToNow } from 'date-fns';
+import { he } from 'date-fns/locale';
+import { cn } from '@/lib/utils';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+
+interface Props {
+  article: KnowledgeArticle;
+  onEdit?: (article: KnowledgeArticle) => void;
+}
+
+export function ArticleCard({ article, onEdit }: Props) {
+  const { isAdmin } = useAuth();
+  const markAsRead = useMarkAsRead();
+  const deleteArticle = useDeleteArticle();
+
+  const initials = article.author?.full_name
+    ?.split(' ')
+    .map((n) => n[0])
+    .join('')
+    .slice(0, 2) || 'U';
+
+  return (
+    <Card
+      className={cn(
+        'relative flex flex-col h-full transition-all hover:shadow-md',
+        article.is_pinned && 'border-orange-300 border-2'
+      )}
+    >
+      {!article.is_read && (
+        <span className="absolute top-3 left-3 h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-background" />
+      )}
+      {article.is_pinned && (
+        <div className="absolute top-3 right-3 text-orange-500">
+          <Pin className="h-4 w-4 fill-orange-500" />
+        </div>
+      )}
+
+      <CardHeader className="pb-3">
+        <div className="flex items-start justify-between gap-2 mb-2">
+          <div className="flex flex-wrap gap-1.5">
+            <Badge className={ARTICLE_TYPE_COLORS[article.article_type]} variant="secondary">
+              {ARTICLE_TYPE_LABELS[article.article_type]}
+            </Badge>
+            {article.department?.name && (
+              <Badge variant="outline">{article.department.name}</Badge>
+            )}
+          </div>
+          {isAdmin && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-7 w-7 -mt-1 -mr-1">
+                  <MoreVertical className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => onEdit?.(article)}>
+                  <Pencil className="ms-2 h-4 w-4" />
+                  ערוך
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  className="text-destructive"
+                  onClick={() => {
+                    if (confirm('למחוק את המאמר?')) deleteArticle.mutate(article.id);
+                  }}
+                >
+                  <Trash2 className="ms-2 h-4 w-4" />
+                  מחק
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+        </div>
+        <h3 className="font-bold text-lg line-clamp-1">{article.title}</h3>
+        <p className="text-xs text-muted-foreground">{article.topic}</p>
+      </CardHeader>
+
+      <CardContent className="flex-1 flex flex-col">
+        {article.summary && (
+          <p className="text-sm text-muted-foreground line-clamp-2 mb-4">{article.summary}</p>
+        )}
+
+        <div className="mt-auto space-y-3">
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <Avatar className="h-6 w-6">
+              <AvatarImage src={article.author?.avatar_url || undefined} />
+              <AvatarFallback className="text-[10px]">{initials}</AvatarFallback>
+            </Avatar>
+            <span>{article.author?.full_name}</span>
+            <span>·</span>
+            <span>
+              {formatDistanceToNow(new Date(article.created_at), { addSuffix: true, locale: he })}
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Button asChild size="sm" className="flex-1">
+              <Link to={`/knowledge/${article.id}`}>קרא עוד</Link>
+            </Button>
+            <Button
+              size="sm"
+              variant={article.is_read ? 'secondary' : 'outline'}
+              disabled={article.is_read || markAsRead.isPending}
+              onClick={() => markAsRead.mutate(article.id)}
+              className={cn(article.is_read && 'bg-green-100 text-green-700 hover:bg-green-100')}
+            >
+              <Check className="ms-1 h-4 w-4" />
+              {article.is_read ? 'נקרא' : 'קראתי'}
+            </Button>
+            {isAdmin && (
+              <div className="flex items-center gap-1 text-xs text-muted-foreground px-2">
+                <Eye className="h-3.5 w-3.5" />
+                {article.read_count || 0}
+              </div>
+            )}
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
