@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useArticles, KnowledgeArticle, ArticleType } from '@/hooks/useKnowledge';
 import { useDepartments } from '@/hooks/useDepartments';
 import { useAuth } from '@/contexts/AuthContext';
@@ -58,6 +58,34 @@ export default function KnowledgeHub() {
 
   const pinned = filtered.filter((a) => a.is_pinned);
   const regular = filtered.filter((a) => !a.is_pinned);
+
+  // Infinite scroll
+  const PAGE_SIZE = 9;
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
+
+  // Reset paging when filters change
+  useEffect(() => {
+    setVisibleCount(PAGE_SIZE);
+  }, [search, deptFilter, typeFilter]);
+
+  useEffect(() => {
+    const el = sentinelRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          setVisibleCount((c) => Math.min(c + PAGE_SIZE, regular.length));
+        }
+      },
+      { rootMargin: '300px' }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [regular.length]);
+
+  const visibleRegular = regular.slice(0, visibleCount);
+  const hasMore = visibleCount < regular.length;
 
   const openEdit = (a: KnowledgeArticle) => {
     setEditing(a);
@@ -160,11 +188,25 @@ export default function KnowledgeHub() {
           <p>אין מאמרים עדיין</p>
         </div>
       ) : (
-        <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-          {regular.map((a) => (
-            <ArticleCard key={a.id} article={a} onEdit={openEdit} />
-          ))}
-        </div>
+        <>
+          <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+            {visibleRegular.map((a) => (
+              <ArticleCard key={a.id} article={a} onEdit={openEdit} />
+            ))}
+          </div>
+          {hasMore && (
+            <div ref={sentinelRef} className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 pt-2">
+              {[...Array(3)].map((_, i) => (
+                <Skeleton key={i} className="h-64" />
+              ))}
+            </div>
+          )}
+          {!hasMore && regular.length > PAGE_SIZE && (
+            <p className="text-center text-xs text-muted-foreground py-4">
+              הגעת לסוף — {regular.length} מאמרים
+            </p>
+          )}
+        </>
       )}
 
       <ArticleDialog open={dialogOpen} onOpenChange={setDialogOpen} article={editing} />
