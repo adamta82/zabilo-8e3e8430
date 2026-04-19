@@ -24,25 +24,26 @@ Deno.serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
-  if (req.method !== 'POST') {
-    return new Response(JSON.stringify({ error: 'Method not allowed' }), {
-      status: 405,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
-  }
-
   try {
-    // Auth check
-    const apiKey = req.headers.get('x-api-key');
-    const expectedKey = Deno.env.get('ARTICLE_API_KEY');
-    if (!expectedKey || apiKey !== expectedKey) {
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-        status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
+    // Parse params from query string (GET) or JSON body (POST)
+    const url = new URL(req.url);
+    const qp = url.searchParams;
 
-    const body: CreateArticleBody = await req.json();
+    let body: CreateArticleBody = {
+      text: qp.get('text') || '',
+      author_email: qp.get('author_email') || qp.get('email') || undefined,
+      department_name: qp.get('department_name') || qp.get('department') || undefined,
+    };
+
+    // Fallback: still allow POST with JSON body for backward compatibility
+    if (!body.text && req.method === 'POST') {
+      try {
+        const json = await req.json();
+        body = { ...body, ...json };
+      } catch {
+        // ignore
+      }
+    }
 
     if (!body.text || typeof body.text !== 'string' || body.text.trim().length < 5) {
       return new Response(
