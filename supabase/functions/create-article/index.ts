@@ -146,15 +146,16 @@ Deno.serve(async (req) => {
     }
     const article: AiArticle = JSON.parse(toolCall.function.arguments);
 
-    // Resolve department: prefer explicit, then AI guess
+    // Resolve department: try explicit match first, then fall back to AI guess
     let departmentId: string | null = null;
-    const wantedDept = body.department_name || article.department_guess;
-    if (wantedDept) {
-      const match = (allDepartments || []).find(
-        (d) => d.name.trim().toLowerCase() === wantedDept.trim().toLowerCase()
+    const tryMatch = (name?: string) => {
+      if (!name) return null;
+      const m = (allDepartments || []).find(
+        (d) => d.name.trim().toLowerCase() === name.trim().toLowerCase()
       );
-      if (match) departmentId = match.id;
-    }
+      return m?.id || null;
+    };
+    departmentId = tryMatch(body.department_name) || tryMatch(article.department_guess);
 
     // Resolve author by email, fallback to first admin
     let authorId: string | null = null;
