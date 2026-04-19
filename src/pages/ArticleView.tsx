@@ -95,7 +95,7 @@ export default function ArticleView() {
             {ARTICLE_TYPE_LABELS[article.article_type as ArticleType]}
           </Badge>
           {article.department?.name && <Badge variant="outline">{article.department.name}</Badge>}
-          <Badge variant="outline">{article.topic}</Badge>
+          
         </div>
         <div className="flex items-center gap-3 text-sm text-muted-foreground">
           <Avatar className="h-8 w-8">
