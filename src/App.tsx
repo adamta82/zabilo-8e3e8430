@@ -114,7 +114,7 @@ function AppRoutes() {
       <Route
         path="/shifts"
         element={
-          <ProtectedRoute requireAdmin>
+          <ProtectedRoute requireShiftManager>
             <AppLayout>
               <ShiftScheduler />
             </AppLayout>
