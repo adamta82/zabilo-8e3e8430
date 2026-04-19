@@ -95,7 +95,7 @@ export default function ArticleView() {
             {ARTICLE_TYPE_LABELS[article.article_type as ArticleType]}
           </Badge>
           {article.department?.name && <Badge variant="outline">{article.department.name}</Badge>}
-          <Badge variant="outline">{article.topic}</Badge>
+          
         </div>
         <div className="flex items-center gap-3 text-sm text-muted-foreground">
           <Avatar className="h-8 w-8">
@@ -109,10 +109,9 @@ export default function ArticleView() {
       </header>
 
       {/* Content */}
-      <div
-        className="prose prose-sm md:prose max-w-none rtl:text-right"
-        dangerouslySetInnerHTML={{ __html: article.content }}
-      />
+      <div className="text-base leading-relaxed whitespace-pre-wrap rtl:text-right">
+        {article.content}
+      </div>
 
       {/* Read progress */}
       <div className="rounded-lg border bg-muted/30 p-4 space-y-2">

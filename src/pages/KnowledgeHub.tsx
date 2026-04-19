@@ -33,7 +33,7 @@ export default function KnowledgeHub() {
   const tickerArticles = useMemo(
     () =>
       (articles || [])
-        .filter((a) => a.is_published && (a.article_type === 'update' || a.article_type === 'announcement'))
+        .filter((a) => a.is_published && a.article_type === 'update')
         .slice(0, 5),
     [articles]
   );
@@ -47,8 +47,7 @@ export default function KnowledgeHub() {
         const s = search.toLowerCase();
         if (
           !a.title.toLowerCase().includes(s) &&
-          !a.topic.toLowerCase().includes(s) &&
-          !(a.summary || '').toLowerCase().includes(s)
+          !a.content.toLowerCase().includes(s)
         )
           return false;
       }

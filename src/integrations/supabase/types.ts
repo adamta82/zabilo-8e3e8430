@@ -217,9 +217,7 @@ export type Database = {
           id: string
           is_pinned: boolean
           is_published: boolean
-          summary: string | null
           title: string
-          topic: string
           updated_at: string
         }
         Insert: {
@@ -231,9 +229,7 @@ export type Database = {
           id?: string
           is_pinned?: boolean
           is_published?: boolean
-          summary?: string | null
           title: string
-          topic: string
           updated_at?: string
         }
         Update: {
@@ -245,9 +241,7 @@ export type Database = {
           id?: string
           is_pinned?: boolean
           is_published?: boolean
-          summary?: string | null
           title?: string
-          topic?: string
           updated_at?: string
         }
         Relationships: [
