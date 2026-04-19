@@ -82,7 +82,11 @@ Deno.serve(async (req) => {
           },
           {
             role: 'user',
-            content: `מחלקות זמינות: ${deptNames.join(', ') || '(אין)'}\n\nטקסט גולמי:\n${body.text}`,
+            content: `מחלקות זמינות במערכת: ${deptNames.join(', ') || '(אין)'}\n${
+              body.department_name
+                ? `\nרמז מהמשתמש לגבי מחלקה: "${body.department_name}" - אם זה תואם בדיוק לאחת המחלקות ברשימה, השתמש בה. אם לא תואם בדיוק, בחר את המחלקה הקרובה/דומה ביותר מהרשימה (למשל "שיווק" ≈ "מרקטינג", "כספים" ≈ "הנהלת חשבונות"). אם הרמז לא קשור לאף מחלקה, התעלם ממנו ובחר לפי תוכן המלל.\n`
+                : ''
+            }\nטקסט גולמי:\n${body.text}`,
           },
         ],
         tools: [
@@ -142,15 +146,16 @@ Deno.serve(async (req) => {
     }
     const article: AiArticle = JSON.parse(toolCall.function.arguments);
 
-    // Resolve department: prefer explicit, then AI guess
+    // Resolve department: try explicit match first, then fall back to AI guess
     let departmentId: string | null = null;
-    const wantedDept = body.department_name || article.department_guess;
-    if (wantedDept) {
-      const match = (allDepartments || []).find(
-        (d) => d.name.trim().toLowerCase() === wantedDept.trim().toLowerCase()
+    const tryMatch = (name?: string) => {
+      if (!name) return null;
+      const m = (allDepartments || []).find(
+        (d) => d.name.trim().toLowerCase() === name.trim().toLowerCase()
       );
-      if (match) departmentId = match.id;
-    }
+      return m?.id || null;
+    };
+    departmentId = tryMatch(body.department_name) || tryMatch(article.department_guess);
 
     // Resolve author by email, fallback to first admin
     let authorId: string | null = null;
