@@ -110,9 +110,11 @@ export default function ArticleView() {
       </header>
 
       {/* Content */}
-      <div className="text-base leading-relaxed whitespace-pre-wrap rtl:text-right">
-        {article.content}
-      </div>
+      <div
+        className="article-content text-base leading-relaxed rtl:text-right"
+        dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(article.content) }}
+      />
+
 
       {/* Read progress */}
       <div className="rounded-lg border bg-muted/30 p-4 space-y-2">
