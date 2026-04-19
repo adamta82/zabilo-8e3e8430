@@ -33,7 +33,7 @@ export default function KnowledgeHub() {
   const tickerArticles = useMemo(
     () =>
       (articles || [])
-        .filter((a) => a.is_published && a.article_type === 'update')
+        .filter((a) => a.is_published)
         .slice(0, 5),
     [articles]
   );
@@ -98,9 +98,6 @@ export default function KnowledgeHub() {
 
   return (
     <div dir="rtl" className="space-y-6 p-4 md:p-6 max-w-7xl mx-auto">
-      {/* Ticker */}
-      <NewsTicker articles={tickerArticles} />
-
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
@@ -154,59 +151,68 @@ export default function KnowledgeHub() {
             <SelectItem value="all">כל הסוגים</SelectItem>
             <SelectItem value="article">מאמר</SelectItem>
             <SelectItem value="update">עדכון</SelectItem>
-            <SelectItem value="announcement">הודעה</SelectItem>
             <SelectItem value="procedure">נוהל</SelectItem>
           </SelectContent>
         </Select>
       </div>
 
-      {/* Pinned */}
-      {pinned.length > 0 && (
-        <div className="space-y-3">
-          <h2 className="text-sm font-semibold text-muted-foreground flex items-center gap-2">
-            <Pin className="h-4 w-4 text-orange-500" /> מוצמד
-          </h2>
-          <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
-            {pinned.map((a) => (
-              <ArticleCard key={a.id} article={a} onEdit={openEdit} />
-            ))}
-          </div>
-        </div>
-      )}
+      {/* Two-column layout: main content + vertical ticker sidebar */}
+      <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
+        <div className="space-y-6 min-w-0">
+          {/* Pinned */}
+          {pinned.length > 0 && (
+            <div className="space-y-3">
+              <h2 className="text-sm font-semibold text-muted-foreground flex items-center gap-2">
+                <Pin className="h-4 w-4 text-orange-500" /> מוצמד
+              </h2>
+              <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
+                {pinned.map((a) => (
+                  <ArticleCard key={a.id} article={a} onEdit={openEdit} />
+                ))}
+              </div>
+            </div>
+          )}
 
-      {/* Grid */}
-      {isLoading ? (
-        <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-          {[...Array(6)].map((_, i) => (
-            <Skeleton key={i} className="h-64" />
-          ))}
-        </div>
-      ) : regular.length === 0 && pinned.length === 0 ? (
-        <div className="text-center py-16 text-muted-foreground">
-          <BookOpen className="h-12 w-12 mx-auto mb-3 opacity-50" />
-          <p>אין מאמרים עדיין</p>
-        </div>
-      ) : (
-        <>
-          <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-            {visibleRegular.map((a) => (
-              <ArticleCard key={a.id} article={a} onEdit={openEdit} />
-            ))}
-          </div>
-          {hasMore && (
-            <div ref={sentinelRef} className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 pt-2">
-              {[...Array(3)].map((_, i) => (
+          {/* Grid */}
+          {isLoading ? (
+            <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
+              {[...Array(6)].map((_, i) => (
                 <Skeleton key={i} className="h-64" />
               ))}
             </div>
+          ) : regular.length === 0 && pinned.length === 0 ? (
+            <div className="text-center py-16 text-muted-foreground">
+              <BookOpen className="h-12 w-12 mx-auto mb-3 opacity-50" />
+              <p>אין מאמרים עדיין</p>
+            </div>
+          ) : (
+            <>
+              <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
+                {visibleRegular.map((a) => (
+                  <ArticleCard key={a.id} article={a} onEdit={openEdit} />
+                ))}
+              </div>
+              {hasMore && (
+                <div ref={sentinelRef} className="grid gap-4 grid-cols-1 md:grid-cols-2 pt-2">
+                  {[...Array(2)].map((_, i) => (
+                    <Skeleton key={i} className="h-64" />
+                  ))}
+                </div>
+              )}
+              {!hasMore && regular.length > PAGE_SIZE && (
+                <p className="text-center text-xs text-muted-foreground py-4">
+                  הגעת לסוף — {regular.length} מאמרים
+                </p>
+              )}
+            </>
           )}
-          {!hasMore && regular.length > PAGE_SIZE && (
-            <p className="text-center text-xs text-muted-foreground py-4">
-              הגעת לסוף — {regular.length} מאמרים
-            </p>
-          )}
-        </>
-      )}
+        </div>
+
+        {/* Vertical ticker sidebar */}
+        <div className="hidden lg:block">
+          <NewsTicker articles={tickerArticles} />
+        </div>
+      </div>
 
       <ArticleDialog open={dialogOpen} onOpenChange={setDialogOpen} article={editing} />
     </div>
