@@ -3,7 +3,9 @@ import { Separator } from '@/components/ui/separator';
 import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbPage } from '@/components/ui/breadcrumb';
 import { useLocation } from 'react-router-dom';
 const pageTitles: Record<string, string> = {
-  '/': 'לוח ארגוני',
+  '/': 'מרכז הידע',
+  '/dashboard': 'לוח שנה',
+  '/knowledge/tracking': 'מעקב קריאה',
   '/requests': 'הבקשות שלי',
   '/employees': 'ניהול עובדים',
   '/departments': 'ניהול מחלקות',

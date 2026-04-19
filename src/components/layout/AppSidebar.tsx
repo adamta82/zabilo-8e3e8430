@@ -1,6 +1,6 @@
 import { Link, useLocation } from 'react-router-dom';
 import {
-  Calendar,
+  CalendarDays,
   FileText,
   Users,
   Building2,
@@ -9,6 +9,8 @@ import {
   ClipboardList,
   Network,
   UserCircle,
+  BookOpen,
+  BarChart2,
 } from 'lucide-react';
 import {
   Sidebar,
@@ -24,67 +26,33 @@ import {
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
-import { cn } from '@/lib/utils';
+import { useUnreadCount } from '@/hooks/useKnowledge';
 
 const mainMenuItems = [
-  {
-    title: 'לוח ארגוני',
-    url: '/',
-    icon: Calendar,
-  },
-  {
-    title: 'הבקשות שלי',
-    url: '/requests',
-    icon: FileText,
-  },
-  {
-    title: 'מבנה ארגוני',
-    url: '/org-chart',
-    icon: Network,
-  },
-  {
-    title: 'האזור שלי',
-    url: '/my-area',
-    icon: UserCircle,
-  },
+  { title: 'מרכז הידע', url: '/', icon: BookOpen, showBadge: true },
+  { title: 'לוח שנה', url: '/dashboard', icon: CalendarDays },
+  { title: 'הבקשות שלי', url: '/requests', icon: FileText },
+  { title: 'מבנה ארגוני', url: '/org-chart', icon: Network },
+  { title: 'האזור שלי', url: '/my-area', icon: UserCircle },
 ];
 
 const adminMenuItems = [
-  {
-    title: 'שיבוץ משמרות',
-    url: '/shifts',
-    icon: ClipboardList,
-  },
-  {
-    title: 'ניהול עובדים',
-    url: '/employees',
-    icon: Users,
-  },
-  {
-    title: 'ניהול מחלקות',
-    url: '/departments',
-    icon: Building2,
-  },
-  {
-    title: 'הגדרות Webhook',
-    url: '/settings',
-    icon: Settings,
-  },
+  { title: 'שיבוץ משמרות', url: '/shifts', icon: ClipboardList },
+  { title: 'ניהול עובדים', url: '/employees', icon: Users },
+  { title: 'ניהול מחלקות', url: '/departments', icon: Building2 },
+  { title: 'מעקב קריאה', url: '/knowledge/tracking', icon: BarChart2 },
+  { title: 'הגדרות Webhook', url: '/settings', icon: Settings },
 ];
 
 export function AppSidebar() {
   const location = useLocation();
   const { profile, isAdmin, signOut } = useAuth();
+  const { data: unreadCount = 0 } = useUnreadCount();
 
-  const getInitials = (name: string) => {
-    return name
-      .split(' ')
-      .map((n) => n[0])
-      .join('')
-      .toUpperCase()
-      .slice(0, 2);
-  };
+  const getInitials = (name: string) =>
+    name.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2);
 
   return (
     <Sidebar side="right" className="border-l-0">
@@ -107,13 +75,15 @@ export function AppSidebar() {
             <SidebarMenu>
               {mainMenuItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton
-                    asChild
-                    isActive={location.pathname === item.url}
-                  >
+                  <SidebarMenuButton asChild isActive={location.pathname === item.url}>
                     <Link to={item.url}>
                       <item.icon className="h-4 w-4" />
-                      <span>{item.title}</span>
+                      <span className="flex-1">{item.title}</span>
+                      {item.showBadge && unreadCount > 0 && (
+                        <Badge className="h-5 min-w-5 px-1.5 bg-red-500 hover:bg-red-500 text-white text-[10px]">
+                          {unreadCount}
+                        </Badge>
+                      )}
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -129,10 +99,7 @@ export function AppSidebar() {
               <SidebarMenu>
                 {adminMenuItems.map((item) => (
                   <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton
-                      asChild
-                      isActive={location.pathname === item.url}
-                    >
+                    <SidebarMenuButton asChild isActive={location.pathname === item.url}>
                       <Link to={item.url}>
                         <item.icon className="h-4 w-4" />
                         <span>{item.title}</span>

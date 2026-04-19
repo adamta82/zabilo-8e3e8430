@@ -232,3 +232,24 @@
     }
   }
 }
+
+/* News ticker animation */
+@keyframes ticker-scroll {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+.ticker-track {
+  animation: ticker-scroll 40s linear infinite;
+  width: max-content;
+}
+
+/* Quill RTL fixes */
+.ql-editor {
+  direction: rtl;
+  text-align: right;
+  min-height: 180px;
+}
+.ql-toolbar {
+  direction: ltr;
+}
+

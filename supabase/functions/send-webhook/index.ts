@@ -9,6 +9,10 @@ interface WebhookPayload {
   event: string;
   request_id?: string;
   test_url?: string;
+  article_id?: string;
+  article_title?: string;
+  unread_user_ids?: string[];
+  unread_user_names?: string[];
 }
 
 Deno.serve(async (req) => {
@@ -23,7 +27,7 @@ Deno.serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
     
     const payload: WebhookPayload = await req.json();
-    const { event, request_id, test_url } = payload;
+    const { event, request_id, test_url, article_id, article_title, unread_user_ids, unread_user_names } = payload;
 
     // Get webhook URL from settings
     let webhookUrl = test_url;
@@ -65,6 +69,15 @@ Deno.serve(async (req) => {
         event: 'test',
         message: 'This is a test webhook from Zabilo Book',
         timestamp: new Date().toISOString(),
+      };
+    } else if (event === 'read_reminder') {
+      webhookData = {
+        event: 'read_reminder',
+        timestamp: new Date().toISOString(),
+        article_id,
+        article_title,
+        unread_user_ids: unread_user_ids || [],
+        unread_user_names: unread_user_names || [],
       };
     } else if (request_id) {
       const { data: request, error: requestError } = await supabase
