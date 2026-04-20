@@ -190,6 +190,10 @@ export default function ArticleView() {
           <ChevronLeft className="me-1 h-4 w-4" />
         </Button>
       </div>
+
+      {isAdmin && (
+        <ArticleDialog open={editOpen} onOpenChange={setEditOpen} article={article as any} />
+      )}
     </div>
   );
 }
