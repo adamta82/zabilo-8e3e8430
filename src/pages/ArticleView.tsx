@@ -21,7 +21,7 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from '@/components/ui/breadcrumb';
-import { Check, ChevronLeft, ChevronRight, Users } from 'lucide-react';
+import { Check, ChevronLeft, ChevronRight, Pencil, Users } from 'lucide-react';
 import { format } from 'date-fns';
 import { he } from 'date-fns/locale';
 import DOMPurify from 'dompurify';
@@ -31,6 +31,7 @@ import {
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
 import { useState } from 'react';
+import { ArticleDialog } from '@/components/knowledge/ArticleDialog';
 
 export default function ArticleView() {
   const { id } = useParams();
