@@ -94,8 +94,10 @@ Deno.serve(async (req) => {
     const sourceText = composedParts.join('\n\n').trim();
 
     if (!sourceText || sourceText.length < 5) {
+      const respBody = { error: 'Missing input: provide text OR task_name/task_description' };
+      await writeLog(400, respBody);
       return new Response(
-        JSON.stringify({ error: 'Missing input: provide text OR task_name/task_description' }),
+        JSON.stringify(respBody),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
