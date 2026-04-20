@@ -1,12 +1,5 @@
 import { useState } from 'react';
-import { useArticles, useArticleReadDetails, ARTICLE_TYPE_COLORS, ARTICLE_TYPE_LABELS, ArticleType } from '@/hooks/useKnowledge';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { useArticles, useArticleReadDetails, useAllArticleReaders, ARTICLE_TYPE_COLORS, ARTICLE_TYPE_LABELS, ArticleType } from '@/hooks/useKnowledge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -19,7 +12,9 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Send, BarChart2, CheckCircle2, XCircle } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { Send, BarChart2, CheckCircle2, XCircle, Check, ChevronsUpDown } from 'lucide-react';
 import { format } from 'date-fns';
 import { he } from 'date-fns/locale';
 import { supabase } from '@/integrations/supabase/client';
@@ -29,7 +24,9 @@ import { cn } from '@/lib/utils';
 export default function ReadTracking() {
   const { data: articles } = useArticles();
   const [selectedId, setSelectedId] = useState<string>('');
+  const [pickerOpen, setPickerOpen] = useState(false);
   const { data: details } = useArticleReadDetails(selectedId || undefined);
+  const { data: allReaders } = useAllArticleReaders();
   const [sending, setSending] = useState(false);
 
   const published = (articles || []).filter((a) => a.is_published);
@@ -76,14 +73,42 @@ export default function ReadTracking() {
           <CardTitle>בחר מאמר לבדיקה</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <Select value={selectedId} onValueChange={setSelectedId}>
-            <SelectTrigger><SelectValue placeholder="בחר מאמר..." /></SelectTrigger>
-            <SelectContent>
-              {published.map((a) => (
-                <SelectItem key={a.id} value={a.id}>{a.title}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <Popover open={pickerOpen} onOpenChange={setPickerOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                role="combobox"
+                aria-expanded={pickerOpen}
+                className="w-full justify-between font-normal"
+              >
+                <span className="truncate">{selectedArticle?.title || 'בחר מאמר...'}</span>
+                <ChevronsUpDown className="ms-2 h-4 w-4 shrink-0 opacity-50" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+              <Command>
+                <CommandInput placeholder="חפש מאמר..." />
+                <CommandList>
+                  <CommandEmpty>לא נמצאו מאמרים</CommandEmpty>
+                  <CommandGroup>
+                    {published.map((a) => (
+                      <CommandItem
+                        key={a.id}
+                        value={a.title}
+                        onSelect={() => {
+                          setSelectedId(a.id);
+                          setPickerOpen(false);
+                        }}
+                      >
+                        <Check className={cn('me-2 h-4 w-4', selectedId === a.id ? 'opacity-100' : 'opacity-0')} />
+                        <span className="truncate">{a.title}</span>
+                      </CommandItem>
+                    ))}
+                  </CommandGroup>
+                </CommandList>
+              </Command>
+            </PopoverContent>
+          </Popover>
 
           {selectedArticle && details && (
             <div className="space-y-4">
@@ -173,7 +198,35 @@ export default function ReadTracking() {
                       <TableCell className="text-sm text-muted-foreground">
                         {format(new Date(a.created_at), 'd בMMMM yyyy', { locale: he })}
                       </TableCell>
-                      <TableCell>{a.read_count || 0} קריאות</TableCell>
+                      <TableCell>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <button
+                              className="underline-offset-4 hover:underline cursor-pointer text-right"
+                              disabled={!(a.read_count && a.read_count > 0)}
+                            >
+                              {a.read_count || 0} קריאות
+                            </button>
+                          </PopoverTrigger>
+                          {a.read_count && a.read_count > 0 && (
+                            <PopoverContent className="w-64 p-0" align="end">
+                              <div className="p-3 border-b">
+                                <p className="text-sm font-semibold">קראו את המאמר</p>
+                              </div>
+                              <div className="max-h-64 overflow-y-auto p-2 space-y-1">
+                                {(allReaders?.[a.id] || []).map((r) => (
+                                  <div key={r.id} className="flex justify-between items-center text-sm py-1 px-2 rounded hover:bg-muted">
+                                    <span className="truncate">{r.full_name}</span>
+                                    <span className="text-xs text-muted-foreground whitespace-nowrap ms-2">
+                                      {format(new Date(r.read_at), 'd/M HH:mm', { locale: he })}
+                                    </span>
+                                  </div>
+                                ))}
+                              </div>
+                            </PopoverContent>
+                          )}
+                        </Popover>
+                      </TableCell>
                       <TableCell>
                         <span className={cn('inline-block h-3 w-3 rounded-full', color)} />
                       </TableCell>
