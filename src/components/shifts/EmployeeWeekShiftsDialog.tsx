@@ -83,6 +83,7 @@ export function EmployeeWeekShiftsDialog({
         cacheBust: true,
         pixelRatio: 2,
         backgroundColor: '#ffffff',
+        filter: (node) => !(node instanceof HTMLElement && node.hasAttribute('data-capture-ignore')),
       });
       const blob = await (await fetch(dataUrl)).blob();
 
