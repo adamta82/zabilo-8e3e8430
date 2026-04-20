@@ -50,6 +50,7 @@ export default function ShiftScheduler() {
     start?: string;
     end?: string;
   } | null>(null);
+  const [employeeWeekView, setEmployeeWeekView] = useState<{ id: string; name: string; deptName?: string } | null>(null);
 
   const { toast } = useToast();
 
