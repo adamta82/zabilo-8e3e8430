@@ -115,7 +115,7 @@ export default function ArticleView() {
           </Avatar>
           <span className="font-medium text-foreground">{article.author?.full_name}</span>
           <span>·</span>
-          <span>{format(new Date(article.created_at), 'd בMMMM yyyy', { locale: he })}</span>
+          <span>{format(new Date(article.created_at), 'd בMMMM yyyy, HH:mm', { locale: he })}</span>
         </div>
       </header>
 
