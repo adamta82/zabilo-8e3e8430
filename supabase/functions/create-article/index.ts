@@ -271,8 +271,10 @@ Deno.serve(async (req) => {
       }
     }
     if (!authorId) {
+      const respBody = { error: 'Could not resolve author (no matching email and no admin fallback)' };
+      await writeLog(400, respBody);
       return new Response(
-        JSON.stringify({ error: 'Could not resolve author (no matching email and no admin fallback)' }),
+        JSON.stringify(respBody),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -293,20 +295,25 @@ Deno.serve(async (req) => {
 
     if (insertErr) throw insertErr;
 
+    const successBody = {
+      success: true,
+      article_id: inserted.id,
+      title: article.title,
+      article_type: article.article_type,
+      department_id: departmentId,
+    };
+    await writeLog(201, successBody);
     return new Response(
-      JSON.stringify({
-        success: true,
-        article_id: inserted.id,
-        title: article.title,
-        article_type: article.article_type,
-        department_id: departmentId,
-      }),
+      JSON.stringify(successBody),
       { status: 201, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {
     console.error('create-article error:', error);
+    const errMsg = (error as Error).message;
+    const respBody = { success: false, error: errMsg };
+    await writeLog(500, respBody, errMsg);
     return new Response(
-      JSON.stringify({ success: false, error: (error as Error).message }),
+      JSON.stringify(respBody),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
