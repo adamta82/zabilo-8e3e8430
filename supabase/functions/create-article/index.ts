@@ -8,12 +8,73 @@ const corsHeaders = {
 
 interface CreateArticleBody {
   text?: string;
+  task_id?: string;
   task_name?: string;
   task_description?: string;
   task_assignee?: string;
   task_priority?: string;
   author_email?: string;
   department_name?: string;
+}
+
+async function fetchClickUpTask(taskId: string): Promise<Partial<CreateArticleBody>> {
+  const token = Deno.env.get('CLICKUP_API_TOKEN');
+  if (!token) throw new Error('CLICKUP_API_TOKEN is not configured');
+
+  const cleanId = taskId.trim().replace(/^#/, '');
+  const resp = await fetch(`https://api.clickup.com/api/v2/task/${cleanId}?include_subtasks=false`, {
+    headers: { Authorization: token },
+  });
+
+  if (!resp.ok) {
+    const t = await resp.text();
+    throw new Error(`ClickUp API error ${resp.status}: ${t}`);
+  }
+
+  const task = await resp.json();
+
+  // Extract description (prefer text_content, fallback to description, then markdown)
+  const description: string =
+    task.text_content || task.description || task.markdown_description || '';
+
+  // Assignees
+  const assignees: string = (task.assignees || [])
+    .map((a: { username?: string; email?: string }) => a.username || a.email)
+    .filter(Boolean)
+    .join(', ');
+
+  // Priority
+  const priority: string | undefined =
+    task.priority?.priority || task.priority?.orderindex || undefined;
+
+  // Custom fields - append as text
+  const customFieldsText = (task.custom_fields || [])
+    .filter((f: { value: unknown }) => f.value !== null && f.value !== undefined && f.value !== '')
+    .map((f: { name: string; value: unknown; type_config?: { options?: Array<{ id?: string; orderindex?: number; name: string }> } }) => {
+      let val = f.value;
+      // Handle dropdown / labels
+      if (f.type_config?.options && (typeof val === 'string' || typeof val === 'number')) {
+        const opt = f.type_config.options.find(
+          (o) => o.id === val || o.orderindex === val
+        );
+        if (opt) val = opt.name;
+      }
+      if (Array.isArray(val)) val = val.join(', ');
+      if (typeof val === 'object') val = JSON.stringify(val);
+      return `${f.name}: ${val}`;
+    })
+    .join('\n');
+
+  const fullDescription = customFieldsText
+    ? `${description}\n\n--- שדות מותאמים ---\n${customFieldsText}`
+    : description;
+
+  return {
+    task_name: task.name,
+    task_description: fullDescription,
+    task_assignee: assignees || undefined,
+    task_priority: priority,
+  };
 }
 
 interface AiArticle {
