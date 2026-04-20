@@ -28,9 +28,38 @@ Deno.serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  const supabaseLog = createClient(
+    Deno.env.get('SUPABASE_URL')!,
+    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+  );
+
+  // Capture incoming request data for logging
+  const url = new URL(req.url);
+  const queryParams: Record<string, string> = {};
+  url.searchParams.forEach((v, k) => { queryParams[k] = v; });
+  const reqHeaders: Record<string, string> = {};
+  req.headers.forEach((v, k) => { reqHeaders[k] = v; });
+  let rawBody: unknown = null;
+
+  const writeLog = async (status: number, responseBody: unknown, error?: string) => {
+    try {
+      await supabaseLog.from('webhook_logs').insert({
+        function_name: 'create-article',
+        method: req.method,
+        url: req.url,
+        query_params: queryParams,
+        body: rawBody,
+        headers: reqHeaders,
+        response_status: status,
+        response_body: responseBody,
+        error: error || null,
+      });
+    } catch (e) {
+      console.error('Failed to write webhook log:', e);
+    }
+  };
+
   try {
-    // Parse params from query string (GET) or JSON body (POST)
-    const url = new URL(req.url);
     const qp = url.searchParams;
 
     let body: CreateArticleBody = {
@@ -47,6 +76,7 @@ Deno.serve(async (req) => {
     if (req.method === 'POST') {
       try {
         const json = await req.json();
+        rawBody = json;
         body = { ...body, ...json };
       } catch {
         // ignore
