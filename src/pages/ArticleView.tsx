@@ -92,7 +92,15 @@ export default function ArticleView() {
       </Breadcrumb>
 
       <header className="space-y-4">
-        <h1 className="text-3xl md:text-4xl font-bold leading-tight">{article.title}</h1>
+        <div className="flex items-start justify-between gap-3">
+          <h1 className="text-3xl md:text-4xl font-bold leading-tight">{article.title}</h1>
+          {isAdmin && (
+            <Button variant="outline" size="sm" onClick={() => setEditOpen(true)}>
+              <Pencil className="ms-2 h-4 w-4" />
+              ערוך
+            </Button>
+          )}
+        </div>
         <div className="flex flex-wrap gap-2">
           <Badge className={ARTICLE_TYPE_COLORS[article.article_type as ArticleType]} variant="secondary">
             {ARTICLE_TYPE_LABELS[article.article_type as ArticleType]}
