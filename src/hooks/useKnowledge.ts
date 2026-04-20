@@ -186,6 +186,31 @@ export function useDeleteArticle() {
   });
 }
 
+export function useAllArticleReaders() {
+  return useQuery({
+    queryKey: ['all_article_readers'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('article_reads')
+        .select('article_id, read_at, profiles!article_reads_user_id_fkey(id, full_name, avatar_url)')
+        .order('read_at', { ascending: false });
+      if (error) throw error;
+      const map: Record<string, Array<{ id: string; full_name: string; avatar_url: string | null; read_at: string }>> = {};
+      (data || []).forEach((r: any) => {
+        if (!r.profiles) return;
+        if (!map[r.article_id]) map[r.article_id] = [];
+        map[r.article_id].push({
+          id: r.profiles.id,
+          full_name: r.profiles.full_name,
+          avatar_url: r.profiles.avatar_url,
+          read_at: r.read_at,
+        });
+      });
+      return map;
+    },
+  });
+}
+
 export function useArticleReadDetails(articleId: string | undefined) {
   return useQuery({
     queryKey: ['article_read_details', articleId],
