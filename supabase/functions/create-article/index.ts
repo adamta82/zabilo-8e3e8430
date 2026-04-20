@@ -7,7 +7,11 @@ const corsHeaders = {
 };
 
 interface CreateArticleBody {
-  text: string;
+  text?: string;
+  task_name?: string;
+  task_description?: string;
+  task_assignee?: string;
+  task_priority?: string;
   author_email?: string;
   department_name?: string;
 }
