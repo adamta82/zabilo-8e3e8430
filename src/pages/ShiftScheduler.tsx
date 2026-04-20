@@ -493,6 +493,18 @@ export default function ShiftScheduler() {
           onSave={handleSaveShift}
         />
       )}
+
+      {/* Employee weekly summary (shareable) */}
+      {employeeWeekView && (
+        <EmployeeWeekShiftsDialog
+          open={!!employeeWeekView}
+          onOpenChange={(open) => !open && setEmployeeWeekView(null)}
+          employeeName={employeeWeekView.name}
+          departmentName={employeeWeekView.deptName}
+          weekDays={weekDays}
+          getEmployeeShifts={(date) => getEmployeeShifts(employeeWeekView.id, date)}
+        />
+      )}
     </div>
   );
 }
