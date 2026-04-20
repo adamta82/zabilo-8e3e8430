@@ -163,11 +163,39 @@ export function ArticleDialog({ open, onOpenChange, article }: Props) {
           </div>
         </div>
 
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>ביטול</Button>
-          <Button onClick={handleSave} disabled={save.isPending}>
-            {article ? 'שמור שינויים' : 'פרסם מאמר'}
-          </Button>
+        <DialogFooter className="flex-row justify-between sm:justify-between gap-2">
+          <div>
+            {article && (
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="destructive" size="sm" disabled={del.isPending}>
+                    <Trash2 className="ml-2 h-4 w-4" />
+                    מחק מאמר
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent dir="rtl">
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>למחוק את המאמר?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      פעולה זו לא ניתנת לביטול. המאמר "{article.title}" יימחק לצמיתות יחד עם כל נתוני הקריאה שלו.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>ביטול</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                      מחק
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            )}
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => onOpenChange(false)}>ביטול</Button>
+            <Button onClick={handleSave} disabled={save.isPending}>
+              {article ? 'שמור שינויים' : 'פרסם מאמר'}
+            </Button>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>
