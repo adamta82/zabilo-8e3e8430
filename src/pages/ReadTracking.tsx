@@ -1,12 +1,5 @@
 import { useState } from 'react';
-import { useArticles, useArticleReadDetails, ARTICLE_TYPE_COLORS, ARTICLE_TYPE_LABELS, ArticleType } from '@/hooks/useKnowledge';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { useArticles, useArticleReadDetails, useAllArticleReaders, ARTICLE_TYPE_COLORS, ARTICLE_TYPE_LABELS, ArticleType } from '@/hooks/useKnowledge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -19,7 +12,9 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Send, BarChart2, CheckCircle2, XCircle } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { Send, BarChart2, CheckCircle2, XCircle, Check, ChevronsUpDown } from 'lucide-react';
 import { format } from 'date-fns';
 import { he } from 'date-fns/locale';
 import { supabase } from '@/integrations/supabase/client';
@@ -29,7 +24,9 @@ import { cn } from '@/lib/utils';
 export default function ReadTracking() {
   const { data: articles } = useArticles();
   const [selectedId, setSelectedId] = useState<string>('');
+  const [pickerOpen, setPickerOpen] = useState(false);
   const { data: details } = useArticleReadDetails(selectedId || undefined);
+  const { data: allReaders } = useAllArticleReaders();
   const [sending, setSending] = useState(false);
 
   const published = (articles || []).filter((a) => a.is_published);
