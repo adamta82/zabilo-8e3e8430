@@ -28,9 +28,38 @@ Deno.serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  const supabaseLog = createClient(
+    Deno.env.get('SUPABASE_URL')!,
+    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+  );
+
+  // Capture incoming request data for logging
+  const url = new URL(req.url);
+  const queryParams: Record<string, string> = {};
+  url.searchParams.forEach((v, k) => { queryParams[k] = v; });
+  const reqHeaders: Record<string, string> = {};
+  req.headers.forEach((v, k) => { reqHeaders[k] = v; });
+  let rawBody: unknown = null;
+
+  const writeLog = async (status: number, responseBody: unknown, error?: string) => {
+    try {
+      await supabaseLog.from('webhook_logs').insert({
+        function_name: 'create-article',
+        method: req.method,
+        url: req.url,
+        query_params: queryParams,
+        body: rawBody,
+        headers: reqHeaders,
+        response_status: status,
+        response_body: responseBody,
+        error: error || null,
+      });
+    } catch (e) {
+      console.error('Failed to write webhook log:', e);
+    }
+  };
+
   try {
-    // Parse params from query string (GET) or JSON body (POST)
-    const url = new URL(req.url);
     const qp = url.searchParams;
 
     let body: CreateArticleBody = {
@@ -47,6 +76,7 @@ Deno.serve(async (req) => {
     if (req.method === 'POST') {
       try {
         const json = await req.json();
+        rawBody = json;
         body = { ...body, ...json };
       } catch {
         // ignore
@@ -64,8 +94,10 @@ Deno.serve(async (req) => {
     const sourceText = composedParts.join('\n\n').trim();
 
     if (!sourceText || sourceText.length < 5) {
+      const respBody = { error: 'Missing input: provide text OR task_name/task_description' };
+      await writeLog(400, respBody);
       return new Response(
-        JSON.stringify({ error: 'Missing input: provide text OR task_name/task_description' }),
+        JSON.stringify(respBody),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -239,8 +271,10 @@ Deno.serve(async (req) => {
       }
     }
     if (!authorId) {
+      const respBody = { error: 'Could not resolve author (no matching email and no admin fallback)' };
+      await writeLog(400, respBody);
       return new Response(
-        JSON.stringify({ error: 'Could not resolve author (no matching email and no admin fallback)' }),
+        JSON.stringify(respBody),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -261,20 +295,25 @@ Deno.serve(async (req) => {
 
     if (insertErr) throw insertErr;
 
+    const successBody = {
+      success: true,
+      article_id: inserted.id,
+      title: article.title,
+      article_type: article.article_type,
+      department_id: departmentId,
+    };
+    await writeLog(201, successBody);
     return new Response(
-      JSON.stringify({
-        success: true,
-        article_id: inserted.id,
-        title: article.title,
-        article_type: article.article_type,
-        department_id: departmentId,
-      }),
+      JSON.stringify(successBody),
       { status: 201, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {
     console.error('create-article error:', error);
+    const errMsg = (error as Error).message;
+    const respBody = { success: false, error: errMsg };
+    await writeLog(500, respBody, errMsg);
     return new Response(
-      JSON.stringify({ success: false, error: (error as Error).message }),
+      JSON.stringify(respBody),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }

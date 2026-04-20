@@ -7,6 +7,7 @@ import { Switch } from '@/components/ui/switch';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useWebhookSettings, useSaveWebhookSettings, useTestWebhook } from '@/hooks/useSettings';
+import { WebhookLogsCard } from '@/components/settings/WebhookLogsCard';
 
 export default function Settings() {
   const { data: settings, isLoading } = useWebhookSettings();
@@ -175,6 +176,9 @@ export default function Settings() {
           שמירת הגדרות
         </Button>
       </div>
+
+      {/* Webhook Logs */}
+      <WebhookLogsCard />
     </div>
   );
 }
