@@ -117,7 +117,7 @@ export function EmployeeWeekShiftsDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         dir="rtl"
-        className="max-w-md p-0 gap-0 border-2 max-h-[95vh] overflow-y-auto"
+        className="max-w-md p-0 gap-0 border-2 max-h-[95vh] overflow-y-auto [&>button.absolute]:hidden"
       >
         <div ref={cardRef} className="bg-background">
           {/* Branded header */}
