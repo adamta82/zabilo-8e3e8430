@@ -20,6 +20,8 @@ import {
 } from '@/components/ui/select';
 import { ArticleType, KnowledgeArticle, useSaveArticle } from '@/hooks/useKnowledge';
 import { useDepartments } from '@/hooks/useDepartments';
+import { useEmployees } from '@/hooks/useEmployees';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface Props {
   open: boolean;
