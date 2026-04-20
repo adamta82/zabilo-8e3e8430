@@ -153,7 +153,7 @@ export function EmployeeWeekShiftsDialog({
           </div>
 
           {/* Days list */}
-          <div className="p-4 space-y-1.5 max-h-[55vh] overflow-y-auto">
+          <div className="p-4 space-y-1.5">
             {dayRows.map(({ date, ds, shifts, dayMinutes }) => {
               const isEmpty = shifts.length === 0;
               const dayName = HEBREW_DAYS[date.getDay()];
