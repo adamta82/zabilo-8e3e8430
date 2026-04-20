@@ -20,6 +20,8 @@ import {
 } from '@/components/ui/select';
 import { ArticleType, KnowledgeArticle, useSaveArticle } from '@/hooks/useKnowledge';
 import { useDepartments } from '@/hooks/useDepartments';
+import { useEmployees } from '@/hooks/useEmployees';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface Props {
   open: boolean;
@@ -29,11 +31,14 @@ interface Props {
 
 export function ArticleDialog({ open, onOpenChange, article }: Props) {
   const { data: departments } = useDepartments();
+  const { data: employees } = useEmployees();
+  const { profile } = useAuth();
   const save = useSaveArticle();
 
   const [title, setTitle] = useState('');
   const [articleType, setArticleType] = useState<ArticleType>('article');
   const [departmentId, setDepartmentId] = useState<string>('none');
+  const [authorId, setAuthorId] = useState<string>('');
   const [content, setContent] = useState('');
   const [isPinned, setIsPinned] = useState(false);
   const [isPublished, setIsPublished] = useState(true);
@@ -43,19 +48,21 @@ export function ArticleDialog({ open, onOpenChange, article }: Props) {
       setTitle(article?.title || '');
       setArticleType((article?.article_type as ArticleType) || 'article');
       setDepartmentId(article?.department_id || 'none');
+      setAuthorId(article?.author_id || profile?.id || '');
       setContent(article?.content || '');
       setIsPinned(article?.is_pinned || false);
       setIsPublished(article?.is_published ?? true);
     }
-  }, [open, article]);
+  }, [open, article, profile?.id]);
 
   const handleSave = async () => {
-    if (!title.trim() || !content.trim() || departmentId === 'none' || !departmentId) return;
+    if (!title.trim() || !content.trim() || departmentId === 'none' || !departmentId || !authorId) return;
     await save.mutateAsync({
       id: article?.id,
       title: title.trim(),
       article_type: articleType,
       department_id: departmentId,
+      author_id: authorId,
       content: content.trim(),
       is_pinned: isPinned,
       is_published: isPublished,
@@ -99,6 +106,18 @@ export function ArticleDialog({ open, onOpenChange, article }: Props) {
                 </SelectContent>
               </Select>
             </div>
+          </div>
+
+          <div className="grid gap-2">
+            <Label>כותב המאמר *</Label>
+            <Select value={authorId} onValueChange={setAuthorId}>
+              <SelectTrigger><SelectValue placeholder="בחר כותב" /></SelectTrigger>
+              <SelectContent>
+                {employees?.map((e) => (
+                  <SelectItem key={e.id} value={e.id}>{e.full_name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="grid gap-2">

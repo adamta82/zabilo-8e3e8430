@@ -21,7 +21,7 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from '@/components/ui/breadcrumb';
-import { Check, ChevronLeft, ChevronRight, Users } from 'lucide-react';
+import { Check, ChevronLeft, ChevronRight, Pencil, Users } from 'lucide-react';
 import { format } from 'date-fns';
 import { he } from 'date-fns/locale';
 import DOMPurify from 'dompurify';
@@ -31,6 +31,7 @@ import {
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
 import { useState } from 'react';
+import { ArticleDialog } from '@/components/knowledge/ArticleDialog';
 
 export default function ArticleView() {
   const { id } = useParams();
@@ -40,6 +41,7 @@ export default function ArticleView() {
   const { data: allArticles } = useArticles();
   const markAsRead = useMarkAsRead();
   const [readersOpen, setReadersOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
 
   if (isLoading || !article) {
     return (
@@ -90,7 +92,15 @@ export default function ArticleView() {
       </Breadcrumb>
 
       <header className="space-y-4">
-        <h1 className="text-3xl md:text-4xl font-bold leading-tight">{article.title}</h1>
+        <div className="flex items-start justify-between gap-3">
+          <h1 className="text-3xl md:text-4xl font-bold leading-tight">{article.title}</h1>
+          {isAdmin && (
+            <Button variant="outline" size="sm" onClick={() => setEditOpen(true)}>
+              <Pencil className="ms-2 h-4 w-4" />
+              ערוך
+            </Button>
+          )}
+        </div>
         <div className="flex flex-wrap gap-2">
           <Badge className={ARTICLE_TYPE_COLORS[article.article_type as ArticleType]} variant="secondary">
             {ARTICLE_TYPE_LABELS[article.article_type as ArticleType]}
@@ -180,6 +190,10 @@ export default function ArticleView() {
           <ChevronLeft className="me-1 h-4 w-4" />
         </Button>
       </div>
+
+      {isAdmin && (
+        <ArticleDialog open={editOpen} onOpenChange={setEditOpen} article={article as any} />
+      )}
     </div>
   );
 }
