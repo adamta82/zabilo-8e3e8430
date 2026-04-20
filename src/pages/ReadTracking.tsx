@@ -73,14 +73,42 @@ export default function ReadTracking() {
           <CardTitle>בחר מאמר לבדיקה</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <Select value={selectedId} onValueChange={setSelectedId}>
-            <SelectTrigger><SelectValue placeholder="בחר מאמר..." /></SelectTrigger>
-            <SelectContent>
-              {published.map((a) => (
-                <SelectItem key={a.id} value={a.id}>{a.title}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <Popover open={pickerOpen} onOpenChange={setPickerOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                role="combobox"
+                aria-expanded={pickerOpen}
+                className="w-full justify-between font-normal"
+              >
+                <span className="truncate">{selectedArticle?.title || 'בחר מאמר...'}</span>
+                <ChevronsUpDown className="ms-2 h-4 w-4 shrink-0 opacity-50" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+              <Command>
+                <CommandInput placeholder="חפש מאמר..." />
+                <CommandList>
+                  <CommandEmpty>לא נמצאו מאמרים</CommandEmpty>
+                  <CommandGroup>
+                    {published.map((a) => (
+                      <CommandItem
+                        key={a.id}
+                        value={a.title}
+                        onSelect={() => {
+                          setSelectedId(a.id);
+                          setPickerOpen(false);
+                        }}
+                      >
+                        <Check className={cn('me-2 h-4 w-4', selectedId === a.id ? 'opacity-100' : 'opacity-0')} />
+                        <span className="truncate">{a.title}</span>
+                      </CommandItem>
+                    ))}
+                  </CommandGroup>
+                </CommandList>
+              </Command>
+            </PopoverContent>
+          </Popover>
 
           {selectedArticle && details && (
             <div className="space-y-4">
