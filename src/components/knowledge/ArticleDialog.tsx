@@ -46,6 +46,13 @@ export function ArticleDialog({ open, onOpenChange, article }: Props) {
   const { data: employees } = useEmployees();
   const { profile } = useAuth();
   const save = useSaveArticle();
+  const del = useDeleteArticle();
+
+  const handleDelete = async () => {
+    if (!article?.id) return;
+    await del.mutateAsync(article.id);
+    onOpenChange(false);
+  };
 
   const [title, setTitle] = useState('');
   const [articleType, setArticleType] = useState<ArticleType>('article');
