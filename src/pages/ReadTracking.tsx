@@ -198,7 +198,35 @@ export default function ReadTracking() {
                       <TableCell className="text-sm text-muted-foreground">
                         {format(new Date(a.created_at), 'd בMMMM yyyy', { locale: he })}
                       </TableCell>
-                      <TableCell>{a.read_count || 0} קריאות</TableCell>
+                      <TableCell>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <button
+                              className="underline-offset-4 hover:underline cursor-pointer text-right"
+                              disabled={!(a.read_count && a.read_count > 0)}
+                            >
+                              {a.read_count || 0} קריאות
+                            </button>
+                          </PopoverTrigger>
+                          {a.read_count && a.read_count > 0 && (
+                            <PopoverContent className="w-64 p-0" align="end">
+                              <div className="p-3 border-b">
+                                <p className="text-sm font-semibold">קראו את המאמר</p>
+                              </div>
+                              <div className="max-h-64 overflow-y-auto p-2 space-y-1">
+                                {(allReaders?.[a.id] || []).map((r) => (
+                                  <div key={r.id} className="flex justify-between items-center text-sm py-1 px-2 rounded hover:bg-muted">
+                                    <span className="truncate">{r.full_name}</span>
+                                    <span className="text-xs text-muted-foreground whitespace-nowrap ms-2">
+                                      {format(new Date(r.read_at), 'd/M HH:mm', { locale: he })}
+                                    </span>
+                                  </div>
+                                ))}
+                              </div>
+                            </PopoverContent>
+                          )}
+                        </Popover>
+                      </TableCell>
                       <TableCell>
                         <span className={cn('inline-block h-3 w-3 rounded-full', color)} />
                       </TableCell>
