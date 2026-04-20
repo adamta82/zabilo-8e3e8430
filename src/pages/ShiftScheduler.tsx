@@ -507,6 +507,7 @@ function DepartmentGroup({
   onAddShift,
   onEditShift,
   onDeleteShift,
+  onEmployeeClick,
 }: {
   deptName: string;
   deptIcon: string | null;
@@ -516,6 +517,7 @@ function DepartmentGroup({
   onAddShift: (empId: string, empName: string, date: string) => void;
   onEditShift: (empId: string, empName: string, date: string, shiftId: string, start: string, end: string) => void;
   onDeleteShift: (shiftId: string) => void;
+  onEmployeeClick?: (empId: string, empName: string) => void;
 }) {
   return (
     <>
@@ -530,16 +532,21 @@ function DepartmentGroup({
       {employees.map(emp => (
         <tr key={emp.id} className="border-b border-border/50 hover:bg-muted/20 transition-colors">
           <td className="p-2 border-l border-border/30">
-            <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => onEmployeeClick?.(emp.id, emp.full_name)}
+              className="flex items-center gap-2 text-right w-full rounded-md hover:bg-primary/5 hover:text-primary transition-colors p-1 -m-1 group"
+              title="הצג סיכום משמרות שבועי"
+            >
               <Avatar className="h-7 w-7">
                 <AvatarFallback className="bg-primary/10 text-primary text-[10px] font-bold">
                   {getInitials(emp.full_name)}
                 </AvatarFallback>
               </Avatar>
               <div className="min-w-0">
-                <div className="text-xs font-semibold truncate">{emp.full_name}</div>
+                <div className="text-xs font-semibold truncate group-hover:underline">{emp.full_name}</div>
               </div>
-            </div>
+            </button>
           </td>
           {weekDays.map(d => {
             const ds = formatDateStr(d);
