@@ -109,6 +109,18 @@ export function ArticleDialog({ open, onOpenChange, article }: Props) {
           </div>
 
           <div className="grid gap-2">
+            <Label>כותב המאמר *</Label>
+            <Select value={authorId} onValueChange={setAuthorId}>
+              <SelectTrigger><SelectValue placeholder="בחר כותב" /></SelectTrigger>
+              <SelectContent>
+                {employees?.map((e) => (
+                  <SelectItem key={e.id} value={e.id}>{e.full_name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="grid gap-2">
             <Label>תוכן *</Label>
             <Textarea
               value={content}
