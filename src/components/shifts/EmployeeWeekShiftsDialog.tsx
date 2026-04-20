@@ -83,6 +83,7 @@ export function EmployeeWeekShiftsDialog({
         cacheBust: true,
         pixelRatio: 2,
         backgroundColor: '#ffffff',
+        filter: (node) => !(node instanceof HTMLElement && node.hasAttribute('data-capture-ignore')),
       });
       const blob = await (await fetch(dataUrl)).blob();
 
@@ -131,9 +132,22 @@ export function EmployeeWeekShiftsDialog({
                   <div className="text-[10px] opacity-75">סידור משמרות</div>
                 </div>
               </div>
-              <Badge className="bg-primary-foreground/20 text-primary-foreground border-0 hover:bg-primary-foreground/20 text-[10px]">
-                שבועי
-              </Badge>
+              <div className="flex items-center gap-2">
+                <Badge className="bg-primary-foreground/20 text-primary-foreground border-0 hover:bg-primary-foreground/20 text-[10px]">
+                  שבועי
+                </Badge>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={handleCopyImage}
+                  disabled={copying}
+                  data-capture-ignore
+                  className="h-7 px-2.5 gap-1.5 bg-primary-foreground/20 hover:bg-primary-foreground/30 text-primary-foreground border-0 text-[11px]"
+                >
+                  {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+                  {copied ? 'הועתק!' : copying ? 'מכין...' : 'העתק כתמונה'}
+                </Button>
+              </div>
             </div>
 
             <div className="flex items-center gap-3">
@@ -218,19 +232,6 @@ export function EmployeeWeekShiftsDialog({
             </div>
             <div className="text-[10px] text-muted-foreground">zabilo.lovable.app</div>
           </div>
-        </div>
-
-        {/* Copy button (outside captured area) */}
-        <div className="border-t p-3 bg-background">
-          <Button
-            onClick={handleCopyImage}
-            disabled={copying}
-            className="w-full gap-2"
-            size="sm"
-          >
-            {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-            {copied ? 'הועתק ללוח!' : copying ? 'מכין תמונה...' : 'העתק כתמונה'}
-          </Button>
         </div>
       </DialogContent>
     </Dialog>
