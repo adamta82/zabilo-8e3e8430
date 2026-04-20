@@ -15,6 +15,7 @@ import { useShifts, useCreateShift, useUpdateShift, useDeleteShift, useBulkCreat
 import { useEmployees, type EmployeeWithRole } from '@/hooks/useEmployees';
 import { useDepartments } from '@/hooks/useDepartments';
 import { ShiftModal } from '@/components/shifts/ShiftModal';
+import { EmployeeWeekShiftsDialog } from '@/components/shifts/EmployeeWeekShiftsDialog';
 import { useToast } from '@/hooks/use-toast';
 
 const HEBREW_DAYS = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];
@@ -49,6 +50,7 @@ export default function ShiftScheduler() {
     start?: string;
     end?: string;
   } | null>(null);
+  const [employeeWeekView, setEmployeeWeekView] = useState<{ id: string; name: string; deptName?: string } | null>(null);
 
   const { toast } = useToast();
 
@@ -346,6 +348,7 @@ export default function ShiftScheduler() {
                             onAddShift={(empId, empName, date) => setModal({ employeeId: empId, employeeName: empName, date })}
                             onEditShift={(empId, empName, date, shiftId, start, end) => setModal({ employeeId: empId, employeeName: empName, date, shiftId, start, end })}
                             onDeleteShift={handleDeleteShift}
+                            onEmployeeClick={(empId, empName) => setEmployeeWeekView({ id: empId, name: empName, deptName: dept.name })}
                           />
                         );
                       })}
@@ -360,6 +363,7 @@ export default function ShiftScheduler() {
                           onAddShift={(empId, empName, date) => setModal({ employeeId: empId, employeeName: empName, date })}
                           onEditShift={(empId, empName, date, shiftId, start, end) => setModal({ employeeId: empId, employeeName: empName, date, shiftId, start, end })}
                           onDeleteShift={handleDeleteShift}
+                          onEmployeeClick={(empId, empName) => setEmployeeWeekView({ id: empId, name: empName })}
                         />
                       )}
                     </tbody>
@@ -489,6 +493,18 @@ export default function ShiftScheduler() {
           onSave={handleSaveShift}
         />
       )}
+
+      {/* Employee weekly summary (shareable) */}
+      {employeeWeekView && (
+        <EmployeeWeekShiftsDialog
+          open={!!employeeWeekView}
+          onOpenChange={(open) => !open && setEmployeeWeekView(null)}
+          employeeName={employeeWeekView.name}
+          departmentName={employeeWeekView.deptName}
+          weekDays={weekDays}
+          getEmployeeShifts={(date) => getEmployeeShifts(employeeWeekView.id, date)}
+        />
+      )}
     </div>
   );
 }
@@ -503,6 +519,7 @@ function DepartmentGroup({
   onAddShift,
   onEditShift,
   onDeleteShift,
+  onEmployeeClick,
 }: {
   deptName: string;
   deptIcon: string | null;
@@ -512,6 +529,7 @@ function DepartmentGroup({
   onAddShift: (empId: string, empName: string, date: string) => void;
   onEditShift: (empId: string, empName: string, date: string, shiftId: string, start: string, end: string) => void;
   onDeleteShift: (shiftId: string) => void;
+  onEmployeeClick?: (empId: string, empName: string) => void;
 }) {
   return (
     <>
@@ -526,16 +544,21 @@ function DepartmentGroup({
       {employees.map(emp => (
         <tr key={emp.id} className="border-b border-border/50 hover:bg-muted/20 transition-colors">
           <td className="p-2 border-l border-border/30">
-            <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => onEmployeeClick?.(emp.id, emp.full_name)}
+              className="flex items-center gap-2 text-right w-full rounded-md hover:bg-primary/5 hover:text-primary transition-colors p-1 -m-1 group"
+              title="הצג סיכום משמרות שבועי"
+            >
               <Avatar className="h-7 w-7">
                 <AvatarFallback className="bg-primary/10 text-primary text-[10px] font-bold">
                   {getInitials(emp.full_name)}
                 </AvatarFallback>
               </Avatar>
               <div className="min-w-0">
-                <div className="text-xs font-semibold truncate">{emp.full_name}</div>
+                <div className="text-xs font-semibold truncate group-hover:underline">{emp.full_name}</div>
               </div>
-            </div>
+            </button>
           </td>
           {weekDays.map(d => {
             const ds = formatDateStr(d);

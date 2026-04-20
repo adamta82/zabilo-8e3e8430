@@ -1,0 +1,177 @@
+import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
+import { Calendar, Clock } from 'lucide-react';
+import { format } from 'date-fns';
+import { he } from 'date-fns/locale';
+import { cn } from '@/lib/utils';
+
+const HEBREW_DAYS = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];
+
+interface ShiftItem {
+  id: string;
+  start_time: string;
+  end_time: string;
+}
+
+interface Props {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  employeeName: string;
+  weekDays: Date[];
+  getEmployeeShifts: (date: string) => ShiftItem[];
+  departmentName?: string;
+}
+
+function formatDateStr(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+function timeToMin(t: string) {
+  const [h, m] = t.split(':').map(Number);
+  return h * 60 + m;
+}
+
+function getInitials(name: string) {
+  return name.split(' ').map(w => w[0]).join('').slice(0, 2);
+}
+
+export function EmployeeWeekShiftsDialog({
+  open,
+  onOpenChange,
+  employeeName,
+  weekDays,
+  getEmployeeShifts,
+  departmentName,
+}: Props) {
+  const weekRange = `${format(weekDays[0], 'd בMMM', { locale: he })} – ${format(weekDays[6], 'd בMMM yyyy', { locale: he })}`;
+
+  let totalMinutes = 0;
+  const dayRows = weekDays.map(d => {
+    const ds = formatDateStr(d);
+    const shifts = getEmployeeShifts(ds);
+    const dayMinutes = shifts.reduce((sum, s) => {
+      let diff = timeToMin(s.end_time) - timeToMin(s.start_time);
+      if (diff < 0) diff += 24 * 60;
+      return sum + diff;
+    }, 0);
+    totalMinutes += dayMinutes;
+    return { date: d, ds, shifts, dayMinutes };
+  });
+
+  const totalHours = Math.floor(totalMinutes / 60);
+  const totalMins = totalMinutes % 60;
+  const totalShiftsCount = dayRows.reduce((c, r) => c + r.shifts.length, 0);
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent
+        dir="rtl"
+        className="max-w-md p-0 overflow-hidden gap-0 border-2"
+      >
+        {/* Branded header */}
+        <div className="bg-gradient-to-br from-primary via-primary to-primary/80 text-primary-foreground p-5 pb-6">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <div className="h-7 w-7 rounded-md bg-primary-foreground/15 backdrop-blur-sm flex items-center justify-center">
+                <Calendar className="h-4 w-4" />
+              </div>
+              <div className="leading-tight">
+                <div className="text-sm font-bold">Zabilo Book</div>
+                <div className="text-[10px] opacity-75">סידור משמרות</div>
+              </div>
+            </div>
+            <Badge className="bg-primary-foreground/20 text-primary-foreground border-0 hover:bg-primary-foreground/20 text-[10px]">
+              שבועי
+            </Badge>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <Avatar className="h-12 w-12 border-2 border-primary-foreground/30">
+              <AvatarFallback className="bg-primary-foreground/20 text-primary-foreground font-bold">
+                {getInitials(employeeName)}
+              </AvatarFallback>
+            </Avatar>
+            <div className="min-w-0 flex-1">
+              <div className="text-lg font-bold truncate">{employeeName}</div>
+              {departmentName && (
+                <div className="text-xs opacity-80 truncate">{departmentName}</div>
+              )}
+              <div className="text-xs opacity-90 mt-0.5">{weekRange}</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Days list */}
+        <div className="p-4 space-y-1.5 max-h-[55vh] overflow-y-auto bg-background">
+          {dayRows.map(({ date, ds, shifts, dayMinutes }) => {
+            const isEmpty = shifts.length === 0;
+            const dayName = HEBREW_DAYS[date.getDay()];
+            const dayDate = format(date, 'd בMMM', { locale: he });
+            const dh = Math.floor(dayMinutes / 60);
+            const dm = dayMinutes % 60;
+            return (
+              <div
+                key={ds}
+                className={cn(
+                  'flex items-center gap-3 rounded-lg p-2.5 border',
+                  isEmpty ? 'bg-muted/30 border-dashed border-border' : 'bg-card border-border shadow-sm'
+                )}
+              >
+                <div className="w-14 text-center shrink-0">
+                  <div className="text-[10px] text-muted-foreground font-medium">{dayName}</div>
+                  <div className="text-sm font-bold">{dayDate}</div>
+                </div>
+                <div className="flex-1 min-w-0">
+                  {isEmpty ? (
+                    <span className="text-xs text-muted-foreground italic">חופש</span>
+                  ) : (
+                    <div className="flex flex-wrap gap-1.5">
+                      {shifts.map(s => (
+                        <div
+                          key={s.id}
+                          className="inline-flex items-center gap-1 bg-primary/10 text-primary border border-primary/20 rounded-md px-2 py-0.5"
+                        >
+                          <Clock className="h-3 w-3" />
+                          <span className="text-xs font-bold tabular-nums" dir="ltr">
+                            {s.start_time}–{s.end_time}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                {!isEmpty && (
+                  <div className="text-[10px] text-muted-foreground font-medium shrink-0 tabular-nums">
+                    {dh}:{String(dm).padStart(2, '0')}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Footer summary */}
+        <div className="bg-muted/40 border-t px-5 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-3 text-xs">
+            <div className="flex items-center gap-1.5">
+              <span className="text-muted-foreground">משמרות:</span>
+              <span className="font-bold">{totalShiftsCount}</span>
+            </div>
+            <div className="h-3 w-px bg-border" />
+            <div className="flex items-center gap-1.5">
+              <span className="text-muted-foreground">סה״כ:</span>
+              <span className="font-bold tabular-nums">
+                {totalHours}:{String(totalMins).padStart(2, '0')} שעות
+              </span>
+            </div>
+          </div>
+          <div className="text-[10px] text-muted-foreground">zabilo.lovable.app</div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
