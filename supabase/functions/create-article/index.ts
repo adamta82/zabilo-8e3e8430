@@ -125,6 +125,7 @@ Deno.serve(async (req) => {
 
     let body: CreateArticleBody = {
       text: qp.get('text') || undefined,
+      task_id: qp.get('task_id') || qp.get('id') || undefined,
       task_name: qp.get('task_name') || qp.get('name') || undefined,
       task_description: qp.get('task_description') || qp.get('description') || undefined,
       task_assignee: qp.get('task_assignee') || qp.get('assignee') || undefined,
@@ -144,6 +145,29 @@ Deno.serve(async (req) => {
       }
     }
 
+    // If task_id provided, fetch full task data from ClickUp and merge
+    if (body.task_id) {
+      try {
+        const fetched = await fetchClickUpTask(body.task_id);
+        // Fetched data takes precedence (fresher), but keep manually-provided fields if ClickUp returned empty
+        body = {
+          ...body,
+          task_name: fetched.task_name || body.task_name,
+          task_description: fetched.task_description || body.task_description,
+          task_assignee: fetched.task_assignee || body.task_assignee,
+          task_priority: fetched.task_priority || body.task_priority,
+        };
+      } catch (e) {
+        const errMsg = (e as Error).message;
+        const respBody = { error: `Failed to fetch ClickUp task: ${errMsg}` };
+        await writeLog(502, respBody, errMsg);
+        return new Response(
+          JSON.stringify(respBody),
+          { status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+    }
+
     // Build a unified text from either raw text OR ClickUp task fields
     const composedParts: string[] = [];
     if (body.task_name) composedParts.push(`שם משימה: ${body.task_name}`);
@@ -155,7 +179,7 @@ Deno.serve(async (req) => {
     const sourceText = composedParts.join('\n\n').trim();
 
     if (!sourceText || sourceText.length < 5) {
-      const respBody = { error: 'Missing input: provide text OR task_name/task_description' };
+      const respBody = { error: 'Missing input: provide task_id OR text OR task_name/task_description' };
       await writeLog(400, respBody);
       return new Response(
         JSON.stringify(respBody),
