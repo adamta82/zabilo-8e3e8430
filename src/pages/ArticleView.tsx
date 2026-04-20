@@ -41,6 +41,7 @@ export default function ArticleView() {
   const { data: allArticles } = useArticles();
   const markAsRead = useMarkAsRead();
   const [readersOpen, setReadersOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
 
   if (isLoading || !article) {
     return (
