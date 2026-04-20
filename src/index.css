@@ -247,6 +247,9 @@
   0% { transform: translateY(0); }
   100% { transform: translateY(-50%); }
 }
+.ticker-vertical {
+  animation: ticker-vertical-scroll 40s linear infinite;
+}
 
 /* Article HTML content styling */
 .article-content p { margin-bottom: 1rem; }
