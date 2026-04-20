@@ -31,11 +31,14 @@ interface Props {
 
 export function ArticleDialog({ open, onOpenChange, article }: Props) {
   const { data: departments } = useDepartments();
+  const { data: employees } = useEmployees();
+  const { profile } = useAuth();
   const save = useSaveArticle();
 
   const [title, setTitle] = useState('');
   const [articleType, setArticleType] = useState<ArticleType>('article');
   const [departmentId, setDepartmentId] = useState<string>('none');
+  const [authorId, setAuthorId] = useState<string>('');
   const [content, setContent] = useState('');
   const [isPinned, setIsPinned] = useState(false);
   const [isPublished, setIsPublished] = useState(true);
@@ -45,19 +48,21 @@ export function ArticleDialog({ open, onOpenChange, article }: Props) {
       setTitle(article?.title || '');
       setArticleType((article?.article_type as ArticleType) || 'article');
       setDepartmentId(article?.department_id || 'none');
+      setAuthorId(article?.author_id || profile?.id || '');
       setContent(article?.content || '');
       setIsPinned(article?.is_pinned || false);
       setIsPublished(article?.is_published ?? true);
     }
-  }, [open, article]);
+  }, [open, article, profile?.id]);
 
   const handleSave = async () => {
-    if (!title.trim() || !content.trim() || departmentId === 'none' || !departmentId) return;
+    if (!title.trim() || !content.trim() || departmentId === 'none' || !departmentId || !authorId) return;
     await save.mutateAsync({
       id: article?.id,
       title: title.trim(),
       article_type: articleType,
       department_id: departmentId,
+      author_id: authorId,
       content: content.trim(),
       is_pinned: isPinned,
       is_published: isPublished,
