@@ -348,6 +348,7 @@ export default function ShiftScheduler() {
                             onAddShift={(empId, empName, date) => setModal({ employeeId: empId, employeeName: empName, date })}
                             onEditShift={(empId, empName, date, shiftId, start, end) => setModal({ employeeId: empId, employeeName: empName, date, shiftId, start, end })}
                             onDeleteShift={handleDeleteShift}
+                            onEmployeeClick={(empId, empName) => setEmployeeWeekView({ id: empId, name: empName, deptName: dept.name })}
                           />
                         );
                       })}
@@ -362,6 +363,7 @@ export default function ShiftScheduler() {
                           onAddShift={(empId, empName, date) => setModal({ employeeId: empId, employeeName: empName, date })}
                           onEditShift={(empId, empName, date, shiftId, start, end) => setModal({ employeeId: empId, employeeName: empName, date, shiftId, start, end })}
                           onDeleteShift={handleDeleteShift}
+                          onEmployeeClick={(empId, empName) => setEmployeeWeekView({ id: empId, name: empName })}
                         />
                       )}
                     </tbody>
