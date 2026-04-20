@@ -176,6 +176,9 @@ export default function Settings() {
           שמירת הגדרות
         </Button>
       </div>
+
+      {/* Webhook Logs */}
+      <WebhookLogsCard />
     </div>
   );
 }
