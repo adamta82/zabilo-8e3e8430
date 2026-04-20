@@ -233,19 +233,6 @@ export function EmployeeWeekShiftsDialog({
             <div className="text-[10px] text-muted-foreground">zabilo.lovable.app</div>
           </div>
         </div>
-
-        {/* Copy button (outside captured area) */}
-        <div className="border-t p-3 bg-background">
-          <Button
-            onClick={handleCopyImage}
-            disabled={copying}
-            className="w-full gap-2"
-            size="sm"
-          >
-            {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-            {copied ? 'הועתק ללוח!' : copying ? 'מכין תמונה...' : 'העתק כתמונה'}
-          </Button>
-        </div>
       </DialogContent>
     </Dialog>
   );
