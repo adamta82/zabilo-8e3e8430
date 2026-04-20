@@ -34,13 +34,17 @@ Deno.serve(async (req) => {
     const qp = url.searchParams;
 
     let body: CreateArticleBody = {
-      text: qp.get('text') || '',
+      text: qp.get('text') || undefined,
+      task_name: qp.get('task_name') || qp.get('name') || undefined,
+      task_description: qp.get('task_description') || qp.get('description') || undefined,
+      task_assignee: qp.get('task_assignee') || qp.get('assignee') || undefined,
+      task_priority: qp.get('task_priority') || qp.get('priority') || undefined,
       author_email: qp.get('author_email') || qp.get('email') || undefined,
       department_name: qp.get('department_name') || qp.get('department') || undefined,
     };
 
     // Fallback: still allow POST with JSON body for backward compatibility
-    if (!body.text && req.method === 'POST') {
+    if (req.method === 'POST') {
       try {
         const json = await req.json();
         body = { ...body, ...json };
@@ -49,9 +53,19 @@ Deno.serve(async (req) => {
       }
     }
 
-    if (!body.text || typeof body.text !== 'string' || body.text.trim().length < 5) {
+    // Build a unified text from either raw text OR ClickUp task fields
+    const composedParts: string[] = [];
+    if (body.task_name) composedParts.push(`שם משימה: ${body.task_name}`);
+    if (body.task_description) composedParts.push(`תיאור:\n${body.task_description}`);
+    if (body.task_assignee) composedParts.push(`אחראי: ${body.task_assignee}`);
+    if (body.task_priority) composedParts.push(`עדיפות: ${body.task_priority}`);
+    if (body.text) composedParts.push(body.text);
+
+    const sourceText = composedParts.join('\n\n').trim();
+
+    if (!sourceText || sourceText.length < 5) {
       return new Response(
-        JSON.stringify({ error: 'Missing or too short field: text' }),
+        JSON.stringify({ error: 'Missing input: provide text OR task_name/task_description' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
