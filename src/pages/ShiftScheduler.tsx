@@ -37,7 +37,9 @@ function getInitials(name: string) {
 }
 
 export default function ShiftScheduler() {
-  const [view, setView] = useState<'week' | 'day'>('week');
+  const [view, setView] = useState<'week' | 'day'>(() =>
+    typeof window !== 'undefined' && window.innerWidth < 768 ? 'day' : 'week'
+  );
   const [weekStartDate, setWeekStartDate] = useState(() => startOfWeek(new Date(), { weekStartsOn: 0 }));
   const [selectedDate, setSelectedDate] = useState(formatDateStr(new Date()));
   const [filterDept, setFilterDept] = useState('all');
@@ -189,38 +191,25 @@ export default function ShiftScheduler() {
     <div className="space-y-4">
       {/* Header */}
       <div className="flex flex-col gap-3">
-        <div className="flex items-center justify-between flex-wrap gap-3">
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-1 bg-muted rounded-lg p-1">
-              {[{ key: 'week', label: 'שבוע' }, { key: 'day', label: 'יום' }].map(v => (
-                <Button
-                  key={v.key}
-                  variant={view === v.key ? 'default' : 'ghost'}
-                  size="sm"
-                  className="h-7 px-3 text-xs"
-                  onClick={() => setView(v.key as 'week' | 'day')}
-                >
-                  {v.label}
-                </Button>
-              ))}
-            </div>
-
-            <div className="flex items-center gap-1">
-              <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => view === 'week' ? navWeek(1) : navDay(1)}>
-                <ChevronRight className="h-3.5 w-3.5" />
+        {/* Row 1: View toggle + actions */}
+        <div className="flex items-center justify-between gap-2 flex-wrap">
+          <div className="flex items-center gap-1 bg-muted rounded-lg p-1">
+            {[{ key: 'week', label: 'שבוע' }, { key: 'day', label: 'יום' }].map(v => (
+              <Button
+                key={v.key}
+                variant={view === v.key ? 'default' : 'ghost'}
+                size="sm"
+                className="h-7 px-3 text-xs"
+                onClick={() => setView(v.key as 'week' | 'day')}
+              >
+                {v.label}
               </Button>
-              <Button variant="outline" size="sm" className="h-7 text-xs" onClick={goToday}>היום</Button>
-              <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => view === 'week' ? navWeek(-1) : navDay(-1)}>
-                <ChevronLeft className="h-3.5 w-3.5" />
-              </Button>
-            </div>
-
-            <span className="text-sm font-semibold">{headerDate}</span>
+            ))}
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 flex-wrap">
             <Button variant="outline" size="sm" className="h-7 text-xs" onClick={handleCopyPrevWeek}>
-              <Copy className="h-3 w-3 ml-1" /> העתק שבוע קודם
+              <Copy className="h-3 w-3 ml-1" /> <span className="hidden sm:inline">העתק שבוע קודם</span><span className="sm:hidden">העתק</span>
             </Button>
             {view === 'day' && (
               <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => handleClearDay(selectedDate)}>
@@ -230,8 +219,23 @@ export default function ShiftScheduler() {
           </div>
         </div>
 
+        {/* Row 2: Date navigation */}
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-1 flex-1 min-w-0">
+            <Button variant="outline" size="icon" className="h-7 w-7 shrink-0" onClick={() => view === 'week' ? navWeek(1) : navDay(1)}>
+              <ChevronRight className="h-3.5 w-3.5" />
+            </Button>
+            <Button variant="outline" size="sm" className="h-7 text-xs shrink-0" onClick={goToday}>היום</Button>
+            <Button variant="outline" size="icon" className="h-7 w-7 shrink-0" onClick={() => view === 'week' ? navWeek(-1) : navDay(-1)}>
+              <ChevronLeft className="h-3.5 w-3.5" />
+            </Button>
+            <span className="text-xs sm:text-sm font-semibold flex-1 text-center truncate min-w-0">{headerDate}</span>
+          </div>
+        </div>
+
+        {/* Row 3: Filters */}
         <div className="flex items-center gap-2 flex-wrap">
-          <div className="relative w-40">
+          <div className="relative flex-1 min-w-[140px]">
             <Search className="absolute right-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
             <Input
               placeholder="חיפוש עובד..."
@@ -241,7 +245,7 @@ export default function ShiftScheduler() {
             />
           </div>
           <Select value={filterDept} onValueChange={setFilterDept}>
-            <SelectTrigger className="w-40 h-7 text-xs">
+            <SelectTrigger className="w-32 sm:w-40 h-7 text-xs">
               <Filter className="h-3 w-3 ml-1" />
               <SelectValue placeholder="כל המחלקות" />
             </SelectTrigger>

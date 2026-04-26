@@ -128,11 +128,11 @@ export default function Dashboard() {
   const isLoading = requestsLoading || departmentsLoading;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div className="flex items-center gap-3">
-          {/* View toggle */}
+      <div className="flex flex-col gap-3">
+        {/* Row 1: View toggle + dept select */}
+        <div className="flex items-center justify-between gap-2 flex-wrap">
           <div className="flex items-center gap-1 bg-muted rounded-lg p-1">
             {[
               { key: 'month' as ViewMode, label: 'חודש' },
@@ -151,43 +151,46 @@ export default function Dashboard() {
             ))}
           </div>
 
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="icon" onClick={() => viewMode === 'month' ? goToPreviousMonth() : viewMode === 'week' ? navWeek(1) : navDay(1)}>
+          <Select value={selectedDepartment} onValueChange={setSelectedDepartment}>
+            <SelectTrigger className="w-[140px] sm:w-[180px] h-8">
+              <Filter className="h-4 w-4 ml-2" />
+              <SelectValue placeholder="כל המחלקות" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">כל המחלקות</SelectItem>
+              {departments?.map(dept => (
+                <SelectItem key={dept.id} value={dept.id}>{dept.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Row 2: Date navigation */}
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-1 sm:gap-2 flex-1 min-w-0">
+            <Button variant="outline" size="icon" className="h-8 w-8 shrink-0" onClick={() => viewMode === 'month' ? goToPreviousMonth() : viewMode === 'week' ? navWeek(1) : navDay(1)}>
               <ChevronRight className="h-4 w-4" />
             </Button>
-            <h2 className="text-xl font-bold min-w-[140px] text-center">
+            <h2 className="text-sm sm:text-xl font-bold flex-1 text-center truncate">
               {viewMode === 'month' && format(currentMonth, 'MMMM yyyy', { locale: he })}
               {viewMode === 'week' && `${format(weekDays[0], 'd בMMM', { locale: he })} — ${format(weekDays[6], 'd בMMM', { locale: he })}`}
-              {viewMode === 'day' && format(new Date(selectedDate), 'EEEE, d בMMMM yyyy', { locale: he })}
+              {viewMode === 'day' && format(new Date(selectedDate), 'EEEE, d בMMM', { locale: he })}
             </h2>
-            <Button variant="outline" size="icon" onClick={() => viewMode === 'month' ? goToNextMonth() : viewMode === 'week' ? navWeek(-1) : navDay(-1)}>
+            <Button variant="outline" size="icon" className="h-8 w-8 shrink-0" onClick={() => viewMode === 'month' ? goToNextMonth() : viewMode === 'week' ? navWeek(-1) : navDay(-1)}>
               <ChevronLeft className="h-4 w-4" />
             </Button>
           </div>
-          <Button variant="outline" size="sm" onClick={goToToday}>היום</Button>
+          <Button variant="outline" size="sm" className="h-8 shrink-0" onClick={goToToday}>היום</Button>
         </div>
-
-        <Select value={selectedDepartment} onValueChange={setSelectedDepartment}>
-          <SelectTrigger className="w-[180px]">
-            <Filter className="h-4 w-4 ml-2" />
-            <SelectValue placeholder="כל המחלקות" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">כל המחלקות</SelectItem>
-            {departments?.map(dept => (
-              <SelectItem key={dept.id} value={dept.id}>{dept.name}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
       </div>
 
       {/* Legend */}
-      <div className="flex flex-wrap gap-4 text-sm">
-        <div className="flex items-center gap-2"><div className="h-3 w-3 rounded-full bg-info" /><span>עבודה מהבית</span></div>
-        <div className="flex items-center gap-2"><div className="h-3 w-3 rounded-full bg-success" /><span>חופשה</span></div>
-        <div className="flex items-center gap-2"><div className="h-3 w-3 rounded-full bg-holiday" /><span>חג / שבת</span></div>
-        <div className="flex items-center gap-2"><Clock className="h-3 w-3 text-warning" /><span>ממתין לאישור</span></div>
-        <div className="flex items-center gap-2"><div className="h-3 w-3 rounded-full bg-primary" /><span>משמרת</span></div>
+      <div className="flex flex-wrap gap-x-3 gap-y-2 text-xs sm:text-sm">
+        <div className="flex items-center gap-1.5"><div className="h-2.5 w-2.5 rounded-full bg-info" /><span>עבודה מהבית</span></div>
+        <div className="flex items-center gap-1.5"><div className="h-2.5 w-2.5 rounded-full bg-success" /><span>חופשה</span></div>
+        <div className="flex items-center gap-1.5"><div className="h-2.5 w-2.5 rounded-full bg-holiday" /><span>חג / שבת</span></div>
+        <div className="flex items-center gap-1.5"><Clock className="h-3 w-3 text-warning" /><span>ממתין</span></div>
+        <div className="flex items-center gap-1.5"><div className="h-2.5 w-2.5 rounded-full bg-primary" /><span>משמרת</span></div>
       </div>
 
       {/* MONTH VIEW */}
@@ -275,7 +278,7 @@ function MonthView({ daysInMonth, emptySlots, getEventsForDay, getHoliday, getSh
   }
 
   return (
-    <Card><CardContent className="p-4">
+    <Card><CardContent className="p-2 sm:p-4">
       <div className="grid grid-cols-7 gap-1 mb-2">
         {weekDayNames.map(day => <div key={day} className="text-center text-sm font-medium text-muted-foreground py-2">{day}</div>)}
       </div>
@@ -337,11 +340,11 @@ function MonthView({ daysInMonth, emptySlots, getEventsForDay, getHoliday, getSh
 // ========== WEEK VIEW ==========
 function WeekView({ weekDays, getEventsForDay, getHoliday, getShiftsForDay, isLoading, onDayClick }: any) {
   if (isLoading) {
-    return <div className="grid grid-cols-7 gap-2">{Array.from({ length: 7 }).map((_, i) => <Skeleton key={i} className="h-48" />)}</div>;
+    return <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2">{Array.from({ length: 7 }).map((_, i) => <Skeleton key={i} className="h-48" />)}</div>;
   }
 
   return (
-    <div className="grid grid-cols-7 gap-2">
+    <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2">
       {weekDays.map((day: Date) => {
         const dateStr = formatDateString(day);
         const dayEvents = getEventsForDay(day);
@@ -356,19 +359,19 @@ function WeekView({ weekDays, getEventsForDay, getHoliday, getShiftsForDay, isLo
             key={dateStr}
             onClick={() => onDayClick(day)}
             className={cn(
-              'cursor-pointer transition-all hover:shadow-md min-h-[200px]',
+              'cursor-pointer transition-all hover:shadow-md min-h-[160px] sm:min-h-[200px]',
               isCurrentDay && 'border-primary bg-primary/5',
               isHolidayOrShabbat && !isCurrentDay && 'bg-holiday/5'
             )}
           >
-            <CardContent className="p-3">
-              <div className="flex justify-between items-start mb-3">
+            <CardContent className="p-2 sm:p-3">
+              <div className="flex justify-between items-start mb-2 sm:mb-3">
                 <div>
-                  <div className="text-xs text-muted-foreground">{HEBREW_DAYS_FULL[day.getDay()]}</div>
-                  <div className={cn('text-xl font-bold', isCurrentDay ? 'text-primary' : 'text-foreground')}>{day.getDate()}</div>
+                  <div className="text-[10px] sm:text-xs text-muted-foreground">{HEBREW_DAYS_FULL[day.getDay()]}</div>
+                  <div className={cn('text-lg sm:text-xl font-bold', isCurrentDay ? 'text-primary' : 'text-foreground')}>{day.getDate()}</div>
                 </div>
-                {holiday && <Badge variant="outline" className="text-[9px] bg-holiday/20 text-holiday border-holiday/30">{holiday}</Badge>}
-                {isShabbat && !holiday && <Badge variant="outline" className="text-[9px] bg-holiday/20 text-holiday border-holiday/30">שבת</Badge>}
+                {holiday && <Badge variant="outline" className="text-[8px] sm:text-[9px] bg-holiday/20 text-holiday border-holiday/30 max-w-[60px] truncate">{holiday}</Badge>}
+                {isShabbat && !holiday && <Badge variant="outline" className="text-[8px] sm:text-[9px] bg-holiday/20 text-holiday border-holiday/30">שבת</Badge>}
               </div>
 
               {dayShifts.length > 0 && (

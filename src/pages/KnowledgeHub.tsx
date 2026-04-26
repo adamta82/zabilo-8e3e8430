@@ -97,37 +97,38 @@ export default function KnowledgeHub() {
   };
 
   return (
-    <div dir="rtl" className="space-y-6 p-4 md:p-6 max-w-7xl mx-auto">
+    <div dir="rtl" className="space-y-4 sm:space-y-6 max-w-7xl mx-auto">
       {/* Header */}
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold flex items-center gap-2">
-            <BookOpen className="h-7 w-7 text-primary" />
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="min-w-0">
+          <h1 className="text-xl sm:text-3xl font-bold flex items-center gap-2">
+            <BookOpen className="h-5 w-5 sm:h-7 sm:w-7 text-primary" />
             מרכז הידע
           </h1>
-          <p className="text-muted-foreground text-sm mt-1">
+          <p className="text-muted-foreground text-xs sm:text-sm mt-1">
             עדכונים, נהלים ומאמרים של זבילו
           </p>
         </div>
         {isAdmin && (
           <div className="flex gap-2">
-            <Button variant="outline" asChild>
+            <Button variant="outline" size="sm" asChild>
               <Link to="/knowledge/tracking">
-                <BarChart2 className="ms-2 h-4 w-4" />
-                מעקב קריאה
+                <BarChart2 className="ms-1 sm:ms-2 h-4 w-4" />
+                <span className="hidden sm:inline">מעקב קריאה</span>
               </Link>
             </Button>
-            <Button onClick={openNew}>
-              <Plus className="ms-2 h-4 w-4" />
-              מאמר חדש
+            <Button size="sm" onClick={openNew}>
+              <Plus className="ms-1 sm:ms-2 h-4 w-4" />
+              <span className="hidden sm:inline">מאמר חדש</span>
+              <span className="sm:hidden">חדש</span>
             </Button>
           </div>
         )}
       </div>
 
       {/* Filters */}
-      <div className="flex flex-wrap gap-3">
-        <div className="relative flex-1 min-w-[200px]">
+      <div className="flex flex-wrap gap-2 sm:gap-3">
+        <div className="relative flex-1 min-w-[160px]">
           <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="חפש מאמרים..."
@@ -137,7 +138,7 @@ export default function KnowledgeHub() {
           />
         </div>
         <Select value={deptFilter} onValueChange={setDeptFilter}>
-          <SelectTrigger className="w-[180px]"><SelectValue placeholder="מחלקה" /></SelectTrigger>
+          <SelectTrigger className="w-[130px] sm:w-[180px]"><SelectValue placeholder="מחלקה" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">כל המחלקות</SelectItem>
             {departments?.map((d) => (
@@ -146,7 +147,7 @@ export default function KnowledgeHub() {
           </SelectContent>
         </Select>
         <Select value={typeFilter} onValueChange={setTypeFilter}>
-          <SelectTrigger className="w-[180px]"><SelectValue placeholder="סוג" /></SelectTrigger>
+          <SelectTrigger className="w-[110px] sm:w-[180px]"><SelectValue placeholder="סוג" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">כל הסוגים</SelectItem>
             <SelectItem value="article">מאמר</SelectItem>

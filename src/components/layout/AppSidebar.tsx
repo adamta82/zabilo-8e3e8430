@@ -23,6 +23,7 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  useSidebar,
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -52,6 +53,11 @@ export function AppSidebar() {
   const location = useLocation();
   const { profile, isAdmin, canManageShifts, signOut } = useAuth();
   const { data: unreadCount = 0 } = useUnreadCount();
+  const { isMobile, setOpenMobile } = useSidebar();
+
+  const handleNavClick = () => {
+    if (isMobile) setOpenMobile(false);
+  };
 
   const getInitials = (name: string) =>
     name.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2);
@@ -78,7 +84,7 @@ export function AppSidebar() {
               {mainMenuItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild isActive={location.pathname === item.url}>
-                    <Link to={item.url}>
+                    <Link to={item.url} onClick={handleNavClick}>
                       <item.icon className="h-4 w-4" />
                       <span className="flex-1">{item.title}</span>
                       {item.showBadge && unreadCount > 0 && (
@@ -102,7 +108,7 @@ export function AppSidebar() {
                 {adminMenuItems.map((item) => (
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton asChild isActive={location.pathname === item.url}>
-                      <Link to={item.url}>
+                      <Link to={item.url} onClick={handleNavClick}>
                         <item.icon className="h-4 w-4" />
                         <span>{item.title}</span>
                       </Link>
@@ -121,7 +127,7 @@ export function AppSidebar() {
               <SidebarMenu>
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild isActive={location.pathname === shiftManagerMenuItem.url}>
-                    <Link to={shiftManagerMenuItem.url}>
+                    <Link to={shiftManagerMenuItem.url} onClick={handleNavClick}>
                       <shiftManagerMenuItem.icon className="h-4 w-4" />
                       <span>{shiftManagerMenuItem.title}</span>
                     </Link>

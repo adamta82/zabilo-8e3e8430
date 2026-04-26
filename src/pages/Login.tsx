@@ -97,18 +97,18 @@ export default function Login() {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 via-background to-info/5 p-4">
       <div className="w-full max-w-md animate-scale-in">
         {/* Logo */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center h-16 w-16 rounded-2xl bg-primary text-primary-foreground font-bold text-2xl mb-4 shadow-lg">
+        <div className="text-center mb-6 sm:mb-8">
+          <div className="inline-flex items-center justify-center h-14 w-14 sm:h-16 sm:w-16 rounded-2xl bg-primary text-primary-foreground font-bold text-xl sm:text-2xl mb-3 sm:mb-4 shadow-lg">
             Z
           </div>
-          <h1 className="text-3xl font-bold text-foreground">Zabilo Book</h1>
-          <p className="text-muted-foreground mt-2">מערכת ניהול פנים-ארגונית</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Zabilo Book</h1>
+          <p className="text-sm sm:text-base text-muted-foreground mt-2">מערכת ניהול פנים-ארגונית</p>
         </div>
 
         <Card className="shadow-xl border-0">
           <CardHeader className="space-y-1 pb-4">
-            <CardTitle className="text-2xl text-center">ברוכים הבאים</CardTitle>
-            <CardDescription className="text-center">
+            <CardTitle className="text-xl sm:text-2xl text-center">ברוכים הבאים</CardTitle>
+            <CardDescription className="text-center text-sm">
               התחבר או הירשם למערכת
             </CardDescription>
           </CardHeader>
