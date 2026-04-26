@@ -53,6 +53,11 @@ export function AppSidebar() {
   const location = useLocation();
   const { profile, isAdmin, canManageShifts, signOut } = useAuth();
   const { data: unreadCount = 0 } = useUnreadCount();
+  const { isMobile, setOpenMobile } = useSidebar();
+
+  const handleNavClick = () => {
+    if (isMobile) setOpenMobile(false);
+  };
 
   const getInitials = (name: string) =>
     name.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2);
