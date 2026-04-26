@@ -12,7 +12,7 @@ export function AppLayout({ children }: AppLayoutProps) {
       <AppSidebar />
       <SidebarInset>
         <AppHeader />
-        <main className="flex-1 overflow-auto p-3 sm:p-6 animate-fade-in">
+        <main className="flex-1 overflow-auto px-3 py-4 sm:p-6 animate-fade-in min-w-0">
           {children}
         </main>
       </SidebarInset>
