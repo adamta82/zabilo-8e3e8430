@@ -179,11 +179,11 @@ export default function MyArea() {
 
       {/* Main Tabs */}
       <Tabs defaultValue="overview" dir="rtl">
-        <TabsList className="w-full justify-start flex-wrap h-auto gap-1">
-          <TabsTrigger value="overview">סקירה כללית</TabsTrigger>
-          <TabsTrigger value="requests">היסטוריית בקשות</TabsTrigger>
-          <TabsTrigger value="documents">מסמכים</TabsTrigger>
-          <TabsTrigger value="personal">פרטים אישיים</TabsTrigger>
+        <TabsList className="w-full justify-start flex-wrap h-auto gap-1 p-1">
+          <TabsTrigger value="overview" className="text-xs sm:text-sm">סקירה</TabsTrigger>
+          <TabsTrigger value="requests" className="text-xs sm:text-sm">בקשות</TabsTrigger>
+          <TabsTrigger value="documents" className="text-xs sm:text-sm">מסמכים</TabsTrigger>
+          <TabsTrigger value="personal" className="text-xs sm:text-sm">פרטים</TabsTrigger>
         </TabsList>
 
         {/* Overview Tab */}
