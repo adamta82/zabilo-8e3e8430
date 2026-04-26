@@ -70,7 +70,7 @@ export default function ArticleView() {
     .slice(0, 2) || 'U';
 
   return (
-    <div dir="rtl" className="p-4 md:p-8 max-w-4xl mx-auto space-y-6">
+    <div dir="rtl" className="max-w-4xl mx-auto space-y-4 sm:space-y-6">
       <Breadcrumb>
         <BreadcrumbList>
           <BreadcrumbItem>
@@ -80,24 +80,24 @@ export default function ArticleView() {
             <>
               <BreadcrumbSeparator />
               <BreadcrumbItem>
-                <span>{article.department.name}</span>
+                <span className="truncate max-w-[100px] sm:max-w-none">{article.department.name}</span>
               </BreadcrumbItem>
             </>
           )}
           <BreadcrumbSeparator />
           <BreadcrumbItem>
-            <BreadcrumbPage>{article.title}</BreadcrumbPage>
+            <BreadcrumbPage className="truncate max-w-[140px] sm:max-w-none">{article.title}</BreadcrumbPage>
           </BreadcrumbItem>
         </BreadcrumbList>
       </Breadcrumb>
 
-      <header className="space-y-4">
+      <header className="space-y-3 sm:space-y-4">
         <div className="flex items-start justify-between gap-3">
-          <h1 className="text-3xl md:text-4xl font-bold leading-tight">{article.title}</h1>
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold leading-tight flex-1 min-w-0">{article.title}</h1>
           {isAdmin && (
-            <Button variant="outline" size="sm" onClick={() => setEditOpen(true)}>
-              <Pencil className="ms-2 h-4 w-4" />
-              ערוך
+            <Button variant="outline" size="sm" className="shrink-0" onClick={() => setEditOpen(true)}>
+              <Pencil className="sm:ms-2 h-4 w-4" />
+              <span className="hidden sm:inline">ערוך</span>
             </Button>
           )}
         </div>
