@@ -84,7 +84,7 @@ export function AppSidebar() {
               {mainMenuItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild isActive={location.pathname === item.url}>
-                    <Link to={item.url}>
+                    <Link to={item.url} onClick={handleNavClick}>
                       <item.icon className="h-4 w-4" />
                       <span className="flex-1">{item.title}</span>
                       {item.showBadge && unreadCount > 0 && (
@@ -108,7 +108,7 @@ export function AppSidebar() {
                 {adminMenuItems.map((item) => (
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton asChild isActive={location.pathname === item.url}>
-                      <Link to={item.url}>
+                      <Link to={item.url} onClick={handleNavClick}>
                         <item.icon className="h-4 w-4" />
                         <span>{item.title}</span>
                       </Link>
@@ -127,7 +127,7 @@ export function AppSidebar() {
               <SidebarMenu>
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild isActive={location.pathname === shiftManagerMenuItem.url}>
-                    <Link to={shiftManagerMenuItem.url}>
+                    <Link to={shiftManagerMenuItem.url} onClick={handleNavClick}>
                       <shiftManagerMenuItem.icon className="h-4 w-4" />
                       <span>{shiftManagerMenuItem.title}</span>
                     </Link>
