@@ -340,11 +340,11 @@ function MonthView({ daysInMonth, emptySlots, getEventsForDay, getHoliday, getSh
 // ========== WEEK VIEW ==========
 function WeekView({ weekDays, getEventsForDay, getHoliday, getShiftsForDay, isLoading, onDayClick }: any) {
   if (isLoading) {
-    return <div className="grid grid-cols-7 gap-2">{Array.from({ length: 7 }).map((_, i) => <Skeleton key={i} className="h-48" />)}</div>;
+    return <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2">{Array.from({ length: 7 }).map((_, i) => <Skeleton key={i} className="h-48" />)}</div>;
   }
 
   return (
-    <div className="grid grid-cols-7 gap-2">
+    <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2">
       {weekDays.map((day: Date) => {
         const dateStr = formatDateString(day);
         const dayEvents = getEventsForDay(day);
@@ -359,19 +359,19 @@ function WeekView({ weekDays, getEventsForDay, getHoliday, getShiftsForDay, isLo
             key={dateStr}
             onClick={() => onDayClick(day)}
             className={cn(
-              'cursor-pointer transition-all hover:shadow-md min-h-[200px]',
+              'cursor-pointer transition-all hover:shadow-md min-h-[160px] sm:min-h-[200px]',
               isCurrentDay && 'border-primary bg-primary/5',
               isHolidayOrShabbat && !isCurrentDay && 'bg-holiday/5'
             )}
           >
-            <CardContent className="p-3">
-              <div className="flex justify-between items-start mb-3">
+            <CardContent className="p-2 sm:p-3">
+              <div className="flex justify-between items-start mb-2 sm:mb-3">
                 <div>
-                  <div className="text-xs text-muted-foreground">{HEBREW_DAYS_FULL[day.getDay()]}</div>
-                  <div className={cn('text-xl font-bold', isCurrentDay ? 'text-primary' : 'text-foreground')}>{day.getDate()}</div>
+                  <div className="text-[10px] sm:text-xs text-muted-foreground">{HEBREW_DAYS_FULL[day.getDay()]}</div>
+                  <div className={cn('text-lg sm:text-xl font-bold', isCurrentDay ? 'text-primary' : 'text-foreground')}>{day.getDate()}</div>
                 </div>
-                {holiday && <Badge variant="outline" className="text-[9px] bg-holiday/20 text-holiday border-holiday/30">{holiday}</Badge>}
-                {isShabbat && !holiday && <Badge variant="outline" className="text-[9px] bg-holiday/20 text-holiday border-holiday/30">שבת</Badge>}
+                {holiday && <Badge variant="outline" className="text-[8px] sm:text-[9px] bg-holiday/20 text-holiday border-holiday/30 max-w-[60px] truncate">{holiday}</Badge>}
+                {isShabbat && !holiday && <Badge variant="outline" className="text-[8px] sm:text-[9px] bg-holiday/20 text-holiday border-holiday/30">שבת</Badge>}
               </div>
 
               {dayShifts.length > 0 && (
