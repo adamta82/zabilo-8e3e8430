@@ -278,7 +278,7 @@ function MonthView({ daysInMonth, emptySlots, getEventsForDay, getHoliday, getSh
   }
 
   return (
-    <Card><CardContent className="p-4">
+    <Card><CardContent className="p-2 sm:p-4">
       <div className="grid grid-cols-7 gap-1 mb-2">
         {weekDayNames.map(day => <div key={day} className="text-center text-sm font-medium text-muted-foreground py-2">{day}</div>)}
       </div>
