@@ -37,7 +37,9 @@ function getInitials(name: string) {
 }
 
 export default function ShiftScheduler() {
-  const [view, setView] = useState<'week' | 'day'>('week');
+  const [view, setView] = useState<'week' | 'day'>(() =>
+    typeof window !== 'undefined' && window.innerWidth < 768 ? 'day' : 'week'
+  );
   const [weekStartDate, setWeekStartDate] = useState(() => startOfWeek(new Date(), { weekStartsOn: 0 }));
   const [selectedDate, setSelectedDate] = useState(formatDateStr(new Date()));
   const [filterDept, setFilterDept] = useState('all');
