@@ -163,29 +163,31 @@ export default function KnowledgeHub() {
       </div>
 
       {/* Type tabs */}
-      <Tabs value={typeTab} onValueChange={setTypeTab} className="w-full flex justify-start">
-        <TabsList className="h-auto flex flex-wrap gap-1 bg-muted/60 p-1 w-fit">
-          <TabsTrigger value="all" className="gap-1.5 data-[state=active]:bg-background">
-            <LayoutGrid className="h-3.5 w-3.5" />
-            הכל
-            <span className="text-xs opacity-70">({counts.all})</span>
-          </TabsTrigger>
-          <TabsTrigger value="update" className="gap-1.5 data-[state=active]:bg-background">
-            <Newspaper className="h-3.5 w-3.5" />
-            עדכונים
-            <span className="text-xs opacity-70">({counts.update})</span>
-          </TabsTrigger>
-          <TabsTrigger value="procedure" className="gap-1.5 data-[state=active]:bg-background">
-            <ClipboardList className="h-3.5 w-3.5" />
-            נהלים
-            <span className="text-xs opacity-70">({counts.procedure})</span>
-          </TabsTrigger>
-          <TabsTrigger value="article" className="gap-1.5 data-[state=active]:bg-background">
-            <FileText className="h-3.5 w-3.5" />
-            מאמרים
-            <span className="text-xs opacity-70">({counts.article})</span>
-          </TabsTrigger>
-        </TabsList>
+      <Tabs value={typeTab} onValueChange={setTypeTab} className="w-full">
+        <div className="flex w-full justify-end">
+          <TabsList className="h-auto flex flex-wrap gap-1 bg-muted/60 p-1 w-fit">
+            <TabsTrigger value="all" className="gap-1.5 data-[state=active]:bg-background">
+              <LayoutGrid className="h-3.5 w-3.5" />
+              הכל
+              <span className="text-xs opacity-70">({counts.all})</span>
+            </TabsTrigger>
+            <TabsTrigger value="update" className="gap-1.5 data-[state=active]:bg-background">
+              <Newspaper className="h-3.5 w-3.5" />
+              עדכונים
+              <span className="text-xs opacity-70">({counts.update})</span>
+            </TabsTrigger>
+            <TabsTrigger value="procedure" className="gap-1.5 data-[state=active]:bg-background">
+              <ClipboardList className="h-3.5 w-3.5" />
+              נהלים
+              <span className="text-xs opacity-70">({counts.procedure})</span>
+            </TabsTrigger>
+            <TabsTrigger value="article" className="gap-1.5 data-[state=active]:bg-background">
+              <FileText className="h-3.5 w-3.5" />
+              מאמרים
+              <span className="text-xs opacity-70">({counts.article})</span>
+            </TabsTrigger>
+          </TabsList>
+        </div>
       </Tabs>
 
       {/* Two-column layout: main content + vertical ticker sidebar */}
