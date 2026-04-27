@@ -15,9 +15,9 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
-import { BookOpen, Plus, Search, BarChart2 } from 'lucide-react';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { BookOpen, Plus, Search, BarChart2, Pin, Newspaper, ClipboardList, FileText, LayoutGrid } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { Pin } from 'lucide-react';
 
 export default function KnowledgeHub() {
   const { isAdmin } = useAuth();
@@ -26,7 +26,7 @@ export default function KnowledgeHub() {
 
   const [search, setSearch] = useState('');
   const [deptFilter, setDeptFilter] = useState<string>('all');
-  const [typeFilter, setTypeFilter] = useState<string>('all');
+  const [typeTab, setTypeTab] = useState<string>('all');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<KnowledgeArticle | null>(null);
 
@@ -38,11 +38,11 @@ export default function KnowledgeHub() {
     [articles]
   );
 
-  const filtered = useMemo(() => {
+  // Base filter (search + department + visibility) — type filter applied per tab
+  const baseFiltered = useMemo(() => {
     return (articles || []).filter((a) => {
       if (!a.is_published && !isAdmin) return false;
       if (deptFilter !== 'all' && a.department_id !== deptFilter) return false;
-      if (typeFilter !== 'all' && a.article_type !== typeFilter) return false;
       if (search) {
         const s = search.toLowerCase();
         if (
@@ -53,20 +53,34 @@ export default function KnowledgeHub() {
       }
       return true;
     });
-  }, [articles, search, deptFilter, typeFilter, isAdmin]);
+  }, [articles, search, deptFilter, isAdmin]);
 
-  const pinned = filtered.filter((a) => a.is_pinned);
-  const regular = filtered.filter((a) => !a.is_pinned);
+  const counts = useMemo(() => ({
+    all: baseFiltered.length,
+    update: baseFiltered.filter((a) => a.article_type === 'update').length,
+    procedure: baseFiltered.filter((a) => a.article_type === 'procedure').length,
+    article: baseFiltered.filter((a) => a.article_type === 'article').length,
+  }), [baseFiltered]);
+
+  // Pinned (across all types after base filter)
+  const pinned = baseFiltered.filter((a) => a.is_pinned);
+
+  // Articles for active tab (excluding pinned — they show in their own section)
+  const tabFiltered = useMemo(() => {
+    const list = baseFiltered.filter((a) => !a.is_pinned);
+    if (typeTab === 'all') return list;
+    return list.filter((a) => a.article_type === typeTab);
+  }, [baseFiltered, typeTab]);
 
   // Infinite scroll
   const PAGE_SIZE = 9;
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const sentinelRef = useRef<HTMLDivElement | null>(null);
 
-  // Reset paging when filters change
+  // Reset paging when filters/tab change
   useEffect(() => {
     setVisibleCount(PAGE_SIZE);
-  }, [search, deptFilter, typeFilter]);
+  }, [search, deptFilter, typeTab]);
 
   useEffect(() => {
     const el = sentinelRef.current;
@@ -74,17 +88,17 @@ export default function KnowledgeHub() {
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries[0].isIntersecting) {
-          setVisibleCount((c) => Math.min(c + PAGE_SIZE, regular.length));
+          setVisibleCount((c) => Math.min(c + PAGE_SIZE, tabFiltered.length));
         }
       },
       { rootMargin: '300px' }
     );
     observer.observe(el);
     return () => observer.disconnect();
-  }, [regular.length]);
+  }, [tabFiltered.length]);
 
-  const visibleRegular = regular.slice(0, visibleCount);
-  const hasMore = visibleCount < regular.length;
+  const visibleRegular = tabFiltered.slice(0, visibleCount);
+  const hasMore = visibleCount < tabFiltered.length;
 
   const openEdit = (a: KnowledgeArticle) => {
     setEditing(a);
@@ -146,16 +160,33 @@ export default function KnowledgeHub() {
             ))}
           </SelectContent>
         </Select>
-        <Select value={typeFilter} onValueChange={setTypeFilter}>
-          <SelectTrigger className="w-[110px] sm:w-[180px]"><SelectValue placeholder="סוג" /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">כל הסוגים</SelectItem>
-            <SelectItem value="article">מאמר</SelectItem>
-            <SelectItem value="update">עדכון</SelectItem>
-            <SelectItem value="procedure">נוהל</SelectItem>
-          </SelectContent>
-        </Select>
       </div>
+
+      {/* Type tabs */}
+      <Tabs value={typeTab} onValueChange={setTypeTab} className="w-full">
+        <TabsList className="w-full sm:w-auto h-auto flex-wrap gap-1 bg-muted/60 p-1">
+          <TabsTrigger value="all" className="gap-1.5 data-[state=active]:bg-background">
+            <LayoutGrid className="h-3.5 w-3.5" />
+            הכל
+            <span className="text-xs opacity-70">({counts.all})</span>
+          </TabsTrigger>
+          <TabsTrigger value="update" className="gap-1.5 data-[state=active]:bg-background">
+            <Newspaper className="h-3.5 w-3.5" />
+            עדכונים
+            <span className="text-xs opacity-70">({counts.update})</span>
+          </TabsTrigger>
+          <TabsTrigger value="procedure" className="gap-1.5 data-[state=active]:bg-background">
+            <ClipboardList className="h-3.5 w-3.5" />
+            נהלים
+            <span className="text-xs opacity-70">({counts.procedure})</span>
+          </TabsTrigger>
+          <TabsTrigger value="article" className="gap-1.5 data-[state=active]:bg-background">
+            <FileText className="h-3.5 w-3.5" />
+            מאמרים
+            <span className="text-xs opacity-70">({counts.article})</span>
+          </TabsTrigger>
+        </TabsList>
+      </Tabs>
 
       {/* Two-column layout: main content + vertical ticker sidebar */}
       <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
@@ -181,7 +212,7 @@ export default function KnowledgeHub() {
                 <Skeleton key={i} className="h-64" />
               ))}
             </div>
-          ) : regular.length === 0 && pinned.length === 0 ? (
+          ) : tabFiltered.length === 0 && pinned.length === 0 ? (
             <div className="text-center py-16 text-muted-foreground">
               <BookOpen className="h-12 w-12 mx-auto mb-3 opacity-50" />
               <p>אין מאמרים עדיין</p>
@@ -200,9 +231,9 @@ export default function KnowledgeHub() {
                   ))}
                 </div>
               )}
-              {!hasMore && regular.length > PAGE_SIZE && (
+              {!hasMore && tabFiltered.length > PAGE_SIZE && (
                 <p className="text-center text-xs text-muted-foreground py-4">
-                  הגעת לסוף — {regular.length} מאמרים
+                  הגעת לסוף — {tabFiltered.length} מאמרים
                 </p>
               )}
             </>
