@@ -199,7 +199,7 @@ export default function KnowledgeHub() {
               <h2 className="text-sm font-semibold text-muted-foreground flex items-center gap-2">
                 <Pin className="h-4 w-4 text-orange-500" /> מוצמד
               </h2>
-              <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
+              <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
                 {pinned.map((a) => (
                   <ArticleCard key={a.id} article={a} onEdit={openEdit} />
                 ))}
@@ -209,7 +209,7 @@ export default function KnowledgeHub() {
 
           {/* Grid */}
           {isLoading ? (
-            <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
+            <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
               {[...Array(6)].map((_, i) => (
                 <Skeleton key={i} className="h-64" />
               ))}
@@ -221,13 +221,13 @@ export default function KnowledgeHub() {
             </div>
           ) : (
             <>
-              <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
+              <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
                 {visibleRegular.map((a) => (
                   <ArticleCard key={a.id} article={a} onEdit={openEdit} />
                 ))}
               </div>
               {hasMore && (
-                <div ref={sentinelRef} className="grid gap-4 grid-cols-1 md:grid-cols-2 pt-2">
+                <div ref={sentinelRef} className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 pt-2">
                   {[...Array(2)].map((_, i) => (
                     <Skeleton key={i} className="h-64" />
                   ))}
