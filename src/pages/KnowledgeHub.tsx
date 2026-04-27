@@ -163,8 +163,8 @@ export default function KnowledgeHub() {
       </div>
 
       {/* Type tabs */}
-      <Tabs value={typeTab} onValueChange={setTypeTab} className="w-full">
-        <TabsList className="h-auto flex flex-wrap justify-start gap-1 bg-muted/60 p-1 w-fit">
+      <Tabs value={typeTab} onValueChange={setTypeTab} className="w-full flex justify-start">
+        <TabsList className="h-auto flex flex-wrap gap-1 bg-muted/60 p-1 w-fit">
           <TabsTrigger value="all" className="gap-1.5 data-[state=active]:bg-background">
             <LayoutGrid className="h-3.5 w-3.5" />
             הכל
