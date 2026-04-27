@@ -212,7 +212,7 @@ export default function KnowledgeHub() {
                 <Skeleton key={i} className="h-64" />
               ))}
             </div>
-          ) : regular.length === 0 && pinned.length === 0 ? (
+          ) : tabFiltered.length === 0 && pinned.length === 0 ? (
             <div className="text-center py-16 text-muted-foreground">
               <BookOpen className="h-12 w-12 mx-auto mb-3 opacity-50" />
               <p>אין מאמרים עדיין</p>
@@ -231,9 +231,9 @@ export default function KnowledgeHub() {
                   ))}
                 </div>
               )}
-              {!hasMore && regular.length > PAGE_SIZE && (
+              {!hasMore && tabFiltered.length > PAGE_SIZE && (
                 <p className="text-center text-xs text-muted-foreground py-4">
-                  הגעת לסוף — {regular.length} מאמרים
+                  הגעת לסוף — {tabFiltered.length} מאמרים
                 </p>
               )}
             </>
