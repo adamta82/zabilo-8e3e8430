@@ -8,7 +8,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
+import { RichTextEditor } from './RichTextEditor';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import {
@@ -141,12 +141,9 @@ export function ArticleDialog({ open, onOpenChange, article }: Props) {
 
           <div className="grid gap-2">
             <Label>תוכן *</Label>
-            <Textarea
+            <RichTextEditor
               value={content}
-              onChange={(e) => setContent(e.target.value)}
-              rows={10}
-              dir="rtl"
-              className="resize-y min-h-[200px]"
+              onChange={setContent}
               placeholder="כתוב כאן את תוכן המאמר..."
             />
           </div>
