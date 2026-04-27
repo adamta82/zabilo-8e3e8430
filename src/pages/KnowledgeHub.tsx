@@ -26,7 +26,7 @@ export default function KnowledgeHub() {
 
   const [search, setSearch] = useState('');
   const [deptFilter, setDeptFilter] = useState<string>('all');
-  const [typeFilter, setTypeFilter] = useState<string>('all');
+  const [typeTab, setTypeTab] = useState<string>('all');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<KnowledgeArticle | null>(null);
 
@@ -38,11 +38,11 @@ export default function KnowledgeHub() {
     [articles]
   );
 
-  const filtered = useMemo(() => {
+  // Base filter (search + department + visibility) — type filter applied per tab
+  const baseFiltered = useMemo(() => {
     return (articles || []).filter((a) => {
       if (!a.is_published && !isAdmin) return false;
       if (deptFilter !== 'all' && a.department_id !== deptFilter) return false;
-      if (typeFilter !== 'all' && a.article_type !== typeFilter) return false;
       if (search) {
         const s = search.toLowerCase();
         if (
@@ -53,20 +53,34 @@ export default function KnowledgeHub() {
       }
       return true;
     });
-  }, [articles, search, deptFilter, typeFilter, isAdmin]);
+  }, [articles, search, deptFilter, isAdmin]);
 
-  const pinned = filtered.filter((a) => a.is_pinned);
-  const regular = filtered.filter((a) => !a.is_pinned);
+  const counts = useMemo(() => ({
+    all: baseFiltered.length,
+    update: baseFiltered.filter((a) => a.article_type === 'update').length,
+    procedure: baseFiltered.filter((a) => a.article_type === 'procedure').length,
+    article: baseFiltered.filter((a) => a.article_type === 'article').length,
+  }), [baseFiltered]);
+
+  // Pinned (across all types after base filter)
+  const pinned = baseFiltered.filter((a) => a.is_pinned);
+
+  // Articles for active tab (excluding pinned — they show in their own section)
+  const tabFiltered = useMemo(() => {
+    const list = baseFiltered.filter((a) => !a.is_pinned);
+    if (typeTab === 'all') return list;
+    return list.filter((a) => a.article_type === typeTab);
+  }, [baseFiltered, typeTab]);
 
   // Infinite scroll
   const PAGE_SIZE = 9;
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const sentinelRef = useRef<HTMLDivElement | null>(null);
 
-  // Reset paging when filters change
+  // Reset paging when filters/tab change
   useEffect(() => {
     setVisibleCount(PAGE_SIZE);
-  }, [search, deptFilter, typeFilter]);
+  }, [search, deptFilter, typeTab]);
 
   useEffect(() => {
     const el = sentinelRef.current;
@@ -74,17 +88,17 @@ export default function KnowledgeHub() {
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries[0].isIntersecting) {
-          setVisibleCount((c) => Math.min(c + PAGE_SIZE, regular.length));
+          setVisibleCount((c) => Math.min(c + PAGE_SIZE, tabFiltered.length));
         }
       },
       { rootMargin: '300px' }
     );
     observer.observe(el);
     return () => observer.disconnect();
-  }, [regular.length]);
+  }, [tabFiltered.length]);
 
-  const visibleRegular = regular.slice(0, visibleCount);
-  const hasMore = visibleCount < regular.length;
+  const visibleRegular = tabFiltered.slice(0, visibleCount);
+  const hasMore = visibleCount < tabFiltered.length;
 
   const openEdit = (a: KnowledgeArticle) => {
     setEditing(a);
