@@ -15,9 +15,9 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
-import { BookOpen, Plus, Search, BarChart2 } from 'lucide-react';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { BookOpen, Plus, Search, BarChart2, Pin, Newspaper, ClipboardList, FileText, LayoutGrid } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { Pin } from 'lucide-react';
 
 export default function KnowledgeHub() {
   const { isAdmin } = useAuth();
