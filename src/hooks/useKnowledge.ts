@@ -10,6 +10,7 @@ export interface KnowledgeArticle {
   title: string;
   content: string;
   department_id: string | null;
+  folder_id: string | null;
   article_type: ArticleType;
   author_id: string;
   is_published: boolean;
