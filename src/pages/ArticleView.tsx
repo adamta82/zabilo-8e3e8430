@@ -172,6 +172,9 @@ export default function ArticleView() {
         </Collapsible>
       )}
 
+      {/* Comments */}
+      <CommentsSection articleId={article.id} />
+
       {/* Navigation */}
       <div className="flex justify-between gap-2 pt-4 border-t">
         <Button
