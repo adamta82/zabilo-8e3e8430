@@ -32,6 +32,7 @@ import {
 } from '@/components/ui/collapsible';
 import { useState } from 'react';
 import { ArticleDialog } from '@/components/knowledge/ArticleDialog';
+import { CommentsSection } from '@/components/knowledge/CommentsSection';
 
 export default function ArticleView() {
   const { id } = useParams();
