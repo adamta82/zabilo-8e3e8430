@@ -58,16 +58,20 @@ export function ArticleDialog({ open, onOpenChange, article }: Props) {
   const [title, setTitle] = useState('');
   const [articleType, setArticleType] = useState<ArticleType>('article');
   const [departmentId, setDepartmentId] = useState<string>('none');
+  const [folderId, setFolderId] = useState<string>('none');
   const [authorId, setAuthorId] = useState<string>('');
   const [content, setContent] = useState('');
   const [isPinned, setIsPinned] = useState(false);
   const [isPublished, setIsPublished] = useState(true);
+
+  const { data: folders } = useFolders(departmentId !== 'none' ? departmentId : undefined);
 
   useEffect(() => {
     if (open) {
       setTitle(article?.title || '');
       setArticleType((article?.article_type as ArticleType) || 'article');
       setDepartmentId(article?.department_id || 'none');
+      setFolderId(article?.folder_id || 'none');
       setAuthorId(article?.author_id || profile?.id || '');
       setContent(article?.content || '');
       setIsPinned(article?.is_pinned || false);
@@ -82,6 +86,7 @@ export function ArticleDialog({ open, onOpenChange, article }: Props) {
       title: title.trim(),
       article_type: articleType,
       department_id: departmentId,
+      folder_id: folderId === 'none' ? null : folderId,
       author_id: authorId,
       content: content.trim(),
       is_pinned: isPinned,
