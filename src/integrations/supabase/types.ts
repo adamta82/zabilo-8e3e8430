@@ -291,6 +291,7 @@ export type Database = {
           content: string
           created_at: string
           department_id: string | null
+          folder_id: string | null
           id: string
           is_pinned: boolean
           is_published: boolean
@@ -303,6 +304,7 @@ export type Database = {
           content: string
           created_at?: string
           department_id?: string | null
+          folder_id?: string | null
           id?: string
           is_pinned?: boolean
           is_published?: boolean
@@ -315,6 +317,7 @@ export type Database = {
           content?: string
           created_at?: string
           department_id?: string | null
+          folder_id?: string | null
           id?: string
           is_pinned?: boolean
           is_published?: boolean
@@ -334,6 +337,58 @@ export type Database = {
             columns: ["department_id"]
             isOneToOne: false
             referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "knowledge_articles_folder_id_fkey"
+            columns: ["folder_id"]
+            isOneToOne: false
+            referencedRelation: "knowledge_folders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      knowledge_folders: {
+        Row: {
+          created_at: string
+          department_id: string | null
+          icon: string | null
+          id: string
+          name: string
+          parent_folder_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          department_id?: string | null
+          icon?: string | null
+          id?: string
+          name: string
+          parent_folder_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          department_id?: string | null
+          icon?: string | null
+          id?: string
+          name?: string
+          parent_folder_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "knowledge_folders_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "knowledge_folders_parent_folder_id_fkey"
+            columns: ["parent_folder_id"]
+            isOneToOne: false
+            referencedRelation: "knowledge_folders"
             referencedColumns: ["id"]
           },
         ]
