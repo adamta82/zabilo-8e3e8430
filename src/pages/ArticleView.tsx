@@ -32,6 +32,7 @@ import {
 } from '@/components/ui/collapsible';
 import { useState } from 'react';
 import { ArticleDialog } from '@/components/knowledge/ArticleDialog';
+import { CommentsSection } from '@/components/knowledge/CommentsSection';
 
 export default function ArticleView() {
   const { id } = useParams();
@@ -170,6 +171,9 @@ export default function ArticleView() {
           </CollapsibleContent>
         </Collapsible>
       )}
+
+      {/* Comments */}
+      <CommentsSection articleId={article.id} />
 
       {/* Navigation */}
       <div className="flex justify-between gap-2 pt-4 border-t">
