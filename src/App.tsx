@@ -60,6 +60,16 @@ function AppRoutes() {
         }
       />
       <Route
+        path="/knowledge/department/:departmentId"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <DepartmentKnowledge />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path="/knowledge/:id"
         element={
           <ProtectedRoute>
