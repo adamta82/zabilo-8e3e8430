@@ -32,6 +32,7 @@ import {
 import { Trash2 } from 'lucide-react';
 import { ArticleType, KnowledgeArticle, useSaveArticle, useDeleteArticle } from '@/hooks/useKnowledge';
 import { useDepartments } from '@/hooks/useDepartments';
+import { useFolders } from '@/hooks/useKnowledgeFolders';
 import { useEmployees } from '@/hooks/useEmployees';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -57,16 +58,20 @@ export function ArticleDialog({ open, onOpenChange, article }: Props) {
   const [title, setTitle] = useState('');
   const [articleType, setArticleType] = useState<ArticleType>('article');
   const [departmentId, setDepartmentId] = useState<string>('none');
+  const [folderId, setFolderId] = useState<string>('none');
   const [authorId, setAuthorId] = useState<string>('');
   const [content, setContent] = useState('');
   const [isPinned, setIsPinned] = useState(false);
   const [isPublished, setIsPublished] = useState(true);
+
+  const { data: folders } = useFolders(departmentId !== 'none' ? departmentId : undefined);
 
   useEffect(() => {
     if (open) {
       setTitle(article?.title || '');
       setArticleType((article?.article_type as ArticleType) || 'article');
       setDepartmentId(article?.department_id || 'none');
+      setFolderId(article?.folder_id || 'none');
       setAuthorId(article?.author_id || profile?.id || '');
       setContent(article?.content || '');
       setIsPinned(article?.is_pinned || false);
@@ -81,6 +86,7 @@ export function ArticleDialog({ open, onOpenChange, article }: Props) {
       title: title.trim(),
       article_type: articleType,
       department_id: departmentId,
+      folder_id: folderId === 'none' ? null : folderId,
       author_id: authorId,
       content: content.trim(),
       is_pinned: isPinned,
@@ -116,7 +122,7 @@ export function ArticleDialog({ open, onOpenChange, article }: Props) {
             </div>
             <div className="grid gap-2">
               <Label>מחלקה *</Label>
-              <Select value={departmentId} onValueChange={setDepartmentId}>
+              <Select value={departmentId} onValueChange={(v) => { setDepartmentId(v); setFolderId('none'); }}>
                 <SelectTrigger><SelectValue placeholder="בחר מחלקה" /></SelectTrigger>
                 <SelectContent>
                   {departments?.map((d) => (
@@ -125,6 +131,21 @@ export function ArticleDialog({ open, onOpenChange, article }: Props) {
                 </SelectContent>
               </Select>
             </div>
+          </div>
+
+          <div className="grid gap-2">
+            <Label>תיקייה</Label>
+            <Select value={folderId} onValueChange={setFolderId} disabled={departmentId === 'none'}>
+              <SelectTrigger>
+                <SelectValue placeholder={departmentId === 'none' ? 'בחר מחלקה קודם' : 'ללא תיקייה'} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">ללא תיקייה</SelectItem>
+                {folders?.map((f) => (
+                  <SelectItem key={f.id} value={f.id}>{f.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="grid gap-2">

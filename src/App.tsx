@@ -18,6 +18,7 @@ import ShiftScheduler from "./pages/ShiftScheduler";
 import OrgChart from "./pages/OrgChart";
 import MyArea from "./pages/MyArea";
 import KnowledgeHub from "./pages/KnowledgeHub";
+import DepartmentKnowledge from "./pages/DepartmentKnowledge";
 import ArticleView from "./pages/ArticleView";
 import ReadTracking from "./pages/ReadTracking";
 import NotFound from "./pages/NotFound";
@@ -54,6 +55,16 @@ function AppRoutes() {
           <ProtectedRoute>
             <AppLayout>
               <Dashboard />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/knowledge/department/:departmentId"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <DepartmentKnowledge />
             </AppLayout>
           </ProtectedRoute>
         }
