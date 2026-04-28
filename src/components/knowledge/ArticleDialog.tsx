@@ -122,7 +122,7 @@ export function ArticleDialog({ open, onOpenChange, article }: Props) {
             </div>
             <div className="grid gap-2">
               <Label>מחלקה *</Label>
-              <Select value={departmentId} onValueChange={setDepartmentId}>
+              <Select value={departmentId} onValueChange={(v) => { setDepartmentId(v); setFolderId('none'); }}>
                 <SelectTrigger><SelectValue placeholder="בחר מחלקה" /></SelectTrigger>
                 <SelectContent>
                   {departments?.map((d) => (
@@ -131,6 +131,21 @@ export function ArticleDialog({ open, onOpenChange, article }: Props) {
                 </SelectContent>
               </Select>
             </div>
+          </div>
+
+          <div className="grid gap-2">
+            <Label>תיקייה</Label>
+            <Select value={folderId} onValueChange={setFolderId} disabled={departmentId === 'none'}>
+              <SelectTrigger>
+                <SelectValue placeholder={departmentId === 'none' ? 'בחר מחלקה קודם' : 'ללא תיקייה'} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">ללא תיקייה</SelectItem>
+                {folders?.map((f) => (
+                  <SelectItem key={f.id} value={f.id}>{f.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="grid gap-2">
