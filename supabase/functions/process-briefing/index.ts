@@ -22,14 +22,8 @@ async function transcribeAudio(audioBase64: string, mimeType: string): Promise<s
         {
           role: "user",
           content: [
-            {
-              type: "text",
-              text: "תמלל את הקובץ הקול הבא בעברית במדויק. החזר רק את התמלול ללא תוספות או הערות.",
-            },
-            {
-              type: "image_url",
-              image_url: { url: `data:${mimeType};base64,${audioBase64}` },
-            },
+            { type: "text", text: "תמלל את הקובץ הקול הבא בעברית במדויק. החזר רק את התמלול ללא תוספות או הערות." },
+            { type: "image_url", image_url: { url: `data:${mimeType};base64,${audioBase64}` } },
           ],
         },
       ],
@@ -43,66 +37,58 @@ async function transcribeAudio(audioBase64: string, mimeType: string): Promise<s
   return data.choices?.[0]?.message?.content ?? "";
 }
 
-async function summarizeTranscript(transcript: string): Promise<any> {
+interface BriefingSection { title: string; bullets: string[]; }
+interface AttendanceData { vacation: string[]; wfh: string[]; }
+
+async function summarizeTranscript(transcript: string): Promise<{ sections: BriefingSection[] }> {
   const systemPrompt = `אתה עוזר שמסכם תדריכי בוקר של חברת eCommerce ישראלית בעברית.
 
-המבנה של הסיכום:
-- זהה את הנושאים המרכזיים בתדריך
-- לכל נושא תן כותרת קצרה וברורה (2-5 מילים)
-- תחת כל כותרת רשום בולטים תמציתיים של הנקודות החשובות
+הסיכום חייב להיות:
+- מובנה לפי נושאים שזוהו בתדריך
+- לכל נושא כותרת קצרה וברורה (2-5 מילים)
+- תחת כל כותרת בולטים תמציתיים
 - שמור על הטון והניסוח של הדובר
-- אל תמציא מידע, רק סכם מה שנאמר
-- אורך הסיכום: דומה למקור, תמציתי וענייני
-- כתוב בעברית טבעית, ללא אימוג'ים מיותרים
+- אל תמציא מידע
+- אורך תמציתי דומה למקור
 - אל תכלול נושאי נוכחות (חופש/עבודה מהבית) - הם מטופלים בנפרד
 
-החזר את הסיכום באמצעות הכלי save_briefing_summary.`;
+החזר באמצעות הכלי save_briefing_summary.`;
 
   const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
     method: "POST",
-    headers: {
-      Authorization: `Bearer ${LOVABLE_API_KEY}`,
-      "Content-Type": "application/json",
-    },
+    headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
     body: JSON.stringify({
       model: "google/gemini-2.5-flash",
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: `תמלול התדריך:\n\n${transcript}` },
       ],
-      tools: [
-        {
-          type: "function",
-          function: {
-            name: "save_briefing_summary",
-            description: "שומר סיכום מובנה של תדריך הבוקר",
-            parameters: {
-              type: "object",
-              properties: {
-                sections: {
-                  type: "array",
-                  description: "סקשנים דינמיים של הסיכום, לפי הנושאים שזוהו",
-                  items: {
-                    type: "object",
-                    properties: {
-                      title: { type: "string", description: "כותרת הסקשן" },
-                      bullets: {
-                        type: "array",
-                        items: { type: "string" },
-                        description: "בולטים תמציתיים",
-                      },
-                    },
-                    required: ["title", "bullets"],
-                    additionalProperties: false,
+      tools: [{
+        type: "function",
+        function: {
+          name: "save_briefing_summary",
+          description: "שומר סיכום מובנה",
+          parameters: {
+            type: "object",
+            properties: {
+              sections: {
+                type: "array",
+                items: {
+                  type: "object",
+                  properties: {
+                    title: { type: "string" },
+                    bullets: { type: "array", items: { type: "string" } },
                   },
+                  required: ["title", "bullets"],
+                  additionalProperties: false,
                 },
               },
-              required: ["sections"],
-              additionalProperties: false,
             },
+            required: ["sections"],
+            additionalProperties: false,
           },
         },
-      ],
+      }],
       tool_choice: { type: "function", function: { name: "save_briefing_summary" } },
     }),
   });
@@ -117,25 +103,22 @@ async function summarizeTranscript(transcript: string): Promise<any> {
   return JSON.parse(toolCall.function.arguments);
 }
 
-async function getAttendanceForDate(supabase: any, date: string) {
-  // Approved vacations covering this date
+async function getAttendanceForDate(supabase: any, date: string): Promise<AttendanceData> {
   const { data: vacations } = await supabase
     .from("requests")
-    .select("user_id, vacation_start_date, vacation_end_date, profiles:user_id(full_name)")
+    .select("user_id")
     .eq("type", "vacation")
     .eq("status", "approved")
     .lte("vacation_start_date", date)
     .gte("vacation_end_date", date);
 
-  // Approved WFH for this date
   const { data: wfh } = await supabase
     .from("requests")
-    .select("user_id, wfh_date, profiles:user_id(full_name)")
+    .select("user_id")
     .eq("type", "wfh")
     .eq("status", "approved")
     .eq("wfh_date", date);
 
-  // Fetch profile names separately (no FK relationship defined)
   const allUserIds = [
     ...(vacations?.map((v: any) => v.user_id) ?? []),
     ...(wfh?.map((w: any) => w.user_id) ?? []),
@@ -155,8 +138,43 @@ async function getAttendanceForDate(supabase: any, date: string) {
   };
 }
 
+function buildBriefingHtml(sections: BriefingSection[], attendance: AttendanceData): string {
+  let html = '';
+
+  if (attendance.vacation.length > 0 || attendance.wfh.length > 0) {
+    html += '<div class="briefing-attendance">';
+    if (attendance.vacation.length > 0) {
+      html += `<p><strong>🌴 חופש:</strong> ${attendance.vacation.join(', ')}</p>`;
+    }
+    if (attendance.wfh.length > 0) {
+      html += `<p><strong>🏠 עבודה מהבית:</strong> ${attendance.wfh.join(', ')}</p>`;
+    }
+    html += '</div><hr/>';
+  }
+
+  for (const section of sections) {
+    html += `<h3>${escapeHtml(section.title)}</h3><ul>`;
+    for (const b of section.bullets) {
+      html += `<li>${escapeHtml(b)}</li>`;
+    }
+    html += '</ul>';
+  }
+
+  return html;
+}
+
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+
+  let articleIdForError: string | null = null;
 
   try {
     const authHeader = req.headers.get("Authorization");
@@ -179,30 +197,52 @@ Deno.serve(async (req) => {
       });
     }
 
+    const userId = userData.user.id;
     const body = await req.json();
-    const { briefingId } = body;
-    if (!briefingId) throw new Error("briefingId is required");
+    const { briefingDate, audioPath, rawTranscript } = body;
+    if (!briefingDate) throw new Error("briefingDate is required");
 
-    // Load briefing
-    const { data: briefing, error: loadErr } = await supabase
-      .from("morning_briefings")
-      .select("*")
-      .eq("id", briefingId)
+    // Get user profile id
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("id")
+      .eq("user_id", userId)
+      .maybeSingle();
+    if (!profile) throw new Error("Profile not found");
+
+    // Format Hebrew title
+    const dateObj = new Date(briefingDate + 'T00:00:00');
+    const hebrewDate = dateObj.toLocaleDateString('he-IL', {
+      weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
+    });
+    const title = `תדריך בוקר - ${hebrewDate}`;
+
+    // Create placeholder article
+    const { data: article, error: insErr } = await supabase
+      .from("knowledge_articles")
+      .insert({
+        title,
+        content: '<p><em>מעבד את התדריך...</em></p>',
+        article_type: 'briefing',
+        author_id: profile.id,
+        is_published: false,
+        is_pinned: false,
+      })
+      .select()
       .single();
-    if (loadErr || !briefing) throw new Error("Briefing not found");
+    if (insErr) throw insErr;
+    articleIdForError = article.id;
 
-    let transcript = briefing.raw_transcript ?? "";
-
-    // If audio exists and no transcript, transcribe
-    if (briefing.audio_path && !transcript) {
+    // Get transcript (transcribe if audio)
+    let transcript = rawTranscript ?? "";
+    if (audioPath && !transcript) {
       const { data: fileData, error: dlErr } = await supabase.storage
         .from("morning-briefings-audio")
-        .download(briefing.audio_path);
+        .download(audioPath);
       if (dlErr) throw new Error(`Failed to download audio: ${dlErr.message}`);
 
       const arrayBuffer = await fileData.arrayBuffer();
       const bytes = new Uint8Array(arrayBuffer);
-      // Convert to base64 in chunks to avoid stack overflow
       let binary = "";
       const chunkSize = 0x8000;
       for (let i = 0; i < bytes.length; i += chunkSize) {
@@ -212,51 +252,49 @@ Deno.serve(async (req) => {
       const mimeType = fileData.type || "audio/webm";
 
       transcript = await transcribeAudio(base64, mimeType);
-
-      await supabase
-        .from("morning_briefings")
-        .update({ raw_transcript: transcript })
-        .eq("id", briefingId);
     }
 
     if (!transcript || transcript.trim().length < 10) {
-      throw new Error("Transcript is empty or too short");
+      throw new Error("התמלול ריק או קצר מדי");
     }
 
-    // Summarize
+    // Summarize and get attendance
     const summary = await summarizeTranscript(transcript);
+    const attendance = await getAttendanceForDate(supabase, briefingDate);
 
-    // Get attendance
-    const attendance = await getAttendanceForDate(supabase, briefing.briefing_date);
+    // Build final HTML
+    const html = buildBriefingHtml(summary.sections, attendance);
 
-    // Save
-    await supabase
-      .from("morning_briefings")
+    // Update article
+    const { error: updErr } = await supabase
+      .from("knowledge_articles")
       .update({
-        summary_sections: summary.sections,
-        attendance,
-        status: "ready",
-        error_message: null,
+        content: html,
+        is_published: true,
       })
-      .eq("id", briefingId);
+      .eq("id", article.id);
+    if (updErr) throw updErr;
 
-    return new Response(JSON.stringify({ success: true, summary, attendance }), {
+    return new Response(JSON.stringify({ success: true, articleId: article.id }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {
     console.error("process-briefing error:", e);
     const msg = e instanceof Error ? e.message : "Unknown error";
 
-    try {
-      const body = await req.clone().json();
-      if (body.briefingId) {
+    // Mark failed article
+    if (articleIdForError) {
+      try {
         const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
         await supabase
-          .from("morning_briefings")
-          .update({ status: "failed", error_message: msg })
-          .eq("id", body.briefingId);
-      }
-    } catch (_) {}
+          .from("knowledge_articles")
+          .update({
+            content: `<p><strong>עיבוד התדריך נכשל:</strong> ${msg}</p>`,
+            is_published: false,
+          })
+          .eq("id", articleIdForError);
+      } catch (_) {}
+    }
 
     return new Response(JSON.stringify({ error: msg }), {
       status: 500,
