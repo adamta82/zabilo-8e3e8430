@@ -322,6 +322,9 @@ Deno.serve(async (req) => {
       .eq("id", article.id);
     if (updErr) throw updErr;
 
+    // Send WhatsApp notification (non-blocking — failures logged but don't fail the request)
+    await sendWhatsAppNotification(summary.sections, attendance, title);
+
     return new Response(JSON.stringify({ success: true, articleId: article.id }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
