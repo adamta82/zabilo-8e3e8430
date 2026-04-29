@@ -13,6 +13,7 @@ import { Card } from '@/components/ui/card';
 import { BookOpen, Plus, Search, BarChart2, Pin, Building2, ChevronLeft, FolderOpen, Sunrise } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { CreateBriefingDialog } from '@/components/briefings/CreateBriefingDialog';
+import { cn } from '@/lib/utils';
 
 export default function KnowledgeHub() {
   const { isAdmin, canManageShifts } = useAuth();
