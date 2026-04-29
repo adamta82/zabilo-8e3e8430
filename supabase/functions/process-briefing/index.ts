@@ -8,6 +8,57 @@ const corsHeaders = {
 const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY")!;
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+const BULLDOG_WHATSAPP_TOKEN = Deno.env.get("BULLDOG_WHATSAPP_TOKEN");
+const BRIEFING_NOTIFY_PHONE = Deno.env.get("BRIEFING_NOTIFY_PHONE");
+const KNOWLEDGE_HUB_URL = "https://zabilo.lovable.app/knowledge";
+
+async function sendWhatsAppNotification(
+  sections: BriefingSection[],
+  attendance: AttendanceData,
+  title: string,
+): Promise<void> {
+  if (!BULLDOG_WHATSAPP_TOKEN || !BRIEFING_NOTIFY_PHONE) {
+    console.log("WhatsApp notification skipped - missing config");
+    return;
+  }
+
+  const vacationText = attendance.vacation.length > 0 ? attendance.vacation.join(", ") : "אין";
+  const wfhText = attendance.wfh.length > 0 ? attendance.wfh.join(", ") : "אין";
+  const titles = sections.map((s) => `• ${s.title}`).join("\n");
+
+  const message = `📋 *${title}*
+
+🌴 *חופש:* ${vacationText}
+🏠 *עבודה מהבית:* ${wfhText}
+
+📌 *נושאי התדריך:*
+${titles || "—"}
+
+🔗 לצפייה בתדריך המלא:
+${KNOWLEDGE_HUB_URL}`;
+
+  try {
+    const resp = await fetch("https://api.bulldog-wp.co.il/v1/messages", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Token": BULLDOG_WHATSAPP_TOKEN,
+      },
+      body: JSON.stringify({
+        phone: BRIEFING_NOTIFY_PHONE,
+        message,
+      }),
+    });
+    const txt = await resp.text();
+    if (!resp.ok) {
+      console.error(`WhatsApp send failed [${resp.status}]: ${txt}`);
+    } else {
+      console.log(`WhatsApp sent: ${txt}`);
+    }
+  } catch (e) {
+    console.error("WhatsApp send error:", e);
+  }
+}
 
 async function transcribeAudio(audioBase64: string, mimeType: string): Promise<string> {
   const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
@@ -270,6 +321,9 @@ Deno.serve(async (req) => {
       })
       .eq("id", article.id);
     if (updErr) throw updErr;
+
+    // Send WhatsApp notification (non-blocking — failures logged but don't fail the request)
+    await sendWhatsAppNotification(summary.sections, attendance, title);
 
     return new Response(JSON.stringify({ success: true, articleId: article.id }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
