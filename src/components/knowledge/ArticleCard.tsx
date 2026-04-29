@@ -73,6 +73,11 @@ export function ArticleCard({ article, onEdit, fullWidth }: Props) {
             {article.department?.name && (
               <Badge variant="outline">{article.department.name}</Badge>
             )}
+            {!article.is_published && (
+              <Badge variant="outline" className="border-amber-500 text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30">
+                טיוטה
+              </Badge>
+            )}
           </div>
           {isAdmin && (
             <div data-no-nav onClick={(e) => e.stopPropagation()}>
