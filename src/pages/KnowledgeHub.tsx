@@ -120,6 +120,20 @@ export default function KnowledgeHub() {
             </div>
           ) : (
             <>
+              {/* Briefings - full width, distinctive amber */}
+              {briefings.length > 0 && (
+                <div className="space-y-3">
+                  <h2 className="text-sm font-semibold text-muted-foreground flex items-center gap-2">
+                    <Sunrise className="h-4 w-4 text-amber-500" /> תדריכי בוקר
+                  </h2>
+                  <div className="space-y-3">
+                    {briefings.map((a) => (
+                      <ArticleCard key={a.id} article={a} onEdit={openEdit} fullWidth />
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {/* Pinned */}
               {pinned.length > 0 && (
                 <div className="space-y-3">
