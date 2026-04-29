@@ -10,7 +10,7 @@ const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const BULLDOG_WHATSAPP_TOKEN = Deno.env.get("BULLDOG_WHATSAPP_TOKEN");
 const BRIEFING_NOTIFY_PHONE = Deno.env.get("BRIEFING_NOTIFY_PHONE");
-const KNOWLEDGE_HUB_URL = "https://zabilo.lovable.app/knowledge";
+const KNOWLEDGE_HUB_URL = "https://zabilo.lovable.app/";
 
 async function sendWhatsAppNotification(
   sections: BriefingSection[],
