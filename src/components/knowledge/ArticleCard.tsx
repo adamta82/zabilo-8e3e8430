@@ -2,14 +2,13 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Check, Eye, Pin, MoreVertical, Pencil, Trash2 } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Eye, Pin, MoreVertical, Pencil, Trash2 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import {
   ARTICLE_TYPE_COLORS,
   ARTICLE_TYPE_LABELS,
   KnowledgeArticle,
   useDeleteArticle,
-  useMarkAsRead,
 } from '@/hooks/useKnowledge';
 import { useAuth } from '@/contexts/AuthContext';
 import { formatDistanceToNow } from 'date-fns';
@@ -30,8 +29,8 @@ interface Props {
 
 export function ArticleCard({ article, onEdit, fullWidth }: Props) {
   const { isAdmin } = useAuth();
-  const markAsRead = useMarkAsRead();
   const deleteArticle = useDeleteArticle();
+  const navigate = useNavigate();
   const isBriefing = article.article_type === 'briefing';
 
   const initials = article.author?.full_name
@@ -40,10 +39,17 @@ export function ArticleCard({ article, onEdit, fullWidth }: Props) {
     .join('')
     .slice(0, 2) || 'U';
 
+  const handleCardClick = (e: React.MouseEvent) => {
+    // Don't navigate if clicking on an interactive element (admin menu)
+    if ((e.target as HTMLElement).closest('[data-no-nav]')) return;
+    navigate(`/knowledge/${article.id}`);
+  };
+
   return (
     <Card
+      onClick={handleCardClick}
       className={cn(
-        'relative flex flex-col h-full transition-all hover:shadow-md',
+        'relative flex flex-col h-full transition-all hover:shadow-md cursor-pointer',
         article.is_pinned && !isBriefing && 'border-orange-300 border-2',
         isBriefing && 'border-amber-400 border-2 bg-gradient-to-br from-amber-50/60 to-transparent dark:from-amber-950/20',
         fullWidth && 'w-full'
@@ -69,28 +75,30 @@ export function ArticleCard({ article, onEdit, fullWidth }: Props) {
             )}
           </div>
           {isAdmin && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-7 w-7 -mt-1 -mr-1">
-                  <MoreVertical className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => onEdit?.(article)}>
-                  <Pencil className="ms-2 h-4 w-4" />
-                  ערוך
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  className="text-destructive"
-                  onClick={() => {
-                    if (confirm('למחוק את המאמר?')) deleteArticle.mutate(article.id);
-                  }}
-                >
-                  <Trash2 className="ms-2 h-4 w-4" />
-                  מחק
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <div data-no-nav onClick={(e) => e.stopPropagation()}>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-7 w-7 -mt-1 -mr-1">
+                    <MoreVertical className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => onEdit?.(article)}>
+                    <Pencil className="ms-2 h-4 w-4" />
+                    ערוך
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    className="text-destructive"
+                    onClick={() => {
+                      if (confirm('למחוק את המאמר?')) deleteArticle.mutate(article.id);
+                    }}
+                  >
+                    <Trash2 className="ms-2 h-4 w-4" />
+                    מחק
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           )}
         </div>
         <h3 className="font-bold text-lg line-clamp-2">{article.title}</h3>
@@ -114,27 +122,12 @@ export function ArticleCard({ article, onEdit, fullWidth }: Props) {
             </span>
           </div>
 
-          <div className="flex items-center gap-2">
-            <Button asChild size="sm" className="flex-1">
-              <Link to={`/knowledge/${article.id}`}>קרא עוד</Link>
-            </Button>
-            <Button
-              size="sm"
-              variant={article.is_read ? 'secondary' : 'outline'}
-              disabled={article.is_read || markAsRead.isPending}
-              onClick={() => markAsRead.mutate(article.id)}
-              className={cn(article.is_read && 'bg-green-100 text-green-700 hover:bg-green-100')}
-            >
-              <Check className="ms-1 h-4 w-4" />
-              {article.is_read ? 'נקרא' : 'קראתי'}
-            </Button>
-            {isAdmin && (
-              <div className="flex items-center gap-1 text-xs text-muted-foreground px-2">
-                <Eye className="h-3.5 w-3.5" />
-                {article.read_count || 0}
-              </div>
-            )}
-          </div>
+          {isAdmin && (
+            <div className="flex items-center gap-1 text-xs text-muted-foreground">
+              <Eye className="h-3.5 w-3.5" />
+              {article.read_count || 0} צפיות
+            </div>
+          )}
         </div>
       </CardContent>
     </Card>
