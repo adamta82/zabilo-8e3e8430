@@ -75,28 +75,30 @@ export function ArticleCard({ article, onEdit, fullWidth }: Props) {
             )}
           </div>
           {isAdmin && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-7 w-7 -mt-1 -mr-1">
-                  <MoreVertical className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => onEdit?.(article)}>
-                  <Pencil className="ms-2 h-4 w-4" />
-                  ערוך
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  className="text-destructive"
-                  onClick={() => {
-                    if (confirm('למחוק את המאמר?')) deleteArticle.mutate(article.id);
-                  }}
-                >
-                  <Trash2 className="ms-2 h-4 w-4" />
-                  מחק
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <div data-no-nav onClick={(e) => e.stopPropagation()}>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-7 w-7 -mt-1 -mr-1">
+                    <MoreVertical className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => onEdit?.(article)}>
+                    <Pencil className="ms-2 h-4 w-4" />
+                    ערוך
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    className="text-destructive"
+                    onClick={() => {
+                      if (confirm('למחוק את המאמר?')) deleteArticle.mutate(article.id);
+                    }}
+                  >
+                    <Trash2 className="ms-2 h-4 w-4" />
+                    מחק
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           )}
         </div>
         <h3 className="font-bold text-lg line-clamp-2">{article.title}</h3>
