@@ -66,21 +66,24 @@ export default function KnowledgeHub() {
             עדכונים, נהלים ומאמרים של זבילו
           </p>
         </div>
-        {isAdmin && (
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" asChild>
-              <Link to="/knowledge/tracking">
-                <BarChart2 className="ms-1 sm:ms-2 h-4 w-4" />
-                <span className="hidden sm:inline">מעקב קריאה</span>
-              </Link>
-            </Button>
-            <Button size="sm" onClick={openNew}>
-              <Plus className="ms-1 sm:ms-2 h-4 w-4" />
-              <span className="hidden sm:inline">מאמר חדש</span>
-              <span className="sm:hidden">חדש</span>
-            </Button>
-          </div>
-        )}
+        <div className="flex gap-2 flex-wrap">
+          {canManageShifts && <CreateBriefingDialog />}
+          {isAdmin && (
+            <>
+              <Button variant="outline" size="sm" asChild>
+                <Link to="/knowledge/tracking">
+                  <BarChart2 className="ms-1 sm:ms-2 h-4 w-4" />
+                  <span className="hidden sm:inline">מעקב קריאה</span>
+                </Link>
+              </Button>
+              <Button size="sm" onClick={openNew}>
+                <Plus className="ms-1 sm:ms-2 h-4 w-4" />
+                <span className="hidden sm:inline">מאמר חדש</span>
+                <span className="sm:hidden">חדש</span>
+              </Button>
+            </>
+          )}
+        </div>
       </div>
 
       {/* Search */}
