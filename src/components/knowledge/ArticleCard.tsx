@@ -29,8 +29,8 @@ interface Props {
 
 export function ArticleCard({ article, onEdit, fullWidth }: Props) {
   const { isAdmin } = useAuth();
-  const markAsRead = useMarkAsRead();
   const deleteArticle = useDeleteArticle();
+  const navigate = useNavigate();
   const isBriefing = article.article_type === 'briefing';
 
   const initials = article.author?.full_name
@@ -39,10 +39,17 @@ export function ArticleCard({ article, onEdit, fullWidth }: Props) {
     .join('')
     .slice(0, 2) || 'U';
 
+  const handleCardClick = (e: React.MouseEvent) => {
+    // Don't navigate if clicking on an interactive element (admin menu)
+    if ((e.target as HTMLElement).closest('[data-no-nav]')) return;
+    navigate(`/knowledge/${article.id}`);
+  };
+
   return (
     <Card
+      onClick={handleCardClick}
       className={cn(
-        'relative flex flex-col h-full transition-all hover:shadow-md',
+        'relative flex flex-col h-full transition-all hover:shadow-md cursor-pointer',
         article.is_pinned && !isBriefing && 'border-orange-300 border-2',
         isBriefing && 'border-amber-400 border-2 bg-gradient-to-br from-amber-50/60 to-transparent dark:from-amber-950/20',
         fullWidth && 'w-full'
