@@ -122,9 +122,17 @@ export default function KnowledgeHub() {
               {/* Latest briefing - full width, distinctive amber */}
               {latestBriefing && (
                 <div className="space-y-3">
-                  <h2 className="text-sm font-semibold text-muted-foreground flex items-center gap-2">
-                    <Sunrise className="h-4 w-4 text-amber-500" /> תדריך בוקר אחרון
-                  </h2>
+                  <div className="flex items-center justify-between gap-2">
+                    <h2 className="text-sm font-semibold text-muted-foreground flex items-center gap-2">
+                      <Sunrise className="h-4 w-4 text-amber-500" /> תדריך בוקר אחרון
+                    </h2>
+                    <Link
+                      to="/knowledge/briefings"
+                      className="text-xs text-primary hover:underline font-medium"
+                    >
+                      ארכיון תדריכים ←
+                    </Link>
+                  </div>
                   <ArticleCard article={latestBriefing} onEdit={openEdit} fullWidth />
                 </div>
               )}
