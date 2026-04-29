@@ -20,6 +20,24 @@ export function CreateBriefingDialog() {
   const [recordedBlob, setRecordedBlob] = useState<Blob | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
+  const wakeLockRef = useRef<any>(null);
+
+  const requestWakeLock = async () => {
+    try {
+      if ('wakeLock' in navigator) {
+        wakeLockRef.current = await (navigator as any).wakeLock.request('screen');
+      }
+    } catch (e) {
+      console.warn('Wake Lock failed:', e);
+    }
+  };
+
+  const releaseWakeLock = async () => {
+    try {
+      await wakeLockRef.current?.release?.();
+      wakeLockRef.current = null;
+    } catch (_) {}
+  };
 
   // Upload state
   const [uploadFile, setUploadFile] = useState<File | null>(null);
