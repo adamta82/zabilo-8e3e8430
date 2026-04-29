@@ -72,6 +72,16 @@ function AppRoutes() {
         }
       />
       <Route
+        path="/knowledge/briefings"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <BriefingsArchive />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path="/knowledge/:id"
         element={
           <ProtectedRoute>
