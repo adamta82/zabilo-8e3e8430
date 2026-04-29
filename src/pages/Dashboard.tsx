@@ -129,9 +129,6 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-4 sm:space-y-6">
-      {/* Morning Briefing */}
-      <BriefingHero />
-
       {/* Header */}
       <div className="flex flex-col gap-3">
         {/* Row 1: View toggle + dept select */}
