@@ -70,26 +70,43 @@ ${titles || "—"}
 🔗 לצפייה בתדריך המלא:
 ${KNOWLEDGE_HUB_URL}`;
 
+  const url = "https://api.bulldog-wp.co.il/v1/messages";
+  const requestBody = { phone: BRIEFING_NOTIFY_PHONE, message };
+
   try {
-    const resp = await fetch("https://api.bulldog-wp.co.il/v1/messages", {
+    const resp = await fetch(url, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         "Token": BULLDOG_WHATSAPP_TOKEN,
       },
-      body: JSON.stringify({
-        phone: BRIEFING_NOTIFY_PHONE,
-        message,
-      }),
+      body: JSON.stringify(requestBody),
     });
     const txt = await resp.text();
+    let parsedResponse: unknown = txt;
+    try { parsedResponse = JSON.parse(txt); } catch (_) {}
+
     if (!resp.ok) {
       console.error(`WhatsApp send failed [${resp.status}]: ${txt}`);
+      await logWebhookCall({
+        url, method: "POST", body: requestBody,
+        responseStatus: resp.status, responseBody: parsedResponse,
+        error: `HTTP ${resp.status}`,
+      });
     } else {
       console.log(`WhatsApp sent: ${txt}`);
+      await logWebhookCall({
+        url, method: "POST", body: requestBody,
+        responseStatus: resp.status, responseBody: parsedResponse, error: null,
+      });
     }
   } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
     console.error("WhatsApp send error:", e);
+    await logWebhookCall({
+      url, method: "POST", body: requestBody,
+      responseStatus: null, responseBody: null, error: msg,
+    });
   }
 }
 
