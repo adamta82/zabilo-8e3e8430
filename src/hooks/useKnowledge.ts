@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 
-export type ArticleType = 'article' | 'update' | 'procedure';
+export type ArticleType = 'article' | 'update' | 'procedure' | 'briefing';
 
 export interface KnowledgeArticle {
   id: string;
@@ -27,12 +27,14 @@ export const ARTICLE_TYPE_LABELS: Record<ArticleType, string> = {
   article: 'מאמר',
   update: 'עדכון',
   procedure: 'נוהל',
+  briefing: 'תדריך בוקר',
 };
 
 export const ARTICLE_TYPE_COLORS: Record<ArticleType, string> = {
   article: 'bg-blue-100 text-blue-700 hover:bg-blue-100',
   update: 'bg-orange-100 text-orange-700 hover:bg-orange-100',
   procedure: 'bg-green-100 text-green-700 hover:bg-green-100',
+  briefing: 'bg-amber-100 text-amber-700 hover:bg-amber-100',
 };
 
 export function useArticles() {
