@@ -26,6 +26,7 @@ export function CreateBriefingDialog() {
   const chunksRef = useRef<Blob[]>([]);
   const wakeLockRef = useRef<any>(null);
   const noSleepRef = useRef<NoSleep | null>(null);
+  const isRecordingRef = useRef(false);
   const discardRecordingRef = useRef(false);
   const [previewData, setPreviewData] = useState<BriefingPreviewData | null>(null);
   const [uploadedAudioPath, setUploadedAudioPath] = useState<string | null>(null);
@@ -36,7 +37,7 @@ export function CreateBriefingDialog() {
       if ('wakeLock' in navigator) {
         const sentinel = await (navigator as any).wakeLock.request('screen');
         sentinel?.addEventListener?.('release', () => {
-          if (isRecording && document.visibilityState === 'visible') {
+          if (isRecordingRef.current && document.visibilityState === 'visible') {
             void requestWakeLock();
           }
         });
@@ -74,6 +75,10 @@ export function CreateBriefingDialog() {
 
   const create = useCreateBriefing();
   const preview = usePreviewBriefing();
+
+  useEffect(() => {
+    isRecordingRef.current = isRecording;
+  }, [isRecording]);
 
   useEffect(() => {
     return () => {
