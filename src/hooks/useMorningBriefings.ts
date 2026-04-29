@@ -39,7 +39,7 @@ export function useLatestBriefing() {
         .limit(1)
         .maybeSingle();
       if (error) throw error;
-      return data as MorningBriefing | null;
+      return data as unknown as MorningBriefing | null;
     },
   });
 }
@@ -54,7 +54,7 @@ export function useBriefings() {
         .order('briefing_date', { ascending: false })
         .order('created_at', { ascending: false });
       if (error) throw error;
-      return data as MorningBriefing[];
+      return data as unknown as MorningBriefing[];
     },
   });
 }
@@ -70,7 +70,7 @@ export function useBriefing(id: string | undefined) {
         .eq('id', id)
         .maybeSingle();
       if (error) throw error;
-      return data as MorningBriefing | null;
+      return data as unknown as MorningBriefing | null;
     },
     enabled: !!id,
     refetchInterval: (query) => {
@@ -128,7 +128,7 @@ export function useCreateBriefing() {
         console.error('Process briefing error:', fnErr);
       }
 
-      return briefing as MorningBriefing;
+      return briefing as unknown as MorningBriefing;
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['morning-briefings'] });
