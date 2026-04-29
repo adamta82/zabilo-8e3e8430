@@ -22,6 +22,7 @@ import DepartmentKnowledge from "./pages/DepartmentKnowledge";
 
 import ArticleView from "./pages/ArticleView";
 import ReadTracking from "./pages/ReadTracking";
+import BriefingsArchive from "./pages/BriefingsArchive";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
