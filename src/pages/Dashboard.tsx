@@ -15,14 +15,6 @@ import { useShifts } from '@/hooks/useShifts';
 import { useEmployees } from '@/hooks/useEmployees';
 import { israeliHolidays, formatDateString, parseLocalDate } from '@/lib/calendar-utils';
 import { useGoogleCalendarEvents, CalendarEvent } from '@/hooks/useGoogleCalendar';
-import { useLatestBriefing } from '@/hooks/useMorningBriefings';
-import { BriefingDisplay } from '@/components/briefings/BriefingDisplay';
-
-function BriefingHero() {
-  const { data: briefing, isLoading } = useLatestBriefing();
-  if (!isLoading && !briefing) return null;
-  return <BriefingDisplay briefing={briefing} isLoading={isLoading} compact />;
-}
 
 const weekDayNames = ['א׳', 'ב׳', 'ג׳', 'ד׳', 'ה׳', 'ו׳', 'ש׳'];
 const HEBREW_DAYS_FULL = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];
