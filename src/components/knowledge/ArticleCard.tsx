@@ -109,25 +109,27 @@ export function ArticleCard({ article, onEdit, fullWidth }: Props) {
           {article.content.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()}
         </p>
 
-        <div className="mt-auto space-y-3">
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <Avatar className="h-6 w-6">
+        <div className="mt-auto">
+          <div className="flex items-center gap-2 text-xs text-muted-foreground min-w-0">
+            <Avatar className="h-5 w-5 shrink-0">
               <AvatarImage src={article.author?.avatar_url || undefined} />
               <AvatarFallback className="text-[10px]">{initials}</AvatarFallback>
             </Avatar>
-            <span>{article.author?.full_name}</span>
-            <span>·</span>
-            <span>
+            <span className="truncate">{article.author?.full_name}</span>
+            <span className="shrink-0">·</span>
+            <span className="truncate shrink-0">
               {formatDistanceToNow(new Date(article.created_at), { addSuffix: true, locale: he })}
             </span>
+            {isAdmin && (
+              <>
+                <span className="shrink-0">·</span>
+                <span className="flex items-center gap-1 shrink-0">
+                  <Eye className="h-3.5 w-3.5" />
+                  {article.read_count || 0}
+                </span>
+              </>
+            )}
           </div>
-
-          {isAdmin && (
-            <div className="flex items-center gap-1 text-xs text-muted-foreground">
-              <Eye className="h-3.5 w-3.5" />
-              {article.read_count || 0} צפיות
-            </div>
-          )}
         </div>
       </CardContent>
     </Card>
