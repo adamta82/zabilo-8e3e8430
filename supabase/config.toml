@@ -11,3 +11,6 @@ verify_jwt = false
 
 [functions.create-article]
 verify_jwt = false
+
+[functions.test-whatsapp]
+verify_jwt = false
