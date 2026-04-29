@@ -13,6 +13,7 @@ import { Card } from '@/components/ui/card';
 import { BookOpen, Plus, Search, BarChart2, Pin, Building2, ChevronLeft, FolderOpen, Sunrise } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { CreateBriefingDialog } from '@/components/briefings/CreateBriefingDialog';
+import { cn } from '@/lib/utils';
 
 export default function KnowledgeHub() {
   const { isAdmin, canManageShifts } = useAuth();
@@ -143,9 +144,14 @@ export default function KnowledgeHub() {
                   <h2 className="text-sm font-semibold text-muted-foreground flex items-center gap-2">
                     <Pin className="h-4 w-4 text-orange-500" /> מוצמד
                   </h2>
-                  <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+                  <div className={cn(
+                    "grid gap-3 grid-cols-1",
+                    pinned.length === 1 && "sm:grid-cols-1",
+                    pinned.length === 2 && "sm:grid-cols-2",
+                    pinned.length >= 3 && "sm:grid-cols-2 lg:grid-cols-3"
+                  )}>
                     {pinned.map((a) => (
-                      <ArticleCard key={a.id} article={a} onEdit={openEdit} />
+                      <ArticleCard key={a.id} article={a} onEdit={openEdit} fullWidth />
                     ))}
                   </div>
                 </div>
