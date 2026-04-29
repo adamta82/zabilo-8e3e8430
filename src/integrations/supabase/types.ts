@@ -393,6 +393,48 @@ export type Database = {
           },
         ]
       }
+      morning_briefings: {
+        Row: {
+          attendance: Json | null
+          audio_path: string | null
+          briefing_date: string
+          created_at: string
+          created_by: string
+          error_message: string | null
+          id: string
+          raw_transcript: string | null
+          status: string
+          summary_sections: Json | null
+          updated_at: string
+        }
+        Insert: {
+          attendance?: Json | null
+          audio_path?: string | null
+          briefing_date?: string
+          created_at?: string
+          created_by: string
+          error_message?: string | null
+          id?: string
+          raw_transcript?: string | null
+          status?: string
+          summary_sections?: Json | null
+          updated_at?: string
+        }
+        Update: {
+          attendance?: Json | null
+          audio_path?: string | null
+          briefing_date?: string
+          created_at?: string
+          created_by?: string
+          error_message?: string | null
+          id?: string
+          raw_transcript?: string | null
+          status?: string
+          summary_sections?: Json | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           address: string | null
