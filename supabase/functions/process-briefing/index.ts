@@ -141,16 +141,12 @@ async function getAttendanceForDate(supabase: any, date: string): Promise<Attend
 function buildBriefingHtml(sections: BriefingSection[], attendance: AttendanceData): string {
   let html = '';
 
-  if (attendance.vacation.length > 0 || attendance.wfh.length > 0) {
-    html += '<div class="briefing-attendance">';
-    if (attendance.vacation.length > 0) {
-      html += `<p><strong>🌴 חופש:</strong> ${attendance.vacation.join(', ')}</p>`;
-    }
-    if (attendance.wfh.length > 0) {
-      html += `<p><strong>🏠 עבודה מהבית:</strong> ${attendance.wfh.join(', ')}</p>`;
-    }
-    html += '</div><hr/>';
-  }
+  html += '<div class="briefing-attendance">';
+  const vacationText = attendance.vacation.length > 0 ? attendance.vacation.join(', ') : 'אין';
+  const wfhText = attendance.wfh.length > 0 ? attendance.wfh.join(', ') : 'אין';
+  html += `<p><strong>🌴 חופש:</strong> ${vacationText}</p>`;
+  html += `<p><strong>🏠 עבודה מהבית:</strong> ${wfhText}</p>`;
+  html += '</div><hr/>';
 
   for (const section of sections) {
     html += `<h3>${escapeHtml(section.title)}</h3><ul>`;
