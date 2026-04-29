@@ -57,10 +57,12 @@ export function CreateBriefingDialog() {
         const blob = new Blob(chunksRef.current, { type: mr.mimeType || 'audio/webm' });
         setRecordedBlob(blob);
         stream.getTracks().forEach(t => t.stop());
+        releaseWakeLock();
       };
       mediaRecorderRef.current = mr;
       mr.start();
       setIsRecording(true);
+      await requestWakeLock();
     } catch (e: any) {
       toast.error('לא ניתן לגשת למיקרופון: ' + (e.message ?? ''));
     }
