@@ -71,7 +71,7 @@ ${titles || "—"}
 ${KNOWLEDGE_HUB_URL}`;
 
   const url = "https://api.bulldog-wp.co.il/v1/messages";
-  const requestBody = { phone: BRIEFING_NOTIFY_PHONE, message };
+  const requestBody = { group: BRIEFING_NOTIFY_PHONE, message };
 
   try {
     const resp = await fetch(url, {
