@@ -122,27 +122,12 @@ export function ArticleCard({ article, onEdit, fullWidth }: Props) {
             </span>
           </div>
 
-          <div className="flex items-center gap-2">
-            <Button asChild size="sm" className="flex-1">
-              <Link to={`/knowledge/${article.id}`}>קרא עוד</Link>
-            </Button>
-            <Button
-              size="sm"
-              variant={article.is_read ? 'secondary' : 'outline'}
-              disabled={article.is_read || markAsRead.isPending}
-              onClick={() => markAsRead.mutate(article.id)}
-              className={cn(article.is_read && 'bg-green-100 text-green-700 hover:bg-green-100')}
-            >
-              <Check className="ms-1 h-4 w-4" />
-              {article.is_read ? 'נקרא' : 'קראתי'}
-            </Button>
-            {isAdmin && (
-              <div className="flex items-center gap-1 text-xs text-muted-foreground px-2">
-                <Eye className="h-3.5 w-3.5" />
-                {article.read_count || 0}
-              </div>
-            )}
-          </div>
+          {isAdmin && (
+            <div className="flex items-center gap-1 text-xs text-muted-foreground">
+              <Eye className="h-3.5 w-3.5" />
+              {article.read_count || 0} צפיות
+            </div>
+          )}
         </div>
       </CardContent>
     </Card>
