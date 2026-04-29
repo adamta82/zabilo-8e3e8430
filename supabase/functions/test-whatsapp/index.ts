@@ -26,7 +26,7 @@ Deno.serve(async (req) => {
 
 🔗 https://zabilo.lovable.app/`;
 
-  const requestBody = { phone: PHONE, message };
+  const requestBody = { group: PHONE, message };
 
   let status: number | null = null;
   let respText = "";
