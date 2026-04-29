@@ -12,6 +12,31 @@ const BULLDOG_WHATSAPP_TOKEN = Deno.env.get("BULLDOG_WHATSAPP_TOKEN");
 const BRIEFING_NOTIFY_PHONE = Deno.env.get("BRIEFING_NOTIFY_PHONE");
 const KNOWLEDGE_HUB_URL = "https://zabilo.lovable.app/";
 
+async function logWebhookCall(params: {
+  url: string;
+  method: string;
+  body: unknown;
+  responseStatus: number | null;
+  responseBody: unknown;
+  error: string | null;
+}): Promise<void> {
+  try {
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+    await supabase.from("webhook_logs").insert({
+      function_name: "process-briefing → WhatsApp (Bulldog)",
+      method: params.method,
+      url: params.url,
+      query_params: null,
+      body: params.body as any,
+      response_status: params.responseStatus,
+      response_body: params.responseBody as any,
+      error: params.error,
+    });
+  } catch (e) {
+    console.error("Failed to log webhook call:", e);
+  }
+}
+
 async function sendWhatsAppNotification(
   sections: BriefingSection[],
   attendance: AttendanceData,
@@ -19,6 +44,14 @@ async function sendWhatsAppNotification(
 ): Promise<void> {
   if (!BULLDOG_WHATSAPP_TOKEN || !BRIEFING_NOTIFY_PHONE) {
     console.log("WhatsApp notification skipped - missing config");
+    await logWebhookCall({
+      url: "https://api.bulldog-wp.co.il/v1/messages",
+      method: "POST",
+      body: null,
+      responseStatus: null,
+      responseBody: null,
+      error: "Skipped — missing BULLDOG_WHATSAPP_TOKEN or BRIEFING_NOTIFY_PHONE",
+    });
     return;
   }
 
@@ -37,26 +70,43 @@ ${titles || "—"}
 🔗 לצפייה בתדריך המלא:
 ${KNOWLEDGE_HUB_URL}`;
 
+  const url = "https://api.bulldog-wp.co.il/v1/messages";
+  const requestBody = { phone: BRIEFING_NOTIFY_PHONE, message };
+
   try {
-    const resp = await fetch("https://api.bulldog-wp.co.il/v1/messages", {
+    const resp = await fetch(url, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         "Token": BULLDOG_WHATSAPP_TOKEN,
       },
-      body: JSON.stringify({
-        phone: BRIEFING_NOTIFY_PHONE,
-        message,
-      }),
+      body: JSON.stringify(requestBody),
     });
     const txt = await resp.text();
+    let parsedResponse: unknown = txt;
+    try { parsedResponse = JSON.parse(txt); } catch (_) {}
+
     if (!resp.ok) {
       console.error(`WhatsApp send failed [${resp.status}]: ${txt}`);
+      await logWebhookCall({
+        url, method: "POST", body: requestBody,
+        responseStatus: resp.status, responseBody: parsedResponse,
+        error: `HTTP ${resp.status}`,
+      });
     } else {
       console.log(`WhatsApp sent: ${txt}`);
+      await logWebhookCall({
+        url, method: "POST", body: requestBody,
+        responseStatus: resp.status, responseBody: parsedResponse, error: null,
+      });
     }
   } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
     console.error("WhatsApp send error:", e);
+    await logWebhookCall({
+      url, method: "POST", body: requestBody,
+      responseStatus: null, responseBody: null, error: msg,
+    });
   }
 }
 
