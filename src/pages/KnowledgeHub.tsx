@@ -119,17 +119,13 @@ export default function KnowledgeHub() {
             </div>
           ) : (
             <>
-              {/* Briefings - full width, distinctive amber */}
-              {briefings.length > 0 && (
+              {/* Latest briefing - full width, distinctive amber */}
+              {latestBriefing && (
                 <div className="space-y-3">
                   <h2 className="text-sm font-semibold text-muted-foreground flex items-center gap-2">
-                    <Sunrise className="h-4 w-4 text-amber-500" /> תדריכי בוקר
+                    <Sunrise className="h-4 w-4 text-amber-500" /> תדריך בוקר אחרון
                   </h2>
-                  <div className="space-y-3">
-                    {briefings.map((a) => (
-                      <ArticleCard key={a.id} article={a} onEdit={openEdit} fullWidth />
-                    ))}
-                  </div>
+                  <ArticleCard article={latestBriefing} onEdit={openEdit} fullWidth />
                 </div>
               )}
 
