@@ -10,11 +10,12 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card } from '@/components/ui/card';
-import { BookOpen, Plus, Search, BarChart2, Pin, Building2, ChevronLeft, FolderOpen } from 'lucide-react';
+import { BookOpen, Plus, Search, BarChart2, Pin, Building2, ChevronLeft, FolderOpen, Sunrise } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { CreateBriefingDialog } from '@/components/briefings/CreateBriefingDialog';
 
 export default function KnowledgeHub() {
-  const { isAdmin } = useAuth();
+  const { isAdmin, canManageShifts } = useAuth();
   const { data: articles, isLoading } = useArticles();
   const { data: departments } = useDepartments();
   const { data: deptCounts } = useDepartmentArticleCounts();
@@ -24,12 +25,19 @@ export default function KnowledgeHub() {
   const [editing, setEditing] = useState<KnowledgeArticle | null>(null);
 
   const tickerArticles = useMemo(
-    () => (articles || []).filter((a) => a.is_published).slice(0, 5),
+    () => (articles || []).filter((a) => a.is_published && a.article_type !== 'briefing').slice(0, 5),
     [articles]
   );
 
+  const briefings = useMemo(
+    () => (articles || [])
+      .filter((a) => a.article_type === 'briefing' && (a.is_published || isAdmin))
+      .slice(0, 3),
+    [articles, isAdmin]
+  );
+
   const pinned = useMemo(
-    () => (articles || []).filter((a) => a.is_pinned && (a.is_published || isAdmin)),
+    () => (articles || []).filter((a) => a.is_pinned && a.article_type !== 'briefing' && (a.is_published || isAdmin)),
     [articles, isAdmin]
   );
 
