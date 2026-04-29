@@ -29,10 +29,9 @@ export default function KnowledgeHub() {
     [articles]
   );
 
-  const briefings = useMemo(
+  const latestBriefing = useMemo(
     () => (articles || [])
-      .filter((a) => a.article_type === 'briefing' && (a.is_published || isAdmin))
-      .slice(0, 3),
+      .filter((a) => a.article_type === 'briefing' && (a.is_published || isAdmin))[0],
     [articles, isAdmin]
   );
 
