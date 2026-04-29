@@ -19,6 +19,7 @@ import OrgChart from "./pages/OrgChart";
 import MyArea from "./pages/MyArea";
 import KnowledgeHub from "./pages/KnowledgeHub";
 import DepartmentKnowledge from "./pages/DepartmentKnowledge";
+import Briefings from "./pages/Briefings";
 import ArticleView from "./pages/ArticleView";
 import ReadTracking from "./pages/ReadTracking";
 import NotFound from "./pages/NotFound";
@@ -110,6 +111,16 @@ function AppRoutes() {
         }
       />
 
+      <Route
+        path="/briefings"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <Briefings />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
       <Route
         path="/my-area"
         element={
