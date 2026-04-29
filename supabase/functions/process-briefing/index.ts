@@ -141,6 +141,15 @@ async function transcribeAudio(audioBase64: string, mimeType: string): Promise<s
 interface BriefingSection { title: string; bullets: string[]; }
 interface AttendanceData { vacation: string[]; wfh: string[]; }
 
+interface BriefingPreviewPayload {
+  title: string;
+  transcript: string;
+  sections: BriefingSection[];
+  attendance: AttendanceData;
+  html: string;
+  audioPath: string | null;
+}
+
 async function summarizeTranscript(transcript: string): Promise<{ sections: BriefingSection[] }> {
   const systemPrompt = `אתה עוזר שמסכם תדריכי בוקר של חברת eCommerce ישראלית בעברית.
 
@@ -268,6 +277,45 @@ function escapeHtml(s: string): string {
     .replace(/"/g, '&quot;');
 }
 
+function formatBriefingTitle(briefingDate: string): string {
+  const dateObj = new Date(briefingDate + 'T00:00:00');
+  const hebrewDate = dateObj.toLocaleDateString('he-IL', {
+    weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
+  });
+  return `תדריך בוקר - ${hebrewDate}`;
+}
+
+function normalizePreviewData(payload: any): BriefingPreviewPayload {
+  if (!payload || typeof payload !== 'object') {
+    throw new Error('previewData is invalid');
+  }
+
+  const transcript = typeof payload.transcript === 'string' ? payload.transcript : '';
+  const title = typeof payload.title === 'string' ? payload.title : '';
+  const html = typeof payload.html === 'string' ? payload.html : '';
+  const audioPath = typeof payload.audioPath === 'string' ? payload.audioPath : null;
+  const sections = Array.isArray(payload.sections)
+    ? payload.sections.map((section: any) => ({
+        title: typeof section?.title === 'string' ? section.title : '',
+        bullets: Array.isArray(section?.bullets) ? section.bullets.filter((bullet: unknown): bullet is string => typeof bullet === 'string') : [],
+      }))
+    : [];
+  const attendance = {
+    vacation: Array.isArray(payload.attendance?.vacation)
+      ? payload.attendance.vacation.filter((name: unknown): name is string => typeof name === 'string')
+      : [],
+    wfh: Array.isArray(payload.attendance?.wfh)
+      ? payload.attendance.wfh.filter((name: unknown): name is string => typeof name === 'string')
+      : [],
+  };
+
+  if (!title || !html || transcript.trim().length < 10 || sections.length === 0) {
+    throw new Error('previewData is incomplete');
+  }
+
+  return { title, transcript, sections, attendance, html, audioPath };
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
@@ -296,7 +344,7 @@ Deno.serve(async (req) => {
 
     const userId = userData.user.id;
     const body = await req.json();
-    const { briefingDate, audioPath, rawTranscript } = body;
+    const { briefingDate, audioPath, rawTranscript, previewOnly, previewData } = body;
     if (!briefingDate) throw new Error("briefingDate is required");
 
     // Get user profile id
@@ -307,18 +355,59 @@ Deno.serve(async (req) => {
       .maybeSingle();
     if (!profile) throw new Error("Profile not found");
 
-    // Format Hebrew title
-    const dateObj = new Date(briefingDate + 'T00:00:00');
-    const hebrewDate = dateObj.toLocaleDateString('he-IL', {
-      weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
-    });
-    const title = `תדריך בוקר - ${hebrewDate}`;
+    const title = formatBriefingTitle(briefingDate);
+
+    let previewPayload: BriefingPreviewPayload;
+    if (previewData) {
+      previewPayload = normalizePreviewData(previewData);
+    } else {
+      let transcript = rawTranscript ?? "";
+      if (audioPath && !transcript) {
+        const { data: fileData, error: dlErr } = await supabase.storage
+          .from("morning-briefings-audio")
+          .download(audioPath);
+        if (dlErr) throw new Error(`Failed to download audio: ${dlErr.message}`);
+
+        const arrayBuffer = await fileData.arrayBuffer();
+        const bytes = new Uint8Array(arrayBuffer);
+        let binary = "";
+        const chunkSize = 0x8000;
+        for (let i = 0; i < bytes.length; i += chunkSize) {
+          binary += String.fromCharCode.apply(null, Array.from(bytes.subarray(i, i + chunkSize)));
+        }
+        const base64 = btoa(binary);
+        const mimeType = fileData.type || "audio/webm";
+
+        transcript = await transcribeAudio(base64, mimeType);
+      }
+
+      if (!transcript || transcript.trim().length < 10) {
+        throw new Error("התמלול ריק או קצר מדי");
+      }
+
+      const summary = await summarizeTranscript(transcript);
+      const attendance = await getAttendanceForDate(supabase, briefingDate);
+      previewPayload = {
+        title,
+        transcript,
+        sections: summary.sections,
+        attendance,
+        html: buildBriefingHtml(summary.sections, attendance),
+        audioPath: audioPath ?? null,
+      };
+    }
+
+    if (previewOnly) {
+      return new Response(JSON.stringify(previewPayload), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     // Create placeholder article
     const { data: article, error: insErr } = await supabase
       .from("knowledge_articles")
       .insert({
-        title,
+        title: previewPayload.title,
         content: '<p><em>מעבד את התדריך...</em></p>',
         article_type: 'briefing',
         author_id: profile.id,
@@ -330,50 +419,18 @@ Deno.serve(async (req) => {
     if (insErr) throw insErr;
     articleIdForError = article.id;
 
-    // Get transcript (transcribe if audio)
-    let transcript = rawTranscript ?? "";
-    if (audioPath && !transcript) {
-      const { data: fileData, error: dlErr } = await supabase.storage
-        .from("morning-briefings-audio")
-        .download(audioPath);
-      if (dlErr) throw new Error(`Failed to download audio: ${dlErr.message}`);
-
-      const arrayBuffer = await fileData.arrayBuffer();
-      const bytes = new Uint8Array(arrayBuffer);
-      let binary = "";
-      const chunkSize = 0x8000;
-      for (let i = 0; i < bytes.length; i += chunkSize) {
-        binary += String.fromCharCode.apply(null, Array.from(bytes.subarray(i, i + chunkSize)));
-      }
-      const base64 = btoa(binary);
-      const mimeType = fileData.type || "audio/webm";
-
-      transcript = await transcribeAudio(base64, mimeType);
-    }
-
-    if (!transcript || transcript.trim().length < 10) {
-      throw new Error("התמלול ריק או קצר מדי");
-    }
-
-    // Summarize and get attendance
-    const summary = await summarizeTranscript(transcript);
-    const attendance = await getAttendanceForDate(supabase, briefingDate);
-
-    // Build final HTML
-    const html = buildBriefingHtml(summary.sections, attendance);
-
     // Update article
     const { error: updErr } = await supabase
       .from("knowledge_articles")
       .update({
-        content: html,
+        content: previewPayload.html,
         is_published: true,
       })
       .eq("id", article.id);
     if (updErr) throw updErr;
 
     // Send WhatsApp notification (non-blocking — failures logged but don't fail the request)
-    await sendWhatsAppNotification(summary.sections, attendance, title);
+    await sendWhatsAppNotification(previewPayload.sections, previewPayload.attendance, previewPayload.title);
 
     return new Response(JSON.stringify({ success: true, articleId: article.id }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
