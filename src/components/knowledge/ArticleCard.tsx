@@ -25,12 +25,14 @@ import {
 interface Props {
   article: KnowledgeArticle;
   onEdit?: (article: KnowledgeArticle) => void;
+  fullWidth?: boolean;
 }
 
-export function ArticleCard({ article, onEdit }: Props) {
+export function ArticleCard({ article, onEdit, fullWidth }: Props) {
   const { isAdmin } = useAuth();
   const markAsRead = useMarkAsRead();
   const deleteArticle = useDeleteArticle();
+  const isBriefing = article.article_type === 'briefing';
 
   const initials = article.author?.full_name
     ?.split(' ')
@@ -42,7 +44,9 @@ export function ArticleCard({ article, onEdit }: Props) {
     <Card
       className={cn(
         'relative flex flex-col h-full transition-all hover:shadow-md',
-        article.is_pinned && 'border-orange-300 border-2'
+        article.is_pinned && !isBriefing && 'border-orange-300 border-2',
+        isBriefing && 'border-amber-400 border-2 bg-gradient-to-br from-amber-50/60 to-transparent dark:from-amber-950/20',
+        fullWidth && 'w-full'
       )}
     >
       {!article.is_read && (

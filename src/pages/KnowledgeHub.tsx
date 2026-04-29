@@ -10,11 +10,12 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card } from '@/components/ui/card';
-import { BookOpen, Plus, Search, BarChart2, Pin, Building2, ChevronLeft, FolderOpen } from 'lucide-react';
+import { BookOpen, Plus, Search, BarChart2, Pin, Building2, ChevronLeft, FolderOpen, Sunrise } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { CreateBriefingDialog } from '@/components/briefings/CreateBriefingDialog';
 
 export default function KnowledgeHub() {
-  const { isAdmin } = useAuth();
+  const { isAdmin, canManageShifts } = useAuth();
   const { data: articles, isLoading } = useArticles();
   const { data: departments } = useDepartments();
   const { data: deptCounts } = useDepartmentArticleCounts();
@@ -24,12 +25,19 @@ export default function KnowledgeHub() {
   const [editing, setEditing] = useState<KnowledgeArticle | null>(null);
 
   const tickerArticles = useMemo(
-    () => (articles || []).filter((a) => a.is_published).slice(0, 5),
+    () => (articles || []).filter((a) => a.is_published && a.article_type !== 'briefing').slice(0, 5),
     [articles]
   );
 
+  const briefings = useMemo(
+    () => (articles || [])
+      .filter((a) => a.article_type === 'briefing' && (a.is_published || isAdmin))
+      .slice(0, 3),
+    [articles, isAdmin]
+  );
+
   const pinned = useMemo(
-    () => (articles || []).filter((a) => a.is_pinned && (a.is_published || isAdmin)),
+    () => (articles || []).filter((a) => a.is_pinned && a.article_type !== 'briefing' && (a.is_published || isAdmin)),
     [articles, isAdmin]
   );
 
@@ -58,21 +66,24 @@ export default function KnowledgeHub() {
             עדכונים, נהלים ומאמרים של זבילו
           </p>
         </div>
-        {isAdmin && (
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" asChild>
-              <Link to="/knowledge/tracking">
-                <BarChart2 className="ms-1 sm:ms-2 h-4 w-4" />
-                <span className="hidden sm:inline">מעקב קריאה</span>
-              </Link>
-            </Button>
-            <Button size="sm" onClick={openNew}>
-              <Plus className="ms-1 sm:ms-2 h-4 w-4" />
-              <span className="hidden sm:inline">מאמר חדש</span>
-              <span className="sm:hidden">חדש</span>
-            </Button>
-          </div>
-        )}
+        <div className="flex gap-2 flex-wrap">
+          {canManageShifts && <CreateBriefingDialog />}
+          {isAdmin && (
+            <>
+              <Button variant="outline" size="sm" asChild>
+                <Link to="/knowledge/tracking">
+                  <BarChart2 className="ms-1 sm:ms-2 h-4 w-4" />
+                  <span className="hidden sm:inline">מעקב קריאה</span>
+                </Link>
+              </Button>
+              <Button size="sm" onClick={openNew}>
+                <Plus className="ms-1 sm:ms-2 h-4 w-4" />
+                <span className="hidden sm:inline">מאמר חדש</span>
+                <span className="sm:hidden">חדש</span>
+              </Button>
+            </>
+          )}
+        </div>
       </div>
 
       {/* Search */}
@@ -109,6 +120,20 @@ export default function KnowledgeHub() {
             </div>
           ) : (
             <>
+              {/* Briefings - full width, distinctive amber */}
+              {briefings.length > 0 && (
+                <div className="space-y-3">
+                  <h2 className="text-sm font-semibold text-muted-foreground flex items-center gap-2">
+                    <Sunrise className="h-4 w-4 text-amber-500" /> תדריכי בוקר
+                  </h2>
+                  <div className="space-y-3">
+                    {briefings.map((a) => (
+                      <ArticleCard key={a.id} article={a} onEdit={openEdit} fullWidth />
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {/* Pinned */}
               {pinned.length > 0 && (
                 <div className="space-y-3">

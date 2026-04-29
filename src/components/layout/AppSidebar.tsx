@@ -35,7 +35,6 @@ import { useUnreadCount } from '@/hooks/useKnowledge';
 const mainMenuItems = [
   { title: 'מרכז הידע', url: '/', icon: BookOpen, showBadge: true },
   { title: 'לוח שנה', url: '/dashboard', icon: CalendarDays },
-  { title: 'תדריכי בוקר', url: '/briefings', icon: Sunrise },
   { title: 'הבקשות שלי', url: '/requests', icon: FileText },
   { title: 'מבנה ארגוני', url: '/org-chart', icon: Network },
   { title: 'האזור שלי', url: '/my-area', icon: UserCircle },
