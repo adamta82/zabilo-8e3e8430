@@ -64,13 +64,14 @@ export function EmployeeWeekShiftsDialog({
   const dayRows = weekDays.map(d => {
     const ds = formatDateStr(d);
     const shifts = getEmployeeShifts(ds);
+    const wfh = isWfh?.(ds) ?? false;
     const dayMinutes = shifts.reduce((sum, s) => {
       let diff = timeToMin(s.end_time) - timeToMin(s.start_time);
       if (diff < 0) diff += 24 * 60;
       return sum + diff;
     }, 0);
     totalMinutes += dayMinutes;
-    return { date: d, ds, shifts, dayMinutes };
+    return { date: d, ds, shifts, dayMinutes, wfh };
   });
 
   const totalHours = Math.floor(totalMinutes / 60);
