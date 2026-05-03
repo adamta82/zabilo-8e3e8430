@@ -14,9 +14,11 @@ import { cn } from '@/lib/utils';
 import { useShifts, useCreateShift, useUpdateShift, useDeleteShift, useBulkCreateShifts, useBulkDeleteShifts } from '@/hooks/useShifts';
 import { useEmployees, type EmployeeWithRole } from '@/hooks/useEmployees';
 import { useDepartments } from '@/hooks/useDepartments';
+import { useWfhDates } from '@/hooks/useWfhDates';
 import { ShiftModal } from '@/components/shifts/ShiftModal';
 import { EmployeeWeekShiftsDialog } from '@/components/shifts/EmployeeWeekShiftsDialog';
 import { useToast } from '@/hooks/use-toast';
+import { Home } from 'lucide-react';
 
 const HEBREW_DAYS = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];
 
