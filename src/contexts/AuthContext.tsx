@@ -39,6 +39,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return;
       }
 
+      if ((profileData as any)?.is_active === false) {
+        await supabase.auth.signOut();
+        setProfile(null);
+        setRole(null);
+        setUser(null);
+        setSession(null);
+        return;
+      }
+
       setProfile(profileData as Profile | null);
 
       // Fetch user role
