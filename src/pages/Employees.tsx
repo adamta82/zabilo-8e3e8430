@@ -34,7 +34,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { useEmployees, useDeleteEmployee, type EmployeeWithRole } from '@/hooks/useEmployees';
+import { useEmployees, useDeactivateEmployee, useReactivateEmployee, type EmployeeWithRole } from '@/hooks/useEmployees';
 import { EditEmployeeDialog } from '@/components/employees/EditEmployeeDialog';
 import { UploadDocumentDialog } from '@/components/myarea/UploadDocumentDialog';
 import { supabase } from '@/integrations/supabase/client';
