@@ -398,6 +398,7 @@ export type Database = {
           address: string | null
           approver_id: string | null
           avatar_url: string | null
+          birth_date: string | null
           calendar_emails: string[] | null
           can_manage_shifts: boolean
           created_at: string
@@ -422,6 +423,7 @@ export type Database = {
           address?: string | null
           approver_id?: string | null
           avatar_url?: string | null
+          birth_date?: string | null
           calendar_emails?: string[] | null
           can_manage_shifts?: boolean
           created_at?: string
@@ -446,6 +448,7 @@ export type Database = {
           address?: string | null
           approver_id?: string | null
           avatar_url?: string | null
+          birth_date?: string | null
           calendar_emails?: string[] | null
           can_manage_shifts?: boolean
           created_at?: string
