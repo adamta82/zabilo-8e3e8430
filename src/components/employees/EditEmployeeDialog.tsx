@@ -44,6 +44,8 @@ export function EditEmployeeDialog({ employee, open, onOpenChange }: EditEmploye
   const [isPartner, setIsPartner] = useState(false);
   const [jobTitle, setJobTitle] = useState('');
   const [canManageShifts, setCanManageShifts] = useState(false);
+  const [birthDay, setBirthDay] = useState<string>('');
+  const [birthMonth, setBirthMonth] = useState<string>('');
 
   useEffect(() => {
     if (employee) {
@@ -56,11 +58,27 @@ export function EditEmployeeDialog({ employee, open, onOpenChange }: EditEmploye
       setIsPartner((employee as any).is_partner || false);
       setJobTitle((employee as any).job_title || '');
       setCanManageShifts((employee as any).can_manage_shifts === true);
+      const bd = (employee as any).birth_date as string | null;
+      if (bd) {
+        const [, m, d] = bd.split('-');
+        setBirthDay(String(parseInt(d, 10)));
+        setBirthMonth(String(parseInt(m, 10)));
+      } else {
+        setBirthDay('');
+        setBirthMonth('');
+      }
     }
   }, [employee]);
 
   const handleSubmit = async () => {
     if (!employee) return;
+
+    let birth_date: string | null = null;
+    if (birthDay && birthMonth) {
+      const m = String(birthMonth).padStart(2, '0');
+      const d = String(birthDay).padStart(2, '0');
+      birth_date = `2000-${m}-${d}`;
+    }
 
     await updateEmployee.mutateAsync({
       id: employee.id,
@@ -73,6 +91,7 @@ export function EditEmployeeDialog({ employee, open, onOpenChange }: EditEmploye
         is_partner: isPartner,
         job_title: jobTitle || null,
         can_manage_shifts: canManageShifts,
+        birth_date,
       } as any,
       newRole: role,
     });
@@ -128,6 +147,41 @@ export function EditEmployeeDialog({ employee, open, onOpenChange }: EditEmploye
               onChange={(e) => setJobTitle(e.target.value)}
               placeholder="לדוגמה: מנכ״ל, סמנכ״ל, ראש צוות..."
             />
+          </div>
+
+          <div className="space-y-2">
+            <Label>תאריך לידה (יום וחודש)</Label>
+            <div className="grid grid-cols-2 gap-2">
+              <Select value={birthDay} onValueChange={setBirthDay}>
+                <SelectTrigger>
+                  <SelectValue placeholder="יום" />
+                </SelectTrigger>
+                <SelectContent className="max-h-64">
+                  {Array.from({ length: 31 }, (_, i) => i + 1).map(d => (
+                    <SelectItem key={d} value={String(d)}>{d}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={birthMonth} onValueChange={setBirthMonth}>
+                <SelectTrigger>
+                  <SelectValue placeholder="חודש" />
+                </SelectTrigger>
+                <SelectContent className="max-h-64">
+                  {['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'].map((name, i) => (
+                    <SelectItem key={i+1} value={String(i+1)}>{name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            {(birthDay || birthMonth) && (
+              <button
+                type="button"
+                className="text-xs text-muted-foreground hover:text-destructive"
+                onClick={() => { setBirthDay(''); setBirthMonth(''); }}
+              >
+                נקה תאריך לידה
+              </button>
+            )}
           </div>
 
           <div className="space-y-2">

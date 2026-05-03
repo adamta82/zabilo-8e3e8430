@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isToday, addMonths, subMonths, getDay, isWithinInterval, isSaturday, startOfWeek, addDays, isSameDay } from 'date-fns';
 import { he } from 'date-fns/locale';
-import { ChevronRight, ChevronLeft, Clock, Home, Palmtree, Filter, ArrowRight, CalendarDays, MapPin, Users } from 'lucide-react';
+import { ChevronRight, ChevronLeft, Clock, Home, Palmtree, Filter, ArrowRight, CalendarDays, MapPin, Users, Cake, Gift } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -107,6 +107,17 @@ export default function Dashboard() {
 
   const getHoliday = (date: Date) => israeliHolidays[formatDateString(date)];
 
+  const getBirthdaysForDay = (date: Date) => {
+    if (!employees) return [] as any[];
+    const m = date.getMonth() + 1;
+    const d = date.getDate();
+    return employees.filter((e: any) => {
+      if (!e.birth_date) return false;
+      const bd = new Date(e.birth_date);
+      return bd.getMonth() + 1 === m && bd.getDate() === d;
+    });
+  };
+
   // Stats
   const todayStr = formatDateString(new Date());
   const stats = useMemo(() => {
@@ -191,6 +202,7 @@ export default function Dashboard() {
         <div className="flex items-center gap-1.5"><div className="h-2.5 w-2.5 rounded-full bg-holiday" /><span>חג / שבת</span></div>
         <div className="flex items-center gap-1.5"><Clock className="h-3 w-3 text-warning" /><span>ממתין</span></div>
         <div className="flex items-center gap-1.5"><div className="h-2.5 w-2.5 rounded-full bg-primary" /><span>משמרת</span></div>
+        <div className="flex items-center gap-1.5"><Cake className="h-3 w-3 text-pink-500" /><span>יום הולדת</span></div>
       </div>
 
       {/* MONTH VIEW */}
@@ -201,6 +213,7 @@ export default function Dashboard() {
           getEventsForDay={getEventsForDay}
           getHoliday={getHoliday}
           getShiftsForDay={getShiftsForDay}
+          getBirthdaysForDay={getBirthdaysForDay}
           isLoading={isLoading}
           onDayClick={handleDayClick}
         />
@@ -213,6 +226,7 @@ export default function Dashboard() {
           getEventsForDay={getEventsForDay}
           getHoliday={getHoliday}
           getShiftsForDay={getShiftsForDay}
+          getBirthdaysForDay={getBirthdaysForDay}
           isLoading={isLoading}
           onDayClick={handleDayClick}
         />
@@ -226,6 +240,7 @@ export default function Dashboard() {
           events={getEventsForDay(parseLocalDate(selectedDate))}
           shifts={getShiftsForDay(selectedDate)}
           holiday={getHoliday(parseLocalDate(selectedDate))}
+          birthdays={getBirthdaysForDay(parseLocalDate(selectedDate))}
           employees={employees || []}
           departments={departments || []}
           onBackToCalendar={() => setViewMode('month')}
@@ -265,7 +280,7 @@ export default function Dashboard() {
 }
 
 // ========== MONTH VIEW ==========
-function MonthView({ daysInMonth, emptySlots, getEventsForDay, getHoliday, getShiftsForDay, isLoading, onDayClick }: any) {
+function MonthView({ daysInMonth, emptySlots, getEventsForDay, getHoliday, getShiftsForDay, getBirthdaysForDay, isLoading, onDayClick }: any) {
   if (isLoading) {
     return (
       <Card><CardContent className="p-4">
@@ -291,6 +306,7 @@ function MonthView({ daysInMonth, emptySlots, getEventsForDay, getHoliday, getSh
           const isHolidayOrShabbat = !!holiday || isShabbat;
           const isCurrentDay = isToday(day);
           const dayShifts = getShiftsForDay(formatDateString(day));
+          const birthdays = getBirthdaysForDay ? getBirthdaysForDay(day) : [];
 
           return (
             <div
@@ -309,6 +325,11 @@ function MonthView({ daysInMonth, emptySlots, getEventsForDay, getHoliday, getSh
                 </span>
                 {holiday && <Badge variant="outline" className="text-[8px] sm:text-[10px] px-0.5 sm:px-1 bg-holiday/20 text-holiday border-holiday/30 max-w-[50px] sm:max-w-none truncate">{holiday}</Badge>}
                 {isShabbat && !holiday && <Badge variant="outline" className="text-[8px] sm:text-[10px] px-0.5 sm:px-1 bg-holiday/20 text-holiday border-holiday/30">שבת</Badge>}
+                {birthdays.length > 0 && (
+                  <span title={`יום הולדת: ${birthdays.map((b: any) => b.full_name).join(', ')}`} className="inline-flex items-center text-pink-500">
+                    <Cake className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                  </span>
+                )}
               </div>
               <div className="space-y-1">
                 {dayShifts.length > 0 && (
@@ -338,7 +359,7 @@ function MonthView({ daysInMonth, emptySlots, getEventsForDay, getHoliday, getSh
 }
 
 // ========== WEEK VIEW ==========
-function WeekView({ weekDays, getEventsForDay, getHoliday, getShiftsForDay, isLoading, onDayClick }: any) {
+function WeekView({ weekDays, getEventsForDay, getHoliday, getShiftsForDay, getBirthdaysForDay, isLoading, onDayClick }: any) {
   if (isLoading) {
     return <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2">{Array.from({ length: 7 }).map((_, i) => <Skeleton key={i} className="h-48" />)}</div>;
   }
@@ -353,6 +374,7 @@ function WeekView({ weekDays, getEventsForDay, getHoliday, getShiftsForDay, isLo
         const isHolidayOrShabbat = !!holiday || isShabbat;
         const isCurrentDay = isToday(day);
         const dayShifts = getShiftsForDay(dateStr);
+        const birthdays = getBirthdaysForDay ? getBirthdaysForDay(day) : [];
 
         return (
           <Card
@@ -381,6 +403,13 @@ function WeekView({ weekDays, getEventsForDay, getHoliday, getShiftsForDay, isLo
                 </div>
               )}
 
+              {birthdays.length > 0 && (
+                <div className="mb-2 text-[10px] px-2 py-1 rounded bg-pink-500/10 text-pink-600 flex items-center gap-1">
+                  <Cake className="h-2.5 w-2.5" />
+                  <span className="truncate">יום הולדת: {birthdays.map((b: any) => b.full_name).join(', ')}</span>
+                </div>
+              )}
+
               <div className="space-y-1">
                 {dayEvents.slice(0, 4).map((event: any) => (
                   <div key={event.id} className={cn('text-[10px] px-1.5 py-0.5 rounded truncate flex items-center gap-1',
@@ -403,12 +432,13 @@ function WeekView({ weekDays, getEventsForDay, getHoliday, getShiftsForDay, isLo
 }
 
 // ========== DAY VIEW ==========
-function DayView({ date, dateStr, events, shifts, holiday, employees, departments, onBackToCalendar }: {
+function DayView({ date, dateStr, events, shifts, holiday, birthdays, employees, departments, onBackToCalendar }: {
   date: Date;
   dateStr: string;
   events: any[];
   shifts: any[];
   holiday: string | undefined;
+  birthdays: any[];
   employees: any[];
   departments: any[];
   onBackToCalendar: () => void;
@@ -528,6 +558,49 @@ function DayView({ date, dateStr, events, shifts, holiday, employees, department
               </CardHeader>
               <CardContent>
                 <div className="text-xs text-muted-foreground text-center py-2">כולם במשרד היום 🎉</div>
+              </CardContent>
+            </Card>
+          )}
+
+          {birthdays && birthdays.length > 0 && (
+            <Card className="border-pink-500/30 bg-gradient-to-br from-pink-500/5 to-amber-500/5">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <Cake className="h-4 w-4 text-pink-500" />
+                  יום הולדת היום
+                  <Badge className="bg-pink-500/10 text-pink-600 border-pink-500/30">{birthdays.length}</Badge>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                {birthdays.map((b: any) => {
+                  const greeting = `🎉🎂 מזל טוב ${b.full_name}! יום הולדת שמח, שתהיה שנה מדהימה! 🎁✨`;
+                  const phoneRaw = (b.phone || '').replace(/\D/g, '');
+                  const waPhone = phoneRaw.startsWith('0') ? '972' + phoneRaw.slice(1) : phoneRaw;
+                  const waUrl = waPhone
+                    ? `https://wa.me/${waPhone}?text=${encodeURIComponent(greeting)}`
+                    : `https://wa.me/?text=${encodeURIComponent(greeting)}`;
+                  return (
+                    <div key={b.id} className="flex items-center gap-2">
+                      <Avatar className="h-8 w-8">
+                        <AvatarFallback className="bg-pink-500/15 text-pink-600 text-[10px] font-bold">
+                          {b.full_name?.split(' ').map((w: string) => w[0]).join('').slice(0, 2)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <span className="flex-1 text-sm font-medium">{b.full_name}</span>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-7 gap-1 border-pink-500/40 text-pink-600 hover:bg-pink-500/10"
+                        asChild
+                      >
+                        <a href={waUrl} target="_blank" rel="noopener noreferrer">
+                          <Gift className="h-3 w-3" />
+                          ברכה
+                        </a>
+                      </Button>
+                    </div>
+                  );
+                })}
               </CardContent>
             </Card>
           )}
