@@ -279,7 +279,7 @@ export default function Dashboard() {
 }
 
 // ========== MONTH VIEW ==========
-function MonthView({ daysInMonth, emptySlots, getEventsForDay, getHoliday, getShiftsForDay, isLoading, onDayClick }: any) {
+function MonthView({ daysInMonth, emptySlots, getEventsForDay, getHoliday, getShiftsForDay, getBirthdaysForDay, isLoading, onDayClick }: any) {
   if (isLoading) {
     return (
       <Card><CardContent className="p-4">
