@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import { Pencil, Plus, Trash2, Check, X } from 'lucide-react';
+import { Pencil, Plus, Trash2, Check, X, Home } from 'lucide-react';
 import { useShiftPresets, useUpdateShiftPresets, type ShiftPreset } from '@/hooks/useShiftPresets';
 import { useToast } from '@/hooks/use-toast';
 
@@ -22,6 +22,7 @@ interface ShiftModalProps {
   initialStart?: string;
   initialEnd?: string;
   isEdit?: boolean;
+  isWfh?: boolean;
   onSave: (start: string, end: string) => void;
 }
 
