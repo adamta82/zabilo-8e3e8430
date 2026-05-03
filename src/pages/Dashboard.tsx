@@ -573,35 +573,25 @@ function DayView({ date, dateStr, events, shifts, holiday, birthdays, employees,
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
-                {birthdays.map((b: any) => {
-                  const greeting = `🎉🎂 מזל טוב ${b.full_name}! יום הולדת שמח, שתהיה שנה מדהימה! 🎁✨`;
-                  const phoneRaw = (b.phone || '').replace(/\D/g, '');
-                  const waPhone = phoneRaw.startsWith('0') ? '972' + phoneRaw.slice(1) : phoneRaw;
-                  const waUrl = waPhone
-                    ? `https://wa.me/${waPhone}?text=${encodeURIComponent(greeting)}`
-                    : `https://wa.me/?text=${encodeURIComponent(greeting)}`;
-                  return (
-                    <div key={b.id} className="flex items-center gap-2">
-                      <Avatar className="h-8 w-8">
-                        <AvatarFallback className="bg-pink-500/15 text-pink-600 text-[10px] font-bold">
-                          {b.full_name?.split(' ').map((w: string) => w[0]).join('').slice(0, 2)}
-                        </AvatarFallback>
-                      </Avatar>
-                      <span className="flex-1 text-sm font-medium">{b.full_name}</span>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="h-7 gap-1 border-pink-500/40 text-pink-600 hover:bg-pink-500/10"
-                        asChild
-                      >
-                        <a href={waUrl} target="_blank" rel="noopener noreferrer">
-                          <Gift className="h-3 w-3" />
-                          ברכה
-                        </a>
-                      </Button>
-                    </div>
-                  );
-                })}
+                {birthdays.map((b: any) => (
+                  <div key={b.id} className="flex items-center gap-2">
+                    <Avatar className="h-8 w-8">
+                      <AvatarFallback className="bg-pink-500/15 text-pink-600 text-[10px] font-bold">
+                        {b.full_name?.split(' ').map((w: string) => w[0]).join('').slice(0, 2)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <span className="flex-1 text-sm font-medium">{b.full_name}</span>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-7 gap-1 border-pink-500/40 text-pink-600 hover:bg-pink-500/10"
+                      onClick={() => setBirthdayRecipient(b)}
+                    >
+                      <Gift className="h-3 w-3" />
+                      ברכה
+                    </Button>
+                  </div>
+                ))}
               </CardContent>
             </Card>
           )}
