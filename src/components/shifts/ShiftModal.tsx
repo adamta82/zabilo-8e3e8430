@@ -104,6 +104,12 @@ export function ShiftModal({
           <p className="text-sm text-muted-foreground">
             {employeeName} • {dateLabel}
           </p>
+          {isWfh && (
+            <div className="mt-2 inline-flex items-center gap-1.5 self-start rounded-md border border-info/40 bg-info/10 px-2.5 py-1 text-info">
+              <Home className="h-3.5 w-3.5" />
+              <span className="text-xs font-bold">העובד מאושר לעבודה מהבית ביום זה</span>
+            </div>
+          )}
         </DialogHeader>
 
         <div className="space-y-4">
