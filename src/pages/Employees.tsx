@@ -318,13 +318,20 @@ export default function Employees() {
                             <Upload className="h-4 w-4 ml-2" />
                             העלאת מסמך
                           </DropdownMenuItem>
-                          <DropdownMenuItem 
-                            className="text-destructive"
-                            onClick={() => setDeletingEmployee(employee)}
-                          >
-                            <Trash2 className="h-4 w-4 ml-2" />
-                            מחיקה
-                          </DropdownMenuItem>
+                          {(employee as any).is_active === false ? (
+                            <DropdownMenuItem onClick={() => setReactivatingEmployee(employee)}>
+                              <UserCheck className="h-4 w-4 ml-2" />
+                              החזר לפעילות
+                            </DropdownMenuItem>
+                          ) : (
+                            <DropdownMenuItem
+                              className="text-destructive"
+                              onClick={() => setDeactivatingEmployee(employee)}
+                            >
+                              <UserX className="h-4 w-4 ml-2" />
+                              השבת עובד
+                            </DropdownMenuItem>
+                          )}
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </div>
