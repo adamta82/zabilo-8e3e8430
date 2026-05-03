@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isToday, addMonths, subMonths, getDay, isWithinInterval, isSaturday, startOfWeek, addDays, isSameDay } from 'date-fns';
 import { he } from 'date-fns/locale';
-import { ChevronRight, ChevronLeft, Clock, Home, Palmtree, Filter, ArrowRight, CalendarDays, MapPin, Users } from 'lucide-react';
+import { ChevronRight, ChevronLeft, Clock, Home, Palmtree, Filter, ArrowRight, CalendarDays, MapPin, Users, Cake, Gift } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
