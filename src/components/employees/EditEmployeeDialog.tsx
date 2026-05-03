@@ -58,6 +58,15 @@ export function EditEmployeeDialog({ employee, open, onOpenChange }: EditEmploye
       setIsPartner((employee as any).is_partner || false);
       setJobTitle((employee as any).job_title || '');
       setCanManageShifts((employee as any).can_manage_shifts === true);
+      const bd = (employee as any).birth_date as string | null;
+      if (bd) {
+        const [, m, d] = bd.split('-');
+        setBirthDay(String(parseInt(d, 10)));
+        setBirthMonth(String(parseInt(m, 10)));
+      } else {
+        setBirthDay('');
+        setBirthMonth('');
+      }
     }
   }, [employee]);
 
