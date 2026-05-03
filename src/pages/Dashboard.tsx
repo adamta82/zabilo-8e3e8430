@@ -212,6 +212,7 @@ export default function Dashboard() {
           getEventsForDay={getEventsForDay}
           getHoliday={getHoliday}
           getShiftsForDay={getShiftsForDay}
+          getBirthdaysForDay={getBirthdaysForDay}
           isLoading={isLoading}
           onDayClick={handleDayClick}
         />
@@ -224,6 +225,7 @@ export default function Dashboard() {
           getEventsForDay={getEventsForDay}
           getHoliday={getHoliday}
           getShiftsForDay={getShiftsForDay}
+          getBirthdaysForDay={getBirthdaysForDay}
           isLoading={isLoading}
           onDayClick={handleDayClick}
         />
@@ -237,6 +239,7 @@ export default function Dashboard() {
           events={getEventsForDay(parseLocalDate(selectedDate))}
           shifts={getShiftsForDay(selectedDate)}
           holiday={getHoliday(parseLocalDate(selectedDate))}
+          birthdays={getBirthdaysForDay(parseLocalDate(selectedDate))}
           employees={employees || []}
           departments={departments || []}
           onBackToCalendar={() => setViewMode('month')}
