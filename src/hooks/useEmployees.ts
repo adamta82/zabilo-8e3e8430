@@ -214,6 +214,17 @@ export function useReactivateEmployee() {
         .update({ is_active: true, deactivated_at: null })
         .eq('id', profileId);
       if (error) throw error;
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('user_id')
+        .eq('id', profileId)
+        .single();
+      if (profile?.user_id) {
+        await supabase.functions.invoke('reactivate-user', {
+          body: { user_id: profile.user_id },
+        });
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['employees'] });
