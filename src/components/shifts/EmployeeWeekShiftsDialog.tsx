@@ -171,7 +171,7 @@ export function EmployeeWeekShiftsDialog({
 
           {/* Days list */}
           <div className="p-4 space-y-1.5">
-            {dayRows.map(({ date, ds, shifts, dayMinutes }) => {
+            {dayRows.map(({ date, ds, shifts, dayMinutes, wfh }) => {
               const isEmpty = shifts.length === 0;
               const dayName = HEBREW_DAYS[date.getDay()];
               const dayDate = format(date, 'd בMMM', { locale: he });
@@ -182,22 +182,37 @@ export function EmployeeWeekShiftsDialog({
                   key={ds}
                   className={cn(
                     'flex items-center gap-3 rounded-lg p-2.5 border',
-                    isEmpty ? 'bg-muted/30 border-dashed border-border' : 'bg-card border-border shadow-sm'
+                    wfh
+                      ? 'bg-info/10 border-info/40'
+                      : isEmpty
+                        ? 'bg-muted/30 border-dashed border-border'
+                        : 'bg-card border-border shadow-sm'
                   )}
                 >
                   <div className="w-14 text-center shrink-0">
                     <div className="text-[10px] text-muted-foreground font-medium">{dayName}</div>
                     <div className="text-sm font-bold">{dayDate}</div>
                   </div>
-                  <div className="flex-1 min-w-0">
+                  <div className="flex-1 min-w-0 space-y-1">
+                    {wfh && (
+                      <div className="inline-flex items-center gap-1 text-info text-[11px] font-bold">
+                        <Home className="h-3 w-3" />
+                        עבודה מהבית
+                      </div>
+                    )}
                     {isEmpty ? (
-                      <span className="text-xs text-muted-foreground italic">חופש</span>
+                      !wfh && <span className="text-xs text-muted-foreground italic">חופש</span>
                     ) : (
                       <div className="flex flex-wrap gap-1.5">
                         {shifts.map(s => (
                           <div
                             key={s.id}
-                            className="inline-flex items-center gap-1 bg-primary/10 text-primary border border-primary/20 rounded-md px-2 py-0.5"
+                            className={cn(
+                              'inline-flex items-center gap-1 rounded-md px-2 py-0.5 border',
+                              wfh
+                                ? 'bg-info/15 text-info border-info/30'
+                                : 'bg-primary/10 text-primary border-primary/20'
+                            )}
                           >
                             <Clock className="h-3 w-3" />
                             <span className="text-xs font-bold tabular-nums" dir="ltr">
