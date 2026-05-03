@@ -529,6 +529,7 @@ export default function ShiftScheduler() {
           departmentName={employeeWeekView.deptName}
           weekDays={weekDays}
           getEmployeeShifts={(date) => getEmployeeShifts(employeeWeekView.id, date)}
+          isWfh={(date) => isWfh(employeeWeekView.id, date)}
         />
       )}
     </div>
