@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Search, MoreHorizontal, Edit, Trash2, Shield, User, Loader2, KeyRound, Star, Crown, Upload, UserX, UserCheck, EyeOff } from 'lucide-react';
+import { Search, Edit, Trash2, Shield, User, Loader2, KeyRound, Star, Crown, Upload, UserX, UserCheck, EyeOff, Pencil } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
