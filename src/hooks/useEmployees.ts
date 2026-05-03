@@ -12,15 +12,14 @@ export interface EmployeeWithRole extends Profile {
   approver: { id: string; full_name: string } | null;
 }
 
-export function useEmployees() {
+export function useEmployees(options?: { includeInactive?: boolean }) {
+  const includeInactive = options?.includeInactive ?? false;
   return useQuery({
-    queryKey: ['employees'],
+    queryKey: ['employees', { includeInactive }],
     queryFn: async () => {
-      // Fetch profiles
-      const { data: profiles, error: profilesError } = await supabase
-        .from('profiles')
-        .select('*')
-        .order('full_name');
+      let query = supabase.from('profiles').select('*').order('full_name');
+      if (!includeInactive) query = query.eq('is_active', true);
+      const { data: profiles, error: profilesError } = await query;
 
       if (profilesError) throw profilesError;
       if (!profiles || profiles.length === 0) return [];
