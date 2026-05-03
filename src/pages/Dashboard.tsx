@@ -431,12 +431,13 @@ function WeekView({ weekDays, getEventsForDay, getHoliday, getShiftsForDay, getB
 }
 
 // ========== DAY VIEW ==========
-function DayView({ date, dateStr, events, shifts, holiday, employees, departments, onBackToCalendar }: {
+function DayView({ date, dateStr, events, shifts, holiday, birthdays, employees, departments, onBackToCalendar }: {
   date: Date;
   dateStr: string;
   events: any[];
   shifts: any[];
   holiday: string | undefined;
+  birthdays: any[];
   employees: any[];
   departments: any[];
   onBackToCalendar: () => void;
