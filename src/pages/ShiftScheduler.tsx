@@ -69,6 +69,12 @@ export default function ShiftScheduler() {
   const { data: shifts, isLoading: shiftsLoading } = useShifts(weekStartStr, weekEndStr);
   const { data: employees, isLoading: employeesLoading } = useEmployees();
   const { data: departments } = useDepartments();
+  const { data: wfhMap } = useWfhDates(weekStartStr, weekEndStr);
+
+  const isWfh = useCallback(
+    (employeeId: string, date: string) => !!wfhMap?.get(employeeId)?.has(date),
+    [wfhMap]
+  );
 
   const createShift = useCreateShift();
   const updateShift = useUpdateShift();
