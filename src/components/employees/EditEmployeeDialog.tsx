@@ -150,6 +150,41 @@ export function EditEmployeeDialog({ employee, open, onOpenChange }: EditEmploye
           </div>
 
           <div className="space-y-2">
+            <Label>תאריך לידה (יום וחודש)</Label>
+            <div className="grid grid-cols-2 gap-2">
+              <Select value={birthDay} onValueChange={setBirthDay}>
+                <SelectTrigger>
+                  <SelectValue placeholder="יום" />
+                </SelectTrigger>
+                <SelectContent className="max-h-64">
+                  {Array.from({ length: 31 }, (_, i) => i + 1).map(d => (
+                    <SelectItem key={d} value={String(d)}>{d}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={birthMonth} onValueChange={setBirthMonth}>
+                <SelectTrigger>
+                  <SelectValue placeholder="חודש" />
+                </SelectTrigger>
+                <SelectContent className="max-h-64">
+                  {['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'].map((name, i) => (
+                    <SelectItem key={i+1} value={String(i+1)}>{name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            {(birthDay || birthMonth) && (
+              <button
+                type="button"
+                className="text-xs text-muted-foreground hover:text-destructive"
+                onClick={() => { setBirthDay(''); setBirthMonth(''); }}
+              >
+                נקה תאריך לידה
+              </button>
+            )}
+          </div>
+
+          <div className="space-y-2">
             <Label>מחלקה</Label>
             <Select value={departmentId} onValueChange={setDepartmentId}>
               <SelectTrigger>
