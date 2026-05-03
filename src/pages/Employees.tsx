@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { Search, MoreHorizontal, Edit, Trash2, Shield, User, Loader2, KeyRound, Star, Crown, Upload } from 'lucide-react';
+import { Search, MoreHorizontal, Edit, Trash2, Shield, User, Loader2, KeyRound, Star, Crown, Upload, UserX, UserCheck, EyeOff } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -33,7 +34,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { useEmployees, useDeleteEmployee, type EmployeeWithRole } from '@/hooks/useEmployees';
+import { useEmployees, useDeactivateEmployee, useReactivateEmployee, type EmployeeWithRole } from '@/hooks/useEmployees';
 import { EditEmployeeDialog } from '@/components/employees/EditEmployeeDialog';
 import { UploadDocumentDialog } from '@/components/myarea/UploadDocumentDialog';
 import { supabase } from '@/integrations/supabase/client';
@@ -49,13 +50,16 @@ const getInitials = (name: string) => {
 };
 
 export default function Employees() {
-  const { data: employees, isLoading } = useEmployees();
-  const deleteEmployee = useDeleteEmployee();
+  const [showInactive, setShowInactive] = useState(false);
+  const { data: employees, isLoading } = useEmployees({ includeInactive: showInactive });
+  const deactivateEmployee = useDeactivateEmployee();
+  const reactivateEmployee = useReactivateEmployee();
   const { toast } = useToast();
-  
+
   const [searchQuery, setSearchQuery] = useState('');
   const [editingEmployee, setEditingEmployee] = useState<EmployeeWithRole | null>(null);
-  const [deletingEmployee, setDeletingEmployee] = useState<EmployeeWithRole | null>(null);
+  const [deactivatingEmployee, setDeactivatingEmployee] = useState<EmployeeWithRole | null>(null);
+  const [reactivatingEmployee, setReactivatingEmployee] = useState<EmployeeWithRole | null>(null);
   const [passwordEmployee, setPasswordEmployee] = useState<EmployeeWithRole | null>(null);
   const [uploadEmployee, setUploadEmployee] = useState<EmployeeWithRole | null>(null);
   const [newPassword, setNewPassword] = useState('');
@@ -67,10 +71,17 @@ export default function Employees() {
     employee.departments?.name?.includes(searchQuery)
   ) || [];
 
-  const handleDelete = async () => {
-    if (deletingEmployee) {
-      await deleteEmployee.mutateAsync(deletingEmployee.id);
-      setDeletingEmployee(null);
+  const handleDeactivate = async () => {
+    if (deactivatingEmployee) {
+      await deactivateEmployee.mutateAsync(deactivatingEmployee.id);
+      setDeactivatingEmployee(null);
+    }
+  };
+
+  const handleReactivate = async () => {
+    if (reactivatingEmployee) {
+      await reactivateEmployee.mutateAsync(reactivatingEmployee.id);
+      setReactivatingEmployee(null);
     }
   };
 
@@ -106,15 +117,24 @@ export default function Employees() {
         </div>
       </div>
 
-      {/* Search */}
-      <div className="relative max-w-md">
-        <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input
-          placeholder="חיפוש לפי שם, אימייל או מחלקה..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="pr-9"
-        />
+      {/* Search + filters */}
+      <div className="flex flex-col sm:flex-row gap-3 sm:items-center">
+        <div className="relative max-w-md flex-1">
+          <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="חיפוש לפי שם, אימייל או מחלקה..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pr-9"
+          />
+        </div>
+        <div className="flex items-center gap-2 text-sm">
+          <Switch id="show-inactive" checked={showInactive} onCheckedChange={setShowInactive} />
+          <label htmlFor="show-inactive" className="cursor-pointer flex items-center gap-1">
+            <EyeOff className="h-3.5 w-3.5" />
+            הצג עובדים מושבתים
+          </label>
+        </div>
       </div>
 
       {/* Employees Table */}
@@ -142,9 +162,9 @@ export default function Employees() {
               <TableBody>
                 {filteredEmployees.map((employee) => {
                   const role = employee.user_roles?.[0]?.role || 'employee';
-                  
+                  const inactive = (employee as any).is_active === false;
                   return (
-                    <TableRow key={employee.id}>
+                    <TableRow key={employee.id} className={cn(inactive && 'opacity-60')}>
                       <TableCell>
                         <div className="flex items-center gap-3">
                           <Avatar className="h-9 w-9">
@@ -153,6 +173,12 @@ export default function Employees() {
                             </AvatarFallback>
                           </Avatar>
                           <span className="font-medium">{employee.full_name}</span>
+                          {inactive && (
+                            <Badge variant="outline" className="bg-muted text-muted-foreground border-border text-xs">
+                              <UserX className="h-3 w-3 ml-1" />
+                              מושבת
+                            </Badge>
+                          )}
                           {(employee as any).is_partner && (
                             <Badge variant="outline" className="bg-amber-500/10 text-amber-600 border-amber-500/30 text-xs">
                               <Star className="h-3 w-3 ml-1" />
@@ -216,13 +242,20 @@ export default function Employees() {
                               <Upload className="h-4 w-4 ml-2" />
                               העלאת מסמך
                             </DropdownMenuItem>
-                            <DropdownMenuItem 
-                              className="text-destructive"
-                              onClick={() => setDeletingEmployee(employee)}
-                            >
-                              <Trash2 className="h-4 w-4 ml-2" />
-                              מחיקה
-                            </DropdownMenuItem>
+                            {(employee as any).is_active === false ? (
+                              <DropdownMenuItem onClick={() => setReactivatingEmployee(employee)}>
+                                <UserCheck className="h-4 w-4 ml-2" />
+                                החזר לפעילות
+                              </DropdownMenuItem>
+                            ) : (
+                              <DropdownMenuItem
+                                className="text-destructive"
+                                onClick={() => setDeactivatingEmployee(employee)}
+                              >
+                                <UserX className="h-4 w-4 ml-2" />
+                                השבת עובד
+                              </DropdownMenuItem>
+                            )}
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </TableCell>
@@ -242,8 +275,9 @@ export default function Employees() {
         ) : (
           filteredEmployees.map((employee) => {
             const role = employee.user_roles?.[0]?.role || 'employee';
+            const inactive = (employee as any).is_active === false;
             return (
-              <Card key={employee.id}>
+              <Card key={employee.id} className={cn(inactive && 'opacity-60')}>
                 <CardContent className="p-4">
                   <div className="flex items-start justify-between">
                     <div className="flex items-center gap-3">
@@ -253,8 +287,14 @@ export default function Employees() {
                         </AvatarFallback>
                       </Avatar>
                       <div>
-                        <p className="font-medium">
+                        <p className="font-medium flex flex-wrap items-center gap-1">
                           {employee.full_name}
+                          {inactive && (
+                            <Badge variant="outline" className="bg-muted text-muted-foreground border-border text-xs">
+                              <UserX className="h-3 w-3 ml-1" />
+                              מושבת
+                            </Badge>
+                          )}
                           {(employee as any).is_partner && (
                             <Badge variant="outline" className="bg-amber-500/10 text-amber-600 border-amber-500/30 text-xs mr-2">
                               <Star className="h-3 w-3 ml-1" />
@@ -291,13 +331,20 @@ export default function Employees() {
                             <Upload className="h-4 w-4 ml-2" />
                             העלאת מסמך
                           </DropdownMenuItem>
-                          <DropdownMenuItem 
-                            className="text-destructive"
-                            onClick={() => setDeletingEmployee(employee)}
-                          >
-                            <Trash2 className="h-4 w-4 ml-2" />
-                            מחיקה
-                          </DropdownMenuItem>
+                          {(employee as any).is_active === false ? (
+                            <DropdownMenuItem onClick={() => setReactivatingEmployee(employee)}>
+                              <UserCheck className="h-4 w-4 ml-2" />
+                              החזר לפעילות
+                            </DropdownMenuItem>
+                          ) : (
+                            <DropdownMenuItem
+                              className="text-destructive"
+                              onClick={() => setDeactivatingEmployee(employee)}
+                            >
+                              <UserX className="h-4 w-4 ml-2" />
+                              השבת עובד
+                            </DropdownMenuItem>
+                          )}
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </div>
@@ -363,26 +410,42 @@ export default function Employees() {
         </DialogContent>
       </Dialog>
 
-      {/* Delete Confirmation */}
-      <AlertDialog open={!!deletingEmployee} onOpenChange={(open) => !open && setDeletingEmployee(null)}>
+      {/* Deactivate Confirmation */}
+      <AlertDialog open={!!deactivatingEmployee} onOpenChange={(open) => !open && setDeactivatingEmployee(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>האם למחוק את העובד?</AlertDialogTitle>
+            <AlertDialogTitle>האם להשבית את העובד?</AlertDialogTitle>
             <AlertDialogDescription>
-              פעולה זו תמחק את {deletingEmployee?.full_name} מהמערכת. לא ניתן לבטל פעולה זו.
+              {deactivatingEmployee?.full_name} יוסתר מכל הרשימות (סידור משמרות, ארגון, בקשות וכו'),
+              לא יוכל להיכנס למערכת, ומשמרות עתידיות יימחקו.
+              ההיסטוריה תישמר ותמיד אפשר להחזיר לפעילות.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>ביטול</AlertDialogCancel>
             <AlertDialogAction
-              onClick={handleDelete}
+              onClick={handleDeactivate}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              {deleteEmployee.isPending ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                'מחיקה'
-              )}
+              {deactivateEmployee.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : 'השבת'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Reactivate Confirmation */}
+      <AlertDialog open={!!reactivatingEmployee} onOpenChange={(open) => !open && setReactivatingEmployee(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>להחזיר את העובד לפעילות?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {reactivatingEmployee?.full_name} יחזור להופיע בכל הרשימות ויוכל להיכנס למערכת.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>ביטול</AlertDialogCancel>
+            <AlertDialogAction onClick={handleReactivate}>
+              {reactivateEmployee.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : 'החזר לפעילות'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

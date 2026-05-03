@@ -12,15 +12,14 @@ export interface EmployeeWithRole extends Profile {
   approver: { id: string; full_name: string } | null;
 }
 
-export function useEmployees() {
+export function useEmployees(options?: { includeInactive?: boolean }) {
+  const includeInactive = options?.includeInactive ?? false;
   return useQuery({
-    queryKey: ['employees'],
+    queryKey: ['employees', { includeInactive }],
     queryFn: async () => {
-      // Fetch profiles
-      const { data: profiles, error: profilesError } = await supabase
-        .from('profiles')
-        .select('*')
-        .order('full_name');
+      let query = supabase.from('profiles').select('*').order('full_name');
+      if (!includeInactive) query = query.eq('is_active', true);
+      const { data: profiles, error: profilesError } = await query;
 
       if (profilesError) throw profilesError;
       if (!profiles || profiles.length === 0) return [];
@@ -127,7 +126,6 @@ export function useDeleteEmployee() {
 
   return useMutation({
     mutationFn: async (profileId: string) => {
-      // Get user_id first
       const { data: profile, error: fetchError } = await supabase
         .from('profiles')
         .select('user_id')
@@ -136,9 +134,6 @@ export function useDeleteEmployee() {
 
       if (fetchError) throw fetchError;
 
-      // Delete from auth (this will cascade to profiles and user_roles via RLS)
-      // Note: This requires admin privileges or a server-side function
-      // For now, we just delete the profile
       const { error } = await supabase
         .from('profiles')
         .delete()
@@ -148,13 +143,96 @@ export function useDeleteEmployee() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['employees'] });
-      toast({
-        title: 'העובד נמחק',
-      });
+      toast({ title: 'העובד נמחק' });
     },
     onError: (error) => {
       toast({
         title: 'שגיאה במחיקת העובד',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+}
+
+export function useDeactivateEmployee() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async (profileId: string) => {
+      // 1. Mark inactive
+      const { error: updErr } = await supabase
+        .from('profiles')
+        .update({ is_active: false, deactivated_at: new Date().toISOString() })
+        .eq('id', profileId);
+      if (updErr) throw updErr;
+
+      // 2. Delete future shifts
+      const today = new Date().toISOString().slice(0, 10);
+      await supabase
+        .from('shifts')
+        .delete()
+        .eq('employee_id', profileId)
+        .gte('date', today);
+
+      // 3. Sign user out everywhere via edge function
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('user_id')
+        .eq('id', profileId)
+        .single();
+      if (profile?.user_id) {
+        await supabase.functions.invoke('deactivate-user', {
+          body: { user_id: profile.user_id },
+        });
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['employees'] });
+      queryClient.invalidateQueries({ queryKey: ['shifts'] });
+      toast({ title: 'העובד הושבת', description: 'ההיסטוריה נשמרה. הכניסה למערכת נחסמה ומשמרות עתידיות נמחקו.' });
+    },
+    onError: (error) => {
+      toast({
+        title: 'שגיאה בהשבתת העובד',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+}
+
+export function useReactivateEmployee() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async (profileId: string) => {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ is_active: true, deactivated_at: null })
+        .eq('id', profileId);
+      if (error) throw error;
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('user_id')
+        .eq('id', profileId)
+        .single();
+      if (profile?.user_id) {
+        await supabase.functions.invoke('reactivate-user', {
+          body: { user_id: profile.user_id },
+        });
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['employees'] });
+      toast({ title: 'העובד הוחזר לפעילות' });
+    },
+    onError: (error) => {
+      toast({
+        title: 'שגיאה בהחזרת העובד',
         description: error.message,
         variant: 'destructive',
       });

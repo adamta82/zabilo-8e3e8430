@@ -401,6 +401,7 @@ export type Database = {
           calendar_emails: string[] | null
           can_manage_shifts: boolean
           created_at: string
+          deactivated_at: string | null
           department_id: string | null
           email: string
           emergency_contact_name: string | null
@@ -408,6 +409,7 @@ export type Database = {
           full_name: string
           hire_date: string | null
           id: string
+          is_active: boolean
           is_partner: boolean
           job_title: string | null
           phone: string | null
@@ -423,6 +425,7 @@ export type Database = {
           calendar_emails?: string[] | null
           can_manage_shifts?: boolean
           created_at?: string
+          deactivated_at?: string | null
           department_id?: string | null
           email: string
           emergency_contact_name?: string | null
@@ -430,6 +433,7 @@ export type Database = {
           full_name: string
           hire_date?: string | null
           id?: string
+          is_active?: boolean
           is_partner?: boolean
           job_title?: string | null
           phone?: string | null
@@ -445,6 +449,7 @@ export type Database = {
           calendar_emails?: string[] | null
           can_manage_shifts?: boolean
           created_at?: string
+          deactivated_at?: string | null
           department_id?: string | null
           email?: string
           emergency_contact_name?: string | null
@@ -452,6 +457,7 @@ export type Database = {
           full_name?: string
           hire_date?: string | null
           id?: string
+          is_active?: boolean
           is_partner?: boolean
           job_title?: string | null
           phone?: string | null
@@ -656,6 +662,7 @@ export type Database = {
         Args: { _approver_user_id: string; _employee_user_id: string }
         Returns: boolean
       }
+      is_user_active: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
       app_role: "admin" | "employee"
