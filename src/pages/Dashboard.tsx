@@ -373,6 +373,7 @@ function WeekView({ weekDays, getEventsForDay, getHoliday, getShiftsForDay, getB
         const isHolidayOrShabbat = !!holiday || isShabbat;
         const isCurrentDay = isToday(day);
         const dayShifts = getShiftsForDay(dateStr);
+        const birthdays = getBirthdaysForDay ? getBirthdaysForDay(day) : [];
 
         return (
           <Card
