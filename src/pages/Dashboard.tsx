@@ -445,6 +445,7 @@ function DayView({ date, dateStr, events, shifts, holiday, birthdays, employees,
   onBackToCalendar: () => void;
 }) {
   const isShabbat = isSaturday(date);
+  const [birthdayRecipient, setBirthdayRecipient] = useState<any | null>(null);
   const wfhEvents = events.filter((e: any) => e.type === 'wfh');
   const vacationEvents = events.filter((e: any) => e.type === 'vacation');
 
