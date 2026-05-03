@@ -15,6 +15,7 @@ import { useShifts } from '@/hooks/useShifts';
 import { useEmployees } from '@/hooks/useEmployees';
 import { israeliHolidays, formatDateString, parseLocalDate } from '@/lib/calendar-utils';
 import { useGoogleCalendarEvents, CalendarEvent } from '@/hooks/useGoogleCalendar';
+import { BirthdayGreetingDialog } from '@/components/dashboard/BirthdayGreetingDialog';
 
 const weekDayNames = ['א׳', 'ב׳', 'ג׳', 'ד׳', 'ה׳', 'ו׳', 'ש׳'];
 const HEBREW_DAYS_FULL = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];
