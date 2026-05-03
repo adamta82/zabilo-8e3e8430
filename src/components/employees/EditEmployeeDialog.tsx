@@ -230,7 +230,7 @@ export function EditEmployeeDialog({ employee, open, onOpenChange }: EditEmploye
             </Select>
           </div>
 
-          <div className="flex items-center justify-between py-2">
+          <div className="flex items-center justify-between py-2 sm:col-span-2">
             <Label htmlFor="show-in-shifts">הצג בניהול משמרות</Label>
             <Switch
               id="show-in-shifts"
@@ -239,7 +239,7 @@ export function EditEmployeeDialog({ employee, open, onOpenChange }: EditEmploye
             />
           </div>
 
-          <div className="flex items-center justify-between py-2">
+          <div className="flex items-center justify-between py-2 sm:col-span-2">
             <Label htmlFor="is-partner">שותף/ה בחברה</Label>
             <Switch
               id="is-partner"
@@ -248,7 +248,7 @@ export function EditEmployeeDialog({ employee, open, onOpenChange }: EditEmploye
             />
           </div>
 
-          <div className="flex items-center justify-between py-2">
+          <div className="flex items-center justify-between py-2 sm:col-span-2">
             <div className="space-y-0.5">
               <Label htmlFor="can-manage-shifts">הרשאה לשיבוץ משמרות</Label>
               <p className="text-xs text-muted-foreground">
@@ -261,9 +261,10 @@ export function EditEmployeeDialog({ employee, open, onOpenChange }: EditEmploye
               onCheckedChange={setCanManageShifts}
             />
           </div>
+          </div>
         </div>
 
-        <DialogFooter>
+        <DialogFooter className="px-6 py-4 border-t">
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             ביטול
           </Button>
