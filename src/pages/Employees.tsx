@@ -275,8 +275,9 @@ export default function Employees() {
         ) : (
           filteredEmployees.map((employee) => {
             const role = employee.user_roles?.[0]?.role || 'employee';
+            const inactive = (employee as any).is_active === false;
             return (
-              <Card key={employee.id}>
+              <Card key={employee.id} className={cn(inactive && 'opacity-60')}>
                 <CardContent className="p-4">
                   <div className="flex items-start justify-between">
                     <div className="flex items-center gap-3">
@@ -286,8 +287,14 @@ export default function Employees() {
                         </AvatarFallback>
                       </Avatar>
                       <div>
-                        <p className="font-medium">
+                        <p className="font-medium flex flex-wrap items-center gap-1">
                           {employee.full_name}
+                          {inactive && (
+                            <Badge variant="outline" className="bg-muted text-muted-foreground border-border text-xs">
+                              <UserX className="h-3 w-3 ml-1" />
+                              מושבת
+                            </Badge>
+                          )}
                           {(employee as any).is_partner && (
                             <Badge variant="outline" className="bg-amber-500/10 text-amber-600 border-amber-500/30 text-xs mr-2">
                               <Star className="h-3 w-3 ml-1" />
