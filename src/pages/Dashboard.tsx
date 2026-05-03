@@ -202,6 +202,7 @@ export default function Dashboard() {
         <div className="flex items-center gap-1.5"><div className="h-2.5 w-2.5 rounded-full bg-holiday" /><span>חג / שבת</span></div>
         <div className="flex items-center gap-1.5"><Clock className="h-3 w-3 text-warning" /><span>ממתין</span></div>
         <div className="flex items-center gap-1.5"><div className="h-2.5 w-2.5 rounded-full bg-primary" /><span>משמרת</span></div>
+        <div className="flex items-center gap-1.5"><Cake className="h-3 w-3 text-pink-500" /><span>יום הולדת</span></div>
       </div>
 
       {/* MONTH VIEW */}
