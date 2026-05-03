@@ -107,6 +107,17 @@ export default function Dashboard() {
 
   const getHoliday = (date: Date) => israeliHolidays[formatDateString(date)];
 
+  const getBirthdaysForDay = (date: Date) => {
+    if (!employees) return [] as any[];
+    const m = date.getMonth() + 1;
+    const d = date.getDate();
+    return employees.filter((e: any) => {
+      if (!e.birth_date) return false;
+      const bd = new Date(e.birth_date);
+      return bd.getMonth() + 1 === m && bd.getDate() === d;
+    });
+  };
+
   // Stats
   const todayStr = formatDateString(new Date());
   const stats = useMemo(() => {
