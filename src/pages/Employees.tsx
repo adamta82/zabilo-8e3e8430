@@ -117,15 +117,24 @@ export default function Employees() {
         </div>
       </div>
 
-      {/* Search */}
-      <div className="relative max-w-md">
-        <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input
-          placeholder="חיפוש לפי שם, אימייל או מחלקה..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="pr-9"
-        />
+      {/* Search + filters */}
+      <div className="flex flex-col sm:flex-row gap-3 sm:items-center">
+        <div className="relative max-w-md flex-1">
+          <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="חיפוש לפי שם, אימייל או מחלקה..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pr-9"
+          />
+        </div>
+        <div className="flex items-center gap-2 text-sm">
+          <Switch id="show-inactive" checked={showInactive} onCheckedChange={setShowInactive} />
+          <label htmlFor="show-inactive" className="cursor-pointer flex items-center gap-1">
+            <EyeOff className="h-3.5 w-3.5" />
+            הצג עובדים מושבתים
+          </label>
+        </div>
       </div>
 
       {/* Employees Table */}
