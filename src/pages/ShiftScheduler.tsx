@@ -530,6 +530,7 @@ function DepartmentGroup({
   employees,
   weekDays,
   getEmployeeShifts,
+  isWfh,
   onAddShift,
   onEditShift,
   onDeleteShift,
@@ -540,6 +541,7 @@ function DepartmentGroup({
   employees: EmployeeWithRole[];
   weekDays: Date[];
   getEmployeeShifts: (empId: string, date: string) => any[];
+  isWfh: (empId: string, date: string) => boolean;
   onAddShift: (empId: string, empName: string, date: string) => void;
   onEditShift: (empId: string, empName: string, date: string, shiftId: string, start: string, end: string) => void;
   onDeleteShift: (shiftId: string) => void;
@@ -578,11 +580,18 @@ function DepartmentGroup({
             const ds = formatDateStr(d);
             const dayShifts = getEmployeeShifts(emp.id, ds);
             const isToday = isTodayFn(d);
+            const wfh = isWfh(emp.id, ds);
             return (
-              <td key={ds} className={cn('p-1 border-l border-border/30', isToday && 'bg-primary/5')}>
+              <td key={ds} className={cn('p-1 border-l border-border/30', isToday && 'bg-primary/5', wfh && 'bg-info/5')}>
+                {wfh && (
+                  <div className="flex items-center justify-center gap-1 mb-0.5 text-info">
+                    <Home className="h-3 w-3" />
+                    <span className="text-[9px] font-bold">עבודה מהבית</span>
+                  </div>
+                )}
                 {dayShifts.length === 0 ? (
                   <div className="flex flex-col items-center justify-center h-full min-h-[40px] gap-0.5">
-                    <span className="text-[10px] text-warning font-medium">לא במשמרת</span>
+                    {!wfh && <span className="text-[10px] text-warning font-medium">לא במשמרת</span>}
                     <button
                       onClick={() => onAddShift(emp.id, emp.full_name, ds)}
                       className="border border-dashed border-border rounded text-[9px] px-2 py-0.5 text-muted-foreground hover:border-primary hover:text-primary transition-colors"
@@ -594,9 +603,14 @@ function DepartmentGroup({
                       <div
                         key={s.id}
                         onClick={() => onEditShift(emp.id, emp.full_name, ds, s.id, s.start_time, s.end_time)}
-                        className="flex items-center justify-between bg-primary/5 border border-primary/20 rounded px-1.5 py-0.5 border-r-2 border-r-primary cursor-pointer hover:shadow-sm transition-shadow"
+                        className={cn(
+                          'flex items-center justify-between rounded px-1.5 py-0.5 border-r-2 cursor-pointer hover:shadow-sm transition-shadow',
+                          wfh
+                            ? 'bg-info/10 border border-info/30 border-r-info'
+                            : 'bg-primary/5 border border-primary/20 border-r-primary'
+                        )}
                       >
-                        <span className="text-[10px] font-semibold text-primary" dir="ltr">{s.start_time}–{s.end_time}</span>
+                        <span className={cn('text-[10px] font-semibold', wfh ? 'text-info' : 'text-primary')} dir="ltr">{s.start_time}–{s.end_time}</span>
                         <button
                           onClick={(e) => { e.stopPropagation(); onDeleteShift(s.id); }}
                           className="text-[8px] text-muted-foreground/50 hover:text-destructive"
