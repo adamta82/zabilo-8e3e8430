@@ -111,12 +111,6 @@ export function EditEmployeeDialog({ employee, open, onOpenChange }: EditEmploye
 
         <div className="px-6 py-2 overflow-y-auto flex-1">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <DialogDescription>
-            עדכן את פרטי העובד
-          </DialogDescription>
-        </DialogHeader>
-
-        <div className="space-y-4 py-4">
           <div className="space-y-2">
             <Label>שם מלא</Label>
             <Input
