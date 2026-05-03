@@ -34,6 +34,7 @@ export function ShiftModal({
   initialStart = '09:00',
   initialEnd = '17:00',
   isEdit = false,
+  isWfh = false,
   onSave,
 }: ShiftModalProps) {
   const [start, setStart] = useState(initialStart);
