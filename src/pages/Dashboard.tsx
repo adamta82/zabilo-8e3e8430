@@ -402,6 +402,13 @@ function WeekView({ weekDays, getEventsForDay, getHoliday, getShiftsForDay, getB
                 </div>
               )}
 
+              {birthdays.length > 0 && (
+                <div className="mb-2 text-[10px] px-2 py-1 rounded bg-pink-500/10 text-pink-600 flex items-center gap-1">
+                  <Cake className="h-2.5 w-2.5" />
+                  <span className="truncate">יום הולדת: {birthdays.map((b: any) => b.full_name).join(', ')}</span>
+                </div>
+              )}
+
               <div className="space-y-1">
                 {dayEvents.slice(0, 4).map((event: any) => (
                   <div key={event.id} className={cn('text-[10px] px-1.5 py-0.5 rounded truncate flex items-center gap-1',
