@@ -35,6 +35,7 @@ import { useDepartments } from '@/hooks/useDepartments';
 import { useFolders } from '@/hooks/useKnowledgeFolders';
 import { useEmployees } from '@/hooks/useEmployees';
 import { useAuth } from '@/contexts/AuthContext';
+import { toast } from 'sonner';
 
 interface Props {
   open: boolean;
@@ -80,12 +81,14 @@ export function ArticleDialog({ open, onOpenChange, article }: Props) {
   }, [open, article, profile?.id]);
 
   const handleSave = async () => {
-    if (!title.trim() || !content.trim() || departmentId === 'none' || !departmentId || !authorId) return;
+    if (!title.trim()) { toast.error('יש להזין כותרת'); return; }
+    if (!content.trim()) { toast.error('יש להזין תוכן'); return; }
+    if (!authorId) { toast.error('יש לבחור כותב'); return; }
     await save.mutateAsync({
       id: article?.id,
       title: title.trim(),
       article_type: articleType,
-      department_id: departmentId,
+      department_id: departmentId === 'none' ? null : departmentId,
       folder_id: folderId === 'none' ? null : folderId,
       author_id: authorId,
       content: content.trim(),
