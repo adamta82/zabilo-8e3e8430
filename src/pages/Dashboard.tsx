@@ -600,6 +600,13 @@ function DayView({ date, dateStr, events, shifts, holiday, birthdays, employees,
           <MeetingsCard dateStr={dateStr} />
         </div>
       </div>
+
+      <BirthdayGreetingDialog
+        open={!!birthdayRecipient}
+        onOpenChange={(o) => !o && setBirthdayRecipient(null)}
+        recipient={birthdayRecipient}
+        dateStr={dateStr}
+      />
     </div>
   );
 }
