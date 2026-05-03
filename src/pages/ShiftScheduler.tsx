@@ -442,8 +442,9 @@ export default function ShiftScheduler() {
                       {emps.map(emp => {
                         const empShifts = getEmployeeShifts(emp.id, selectedDate);
                         const totalH = empShifts.reduce((a, s) => a + (timeToMin(s.end_time) - timeToMin(s.start_time)) / 60, 0);
+                        const wfh = isWfh(emp.id, selectedDate);
                         return (
-                          <Card key={emp.id} className="hover:border-primary/30 transition-colors">
+                          <Card key={emp.id} className={cn('transition-colors', wfh ? 'border-info/40 bg-info/5' : 'hover:border-primary/30')}>
                             <CardContent className="p-3">
                               <div className="flex items-center justify-between mb-2">
                                 <div className="flex items-center gap-2">
@@ -454,14 +455,25 @@ export default function ShiftScheduler() {
                                   </Avatar>
                                   <div>
                                     <div className="text-sm font-semibold">{emp.full_name}</div>
+                                    {wfh && (
+                                      <div className="flex items-center gap-1 text-info text-[10px] font-bold mt-0.5">
+                                        <Home className="h-3 w-3" />
+                                        עבודה מהבית
+                                      </div>
+                                    )}
                                   </div>
                                 </div>
                                 <Badge variant="secondary" className="text-xs">{totalH.toFixed(1)}h</Badge>
                               </div>
                               <div className="space-y-1">
                                 {empShifts.map(s => (
-                                  <div key={s.id} className="flex items-center justify-between bg-primary/5 border border-primary/20 rounded px-2 py-1 border-r-[3px] border-r-primary">
-                                    <span className="text-xs font-semibold text-primary" dir="ltr">{s.start_time} — {s.end_time}</span>
+                                  <div key={s.id} className={cn(
+                                    'flex items-center justify-between rounded px-2 py-1 border-r-[3px]',
+                                    wfh
+                                      ? 'bg-info/10 border border-info/30 border-r-info'
+                                      : 'bg-primary/5 border border-primary/20 border-r-primary'
+                                  )}>
+                                    <span className={cn('text-xs font-semibold', wfh ? 'text-info' : 'text-primary')} dir="ltr">{s.start_time} — {s.end_time}</span>
                                     <div className="flex gap-1">
                                       <button
                                         onClick={() => setModal({ employeeId: emp.id, employeeName: emp.full_name, date: selectedDate, shiftId: s.id, start: s.start_time, end: s.end_time })}
