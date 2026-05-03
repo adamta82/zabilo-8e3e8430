@@ -149,6 +149,36 @@ export type Database = {
         }
         Relationships: []
       }
+      birthday_greetings: {
+        Row: {
+          birthday_date: string
+          created_at: string
+          emoji: string | null
+          id: string
+          message: string
+          recipient_id: string
+          sender_id: string
+        }
+        Insert: {
+          birthday_date: string
+          created_at?: string
+          emoji?: string | null
+          id?: string
+          message: string
+          recipient_id: string
+          sender_id: string
+        }
+        Update: {
+          birthday_date?: string
+          created_at?: string
+          emoji?: string | null
+          id?: string
+          message?: string
+          recipient_id?: string
+          sender_id?: string
+        }
+        Relationships: []
+      }
       comment_likes: {
         Row: {
           comment_id: string
