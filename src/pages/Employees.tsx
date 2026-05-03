@@ -397,26 +397,42 @@ export default function Employees() {
         </DialogContent>
       </Dialog>
 
-      {/* Delete Confirmation */}
-      <AlertDialog open={!!deletingEmployee} onOpenChange={(open) => !open && setDeletingEmployee(null)}>
+      {/* Deactivate Confirmation */}
+      <AlertDialog open={!!deactivatingEmployee} onOpenChange={(open) => !open && setDeactivatingEmployee(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>האם למחוק את העובד?</AlertDialogTitle>
+            <AlertDialogTitle>האם להשבית את העובד?</AlertDialogTitle>
             <AlertDialogDescription>
-              פעולה זו תמחק את {deletingEmployee?.full_name} מהמערכת. לא ניתן לבטל פעולה זו.
+              {deactivatingEmployee?.full_name} יוסתר מכל הרשימות (סידור משמרות, ארגון, בקשות וכו'),
+              לא יוכל להיכנס למערכת, ומשמרות עתידיות יימחקו.
+              ההיסטוריה תישמר ותמיד אפשר להחזיר לפעילות.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>ביטול</AlertDialogCancel>
             <AlertDialogAction
-              onClick={handleDelete}
+              onClick={handleDeactivate}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              {deleteEmployee.isPending ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                'מחיקה'
-              )}
+              {deactivateEmployee.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : 'השבת'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Reactivate Confirmation */}
+      <AlertDialog open={!!reactivatingEmployee} onOpenChange={(open) => !open && setReactivatingEmployee(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>להחזיר את העובד לפעילות?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {reactivatingEmployee?.full_name} יחזור להופיע בכל הרשימות ויוכל להיכנס למערכת.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>ביטול</AlertDialogCancel>
+            <AlertDialogAction onClick={handleReactivate}>
+              {reactivateEmployee.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : 'החזר לפעילות'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
