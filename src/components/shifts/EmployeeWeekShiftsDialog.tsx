@@ -50,6 +50,7 @@ export function EmployeeWeekShiftsDialog({
   employeeName,
   weekDays,
   getEmployeeShifts,
+  isWfh,
   departmentName,
 }: Props) {
   const cardRef = useRef<HTMLDivElement>(null);
