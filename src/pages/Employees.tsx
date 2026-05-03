@@ -162,9 +162,9 @@ export default function Employees() {
               <TableBody>
                 {filteredEmployees.map((employee) => {
                   const role = employee.user_roles?.[0]?.role || 'employee';
-                  
+                  const inactive = (employee as any).is_active === false;
                   return (
-                    <TableRow key={employee.id}>
+                    <TableRow key={employee.id} className={cn(inactive && 'opacity-60')}>
                       <TableCell>
                         <div className="flex items-center gap-3">
                           <Avatar className="h-9 w-9">
@@ -173,6 +173,12 @@ export default function Employees() {
                             </AvatarFallback>
                           </Avatar>
                           <span className="font-medium">{employee.full_name}</span>
+                          {inactive && (
+                            <Badge variant="outline" className="bg-muted text-muted-foreground border-border text-xs">
+                              <UserX className="h-3 w-3 ml-1" />
+                              מושבת
+                            </Badge>
+                          )}
                           {(employee as any).is_partner && (
                             <Badge variant="outline" className="bg-amber-500/10 text-amber-600 border-amber-500/30 text-xs">
                               <Star className="h-3 w-3 ml-1" />
