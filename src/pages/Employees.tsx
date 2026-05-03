@@ -50,13 +50,16 @@ const getInitials = (name: string) => {
 };
 
 export default function Employees() {
-  const { data: employees, isLoading } = useEmployees();
-  const deleteEmployee = useDeleteEmployee();
+  const [showInactive, setShowInactive] = useState(false);
+  const { data: employees, isLoading } = useEmployees({ includeInactive: showInactive });
+  const deactivateEmployee = useDeactivateEmployee();
+  const reactivateEmployee = useReactivateEmployee();
   const { toast } = useToast();
-  
+
   const [searchQuery, setSearchQuery] = useState('');
   const [editingEmployee, setEditingEmployee] = useState<EmployeeWithRole | null>(null);
-  const [deletingEmployee, setDeletingEmployee] = useState<EmployeeWithRole | null>(null);
+  const [deactivatingEmployee, setDeactivatingEmployee] = useState<EmployeeWithRole | null>(null);
+  const [reactivatingEmployee, setReactivatingEmployee] = useState<EmployeeWithRole | null>(null);
   const [passwordEmployee, setPasswordEmployee] = useState<EmployeeWithRole | null>(null);
   const [uploadEmployee, setUploadEmployee] = useState<EmployeeWithRole | null>(null);
   const [newPassword, setNewPassword] = useState('');
@@ -68,10 +71,17 @@ export default function Employees() {
     employee.departments?.name?.includes(searchQuery)
   ) || [];
 
-  const handleDelete = async () => {
-    if (deletingEmployee) {
-      await deleteEmployee.mutateAsync(deletingEmployee.id);
-      setDeletingEmployee(null);
+  const handleDeactivate = async () => {
+    if (deactivatingEmployee) {
+      await deactivateEmployee.mutateAsync(deactivatingEmployee.id);
+      setDeactivatingEmployee(null);
+    }
+  };
+
+  const handleReactivate = async () => {
+    if (reactivatingEmployee) {
+      await reactivateEmployee.mutateAsync(reactivatingEmployee.id);
+      setReactivatingEmployee(null);
     }
   };
 
