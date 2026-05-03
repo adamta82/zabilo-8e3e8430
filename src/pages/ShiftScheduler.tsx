@@ -357,6 +357,7 @@ export default function ShiftScheduler() {
                             employees={emps}
                             weekDays={weekDays}
                             getEmployeeShifts={getEmployeeShifts}
+                            isWfh={isWfh}
                             onAddShift={(empId, empName, date) => setModal({ employeeId: empId, employeeName: empName, date })}
                             onEditShift={(empId, empName, date, shiftId, start, end) => setModal({ employeeId: empId, employeeName: empName, date, shiftId, start, end })}
                             onDeleteShift={handleDeleteShift}
