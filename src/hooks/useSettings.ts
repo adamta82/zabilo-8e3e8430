@@ -35,6 +35,28 @@ export function useSaveWebhookSettings() {
 
   return useMutation({
     mutationFn: async (settings: WebhookSettings) => {
+      if (settings.url) {
+        try {
+          const url = new URL(settings.url);
+          if (url.protocol !== 'https:') {
+            throw new Error('כתובת ה-Webhook חייבת להתחיל ב-https://');
+          }
+          const host = url.hostname.toLowerCase();
+          const blocked = [
+            /^localhost$/,
+            /^127\./,
+            /^10\./,
+            /^192\.168\./,
+            /^169\.254\./,
+            /^172\.(1[6-9]|2\d|3[01])\./,
+          ];
+          if (blocked.some((re) => re.test(host)) || host.endsWith('.local') || host.endsWith('.internal')) {
+            throw new Error('כתובות פנימיות אינן מותרות');
+          }
+        } catch (e) {
+          throw e instanceof Error ? e : new Error('כתובת URL לא תקינה');
+        }
+      }
       const { error } = await supabase
         .from('global_settings')
         .upsert(
