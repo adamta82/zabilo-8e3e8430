@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import { Pencil, Plus, Trash2, Check, X } from 'lucide-react';
+import { Pencil, Plus, Trash2, Check, X, Home } from 'lucide-react';
 import { useShiftPresets, useUpdateShiftPresets, type ShiftPreset } from '@/hooks/useShiftPresets';
 import { useToast } from '@/hooks/use-toast';
 
@@ -22,6 +22,7 @@ interface ShiftModalProps {
   initialStart?: string;
   initialEnd?: string;
   isEdit?: boolean;
+  isWfh?: boolean;
   onSave: (start: string, end: string) => void;
 }
 
@@ -33,6 +34,7 @@ export function ShiftModal({
   initialStart = '09:00',
   initialEnd = '17:00',
   isEdit = false,
+  isWfh = false,
   onSave,
 }: ShiftModalProps) {
   const [start, setStart] = useState(initialStart);
@@ -102,6 +104,12 @@ export function ShiftModal({
           <p className="text-sm text-muted-foreground">
             {employeeName} • {dateLabel}
           </p>
+          {isWfh && (
+            <div className="mt-2 inline-flex items-center gap-1.5 self-start rounded-md border border-info/40 bg-info/10 px-2.5 py-1 text-info">
+              <Home className="h-3.5 w-3.5" />
+              <span className="text-xs font-bold">העובד מאושר לעבודה מהבית ביום זה</span>
+            </div>
+          )}
         </DialogHeader>
 
         <div className="space-y-4">
