@@ -324,6 +324,11 @@ function MonthView({ daysInMonth, emptySlots, getEventsForDay, getHoliday, getSh
                 </span>
                 {holiday && <Badge variant="outline" className="text-[8px] sm:text-[10px] px-0.5 sm:px-1 bg-holiday/20 text-holiday border-holiday/30 max-w-[50px] sm:max-w-none truncate">{holiday}</Badge>}
                 {isShabbat && !holiday && <Badge variant="outline" className="text-[8px] sm:text-[10px] px-0.5 sm:px-1 bg-holiday/20 text-holiday border-holiday/30">שבת</Badge>}
+                {birthdays.length > 0 && (
+                  <span title={`יום הולדת: ${birthdays.map((b: any) => b.full_name).join(', ')}`} className="inline-flex items-center text-pink-500">
+                    <Cake className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                  </span>
+                )}
               </div>
               <div className="space-y-1">
                 {dayShifts.length > 0 && (
