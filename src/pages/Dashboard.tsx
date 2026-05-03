@@ -358,7 +358,7 @@ function MonthView({ daysInMonth, emptySlots, getEventsForDay, getHoliday, getSh
 }
 
 // ========== WEEK VIEW ==========
-function WeekView({ weekDays, getEventsForDay, getHoliday, getShiftsForDay, isLoading, onDayClick }: any) {
+function WeekView({ weekDays, getEventsForDay, getHoliday, getShiftsForDay, getBirthdaysForDay, isLoading, onDayClick }: any) {
   if (isLoading) {
     return <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2">{Array.from({ length: 7 }).map((_, i) => <Skeleton key={i} className="h-48" />)}</div>;
   }
