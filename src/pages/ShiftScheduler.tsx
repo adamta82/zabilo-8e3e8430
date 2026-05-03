@@ -516,6 +516,7 @@ export default function ShiftScheduler() {
           initialStart={modal.start}
           initialEnd={modal.end}
           isEdit={!!modal.shiftId}
+          isWfh={isWfh(modal.employeeId, modal.date)}
           onSave={handleSaveShift}
         />
       )}
