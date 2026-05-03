@@ -44,6 +44,8 @@ export function EditEmployeeDialog({ employee, open, onOpenChange }: EditEmploye
   const [isPartner, setIsPartner] = useState(false);
   const [jobTitle, setJobTitle] = useState('');
   const [canManageShifts, setCanManageShifts] = useState(false);
+  const [birthDay, setBirthDay] = useState<string>('');
+  const [birthMonth, setBirthMonth] = useState<string>('');
 
   useEffect(() => {
     if (employee) {
