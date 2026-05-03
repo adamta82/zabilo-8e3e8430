@@ -35,6 +35,7 @@ import { useDepartments } from '@/hooks/useDepartments';
 import { useFolders } from '@/hooks/useKnowledgeFolders';
 import { useEmployees } from '@/hooks/useEmployees';
 import { useAuth } from '@/contexts/AuthContext';
+import { toast } from 'sonner';
 
 interface Props {
   open: boolean;
