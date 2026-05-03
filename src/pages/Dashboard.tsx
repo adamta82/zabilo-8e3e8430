@@ -305,6 +305,7 @@ function MonthView({ daysInMonth, emptySlots, getEventsForDay, getHoliday, getSh
           const isHolidayOrShabbat = !!holiday || isShabbat;
           const isCurrentDay = isToday(day);
           const dayShifts = getShiftsForDay(formatDateString(day));
+          const birthdays = getBirthdaysForDay ? getBirthdaysForDay(day) : [];
 
           return (
             <div
