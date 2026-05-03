@@ -24,6 +24,7 @@ interface Props {
   employeeName: string;
   weekDays: Date[];
   getEmployeeShifts: (date: string) => ShiftItem[];
+  isWfh?: (date: string) => boolean;
   departmentName?: string;
 }
 
