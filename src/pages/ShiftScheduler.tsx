@@ -14,9 +14,11 @@ import { cn } from '@/lib/utils';
 import { useShifts, useCreateShift, useUpdateShift, useDeleteShift, useBulkCreateShifts, useBulkDeleteShifts } from '@/hooks/useShifts';
 import { useEmployees, type EmployeeWithRole } from '@/hooks/useEmployees';
 import { useDepartments } from '@/hooks/useDepartments';
+import { useWfhDates } from '@/hooks/useWfhDates';
 import { ShiftModal } from '@/components/shifts/ShiftModal';
 import { EmployeeWeekShiftsDialog } from '@/components/shifts/EmployeeWeekShiftsDialog';
 import { useToast } from '@/hooks/use-toast';
+import { Home } from 'lucide-react';
 
 const HEBREW_DAYS = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];
 
@@ -67,6 +69,12 @@ export default function ShiftScheduler() {
   const { data: shifts, isLoading: shiftsLoading } = useShifts(weekStartStr, weekEndStr);
   const { data: employees, isLoading: employeesLoading } = useEmployees();
   const { data: departments } = useDepartments();
+  const { data: wfhMap } = useWfhDates(weekStartStr, weekEndStr);
+
+  const isWfh = useCallback(
+    (employeeId: string, date: string) => !!wfhMap?.get(employeeId)?.has(date),
+    [wfhMap]
+  );
 
   const createShift = useCreateShift();
   const updateShift = useUpdateShift();
@@ -349,6 +357,7 @@ export default function ShiftScheduler() {
                             employees={emps}
                             weekDays={weekDays}
                             getEmployeeShifts={getEmployeeShifts}
+                            isWfh={isWfh}
                             onAddShift={(empId, empName, date) => setModal({ employeeId: empId, employeeName: empName, date })}
                             onEditShift={(empId, empName, date, shiftId, start, end) => setModal({ employeeId: empId, employeeName: empName, date, shiftId, start, end })}
                             onDeleteShift={handleDeleteShift}
@@ -364,6 +373,7 @@ export default function ShiftScheduler() {
                           employees={filteredEmployees.filter(e => !e.department_id)}
                           weekDays={weekDays}
                           getEmployeeShifts={getEmployeeShifts}
+                          isWfh={isWfh}
                           onAddShift={(empId, empName, date) => setModal({ employeeId: empId, employeeName: empName, date })}
                           onEditShift={(empId, empName, date, shiftId, start, end) => setModal({ employeeId: empId, employeeName: empName, date, shiftId, start, end })}
                           onDeleteShift={handleDeleteShift}
@@ -432,8 +442,9 @@ export default function ShiftScheduler() {
                       {emps.map(emp => {
                         const empShifts = getEmployeeShifts(emp.id, selectedDate);
                         const totalH = empShifts.reduce((a, s) => a + (timeToMin(s.end_time) - timeToMin(s.start_time)) / 60, 0);
+                        const wfh = isWfh(emp.id, selectedDate);
                         return (
-                          <Card key={emp.id} className="hover:border-primary/30 transition-colors">
+                          <Card key={emp.id} className={cn('transition-colors', wfh ? 'border-info/40 bg-info/5' : 'hover:border-primary/30')}>
                             <CardContent className="p-3">
                               <div className="flex items-center justify-between mb-2">
                                 <div className="flex items-center gap-2">
@@ -444,14 +455,25 @@ export default function ShiftScheduler() {
                                   </Avatar>
                                   <div>
                                     <div className="text-sm font-semibold">{emp.full_name}</div>
+                                    {wfh && (
+                                      <div className="flex items-center gap-1 text-info text-[10px] font-bold mt-0.5">
+                                        <Home className="h-3 w-3" />
+                                        עבודה מהבית
+                                      </div>
+                                    )}
                                   </div>
                                 </div>
                                 <Badge variant="secondary" className="text-xs">{totalH.toFixed(1)}h</Badge>
                               </div>
                               <div className="space-y-1">
                                 {empShifts.map(s => (
-                                  <div key={s.id} className="flex items-center justify-between bg-primary/5 border border-primary/20 rounded px-2 py-1 border-r-[3px] border-r-primary">
-                                    <span className="text-xs font-semibold text-primary" dir="ltr">{s.start_time} — {s.end_time}</span>
+                                  <div key={s.id} className={cn(
+                                    'flex items-center justify-between rounded px-2 py-1 border-r-[3px]',
+                                    wfh
+                                      ? 'bg-info/10 border border-info/30 border-r-info'
+                                      : 'bg-primary/5 border border-primary/20 border-r-primary'
+                                  )}>
+                                    <span className={cn('text-xs font-semibold', wfh ? 'text-info' : 'text-primary')} dir="ltr">{s.start_time} — {s.end_time}</span>
                                     <div className="flex gap-1">
                                       <button
                                         onClick={() => setModal({ employeeId: emp.id, employeeName: emp.full_name, date: selectedDate, shiftId: s.id, start: s.start_time, end: s.end_time })}
@@ -507,6 +529,7 @@ export default function ShiftScheduler() {
           departmentName={employeeWeekView.deptName}
           weekDays={weekDays}
           getEmployeeShifts={(date) => getEmployeeShifts(employeeWeekView.id, date)}
+          isWfh={(date) => isWfh(employeeWeekView.id, date)}
         />
       )}
     </div>
@@ -520,6 +543,7 @@ function DepartmentGroup({
   employees,
   weekDays,
   getEmployeeShifts,
+  isWfh,
   onAddShift,
   onEditShift,
   onDeleteShift,
@@ -530,6 +554,7 @@ function DepartmentGroup({
   employees: EmployeeWithRole[];
   weekDays: Date[];
   getEmployeeShifts: (empId: string, date: string) => any[];
+  isWfh: (empId: string, date: string) => boolean;
   onAddShift: (empId: string, empName: string, date: string) => void;
   onEditShift: (empId: string, empName: string, date: string, shiftId: string, start: string, end: string) => void;
   onDeleteShift: (shiftId: string) => void;
@@ -568,11 +593,18 @@ function DepartmentGroup({
             const ds = formatDateStr(d);
             const dayShifts = getEmployeeShifts(emp.id, ds);
             const isToday = isTodayFn(d);
+            const wfh = isWfh(emp.id, ds);
             return (
-              <td key={ds} className={cn('p-1 border-l border-border/30', isToday && 'bg-primary/5')}>
+              <td key={ds} className={cn('p-1 border-l border-border/30', isToday && 'bg-primary/5', wfh && 'bg-info/5')}>
+                {wfh && (
+                  <div className="flex items-center justify-center gap-1 mb-0.5 text-info">
+                    <Home className="h-3 w-3" />
+                    <span className="text-[9px] font-bold">עבודה מהבית</span>
+                  </div>
+                )}
                 {dayShifts.length === 0 ? (
                   <div className="flex flex-col items-center justify-center h-full min-h-[40px] gap-0.5">
-                    <span className="text-[10px] text-warning font-medium">לא במשמרת</span>
+                    {!wfh && <span className="text-[10px] text-warning font-medium">לא במשמרת</span>}
                     <button
                       onClick={() => onAddShift(emp.id, emp.full_name, ds)}
                       className="border border-dashed border-border rounded text-[9px] px-2 py-0.5 text-muted-foreground hover:border-primary hover:text-primary transition-colors"
@@ -584,9 +616,14 @@ function DepartmentGroup({
                       <div
                         key={s.id}
                         onClick={() => onEditShift(emp.id, emp.full_name, ds, s.id, s.start_time, s.end_time)}
-                        className="flex items-center justify-between bg-primary/5 border border-primary/20 rounded px-1.5 py-0.5 border-r-2 border-r-primary cursor-pointer hover:shadow-sm transition-shadow"
+                        className={cn(
+                          'flex items-center justify-between rounded px-1.5 py-0.5 border-r-2 cursor-pointer hover:shadow-sm transition-shadow',
+                          wfh
+                            ? 'bg-info/10 border border-info/30 border-r-info'
+                            : 'bg-primary/5 border border-primary/20 border-r-primary'
+                        )}
                       >
-                        <span className="text-[10px] font-semibold text-primary" dir="ltr">{s.start_time}–{s.end_time}</span>
+                        <span className={cn('text-[10px] font-semibold', wfh ? 'text-info' : 'text-primary')} dir="ltr">{s.start_time}–{s.end_time}</span>
                         <button
                           onClick={(e) => { e.stopPropagation(); onDeleteShift(s.id); }}
                           className="text-[8px] text-muted-foreground/50 hover:text-destructive"
