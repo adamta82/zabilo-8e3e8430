@@ -73,6 +73,13 @@ export function EditEmployeeDialog({ employee, open, onOpenChange }: EditEmploye
   const handleSubmit = async () => {
     if (!employee) return;
 
+    let birth_date: string | null = null;
+    if (birthDay && birthMonth) {
+      const m = String(birthMonth).padStart(2, '0');
+      const d = String(birthDay).padStart(2, '0');
+      birth_date = `2000-${m}-${d}`;
+    }
+
     await updateEmployee.mutateAsync({
       id: employee.id,
       updates: {
@@ -84,6 +91,7 @@ export function EditEmployeeDialog({ employee, open, onOpenChange }: EditEmploye
         is_partner: isPartner,
         job_title: jobTitle || null,
         can_manage_shifts: canManageShifts,
+        birth_date,
       } as any,
       newRole: role,
     });
