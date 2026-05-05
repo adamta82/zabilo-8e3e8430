@@ -292,7 +292,7 @@ function normalizePreviewData(payload: any): BriefingPreviewPayload {
 
   const transcript = typeof payload.transcript === 'string' ? payload.transcript : '';
   const title = typeof payload.title === 'string' ? payload.title : '';
-  const html = typeof payload.html === 'string' ? payload.html : '';
+  
   const audioPath = typeof payload.audioPath === 'string' ? payload.audioPath : null;
   const sections = Array.isArray(payload.sections)
     ? payload.sections.map((section: any) => ({
