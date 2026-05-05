@@ -223,62 +223,114 @@ export function CreateBriefingDialog() {
           תדריך חדש
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-2xl" dir="rtl">
-        <DialogHeader>
+      <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col p-0" dir="rtl">
+        <DialogHeader className="px-6 pt-6">
           <DialogTitle>תדריך בוקר חדש</DialogTitle>
           <DialogDescription>
-            {previewData ? 'בדוק את הסיכום לפני שמירה ושליחה.' : 'הקלט, העלה או הדבק טקסט ואז צור תצוגה מקדימה.'}
+            {previewData ? 'ערוך את הסיכום לפני שמירה ושליחה.' : 'הקלט, העלה או הדבק טקסט ואז צור תצוגה מקדימה.'}
           </DialogDescription>
         </DialogHeader>
 
         {previewData ? (
-          <div className="space-y-4">
-            <Alert>
-              <Sparkles className="h-4 w-4" />
-              <AlertDescription>
-                זה הסיכום שיישמר ויישלח. אפשר לחזור אחורה כדי לתקן לפני האישור.
-              </AlertDescription>
-            </Alert>
+          <div className="flex flex-col flex-1 min-h-0">
+            <div className="flex-1 overflow-y-auto px-6 space-y-4">
+              <Alert>
+                <Sparkles className="h-4 w-4" />
+                <AlertDescription>
+                  ניתן לערוך כל שדה. הסיכום יישמר ויישלח לאחר האישור.
+                </AlertDescription>
+              </Alert>
 
-            <div className="grid gap-3 sm:grid-cols-2">
-              <div className="rounded-md border p-3">
-                <p className="text-sm text-muted-foreground">חופש</p>
-                <p className="mt-1 text-sm">{previewData.attendance.vacation.length ? previewData.attendance.vacation.join(', ') : 'אין'}</p>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="rounded-md border p-3 space-y-1">
+                  <Label className="text-xs text-muted-foreground">חופש (מופרד בפסיקים)</Label>
+                  <Input
+                    value={previewData.attendance.vacation.join(', ')}
+                    onChange={(e) => setPreviewData({
+                      ...previewData,
+                      attendance: { ...previewData.attendance, vacation: e.target.value.split(',').map(s => s.trim()).filter(Boolean) },
+                    })}
+                  />
+                </div>
+                <div className="rounded-md border p-3 space-y-1">
+                  <Label className="text-xs text-muted-foreground">עבודה מהבית (מופרד בפסיקים)</Label>
+                  <Input
+                    value={previewData.attendance.wfh.join(', ')}
+                    onChange={(e) => setPreviewData({
+                      ...previewData,
+                      attendance: { ...previewData.attendance, wfh: e.target.value.split(',').map(s => s.trim()).filter(Boolean) },
+                    })}
+                  />
+                </div>
               </div>
-              <div className="rounded-md border p-3">
-                <p className="text-sm text-muted-foreground">עבודה מהבית</p>
-                <p className="mt-1 text-sm">{previewData.attendance.wfh.length ? previewData.attendance.wfh.join(', ') : 'אין'}</p>
+
+              <div className="space-y-1">
+                <Label className="text-xs text-muted-foreground">כותרת</Label>
+                <Input
+                  value={previewData.title}
+                  onChange={(e) => setPreviewData({ ...previewData, title: e.target.value })}
+                  className="text-lg font-semibold"
+                />
+              </div>
+
+              <div className="space-y-3">
+                {previewData.sections.map((section, sIdx) => (
+                  <div key={sIdx} className="space-y-2 rounded-md border p-3">
+                    <Input
+                      value={section.title}
+                      onChange={(e) => {
+                        const sections = [...previewData.sections];
+                        sections[sIdx] = { ...section, title: e.target.value };
+                        setPreviewData({ ...previewData, sections });
+                      }}
+                      className="font-medium"
+                    />
+                    <Textarea
+                      value={section.bullets.join('\n')}
+                      onChange={(e) => {
+                        const sections = [...previewData.sections];
+                        sections[sIdx] = { ...section, bullets: e.target.value.split('\n').map(s => s.trim()).filter(Boolean) };
+                        setPreviewData({ ...previewData, sections });
+                      }}
+                      rows={Math.max(3, section.bullets.length)}
+                      placeholder="כל שורה = פריט נפרד"
+                    />
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setPreviewData({
+                        ...previewData,
+                        sections: previewData.sections.filter((_, i) => i !== sIdx),
+                      })}
+                    >
+                      מחק סעיף
+                    </Button>
+                  </div>
+                ))}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPreviewData({
+                    ...previewData,
+                    sections: [...previewData.sections, { title: 'סעיף חדש', bullets: [] }],
+                  })}
+                >
+                  <Plus className="h-4 w-4 ml-1" />
+                  הוסף סעיף
+                </Button>
+              </div>
+
+              <div className="space-y-1">
+                <Label className="text-xs text-muted-foreground">תמלול</Label>
+                <Textarea
+                  value={previewData.transcript}
+                  onChange={(e) => setPreviewData({ ...previewData, transcript: e.target.value })}
+                  rows={6}
+                />
               </div>
             </div>
 
-            <ScrollArea className="max-h-[55vh] rounded-md border">
-              <div className="space-y-4 p-4">
-                <div>
-                  <p className="text-sm text-muted-foreground">כותרת</p>
-                  <h3 className="text-lg font-semibold">{previewData.title}</h3>
-                </div>
-
-                <div className="space-y-3">
-                  {previewData.sections.map((section) => (
-                    <section key={section.title} className="space-y-2">
-                      <h4 className="font-medium">{section.title}</h4>
-                      <ul className="list-disc space-y-1 pr-5 text-sm">
-                        {section.bullets.map((bullet, index) => (
-                          <li key={`${section.title}-${index}`}>{bullet}</li>
-                        ))}
-                      </ul>
-                    </section>
-                  ))}
-                </div>
-
-                <div>
-                  <p className="text-sm text-muted-foreground">תמלול</p>
-                  <p className="mt-2 whitespace-pre-wrap text-sm leading-6">{previewData.transcript}</p>
-                </div>
-              </div>
-            </ScrollArea>
-
-            <div className="flex justify-end gap-2 pt-2">
+            <div className="flex justify-end gap-2 px-6 py-4 border-t bg-background">
               <Button variant="outline" onClick={() => setPreviewData(null)}>
                 <ChevronRight className="h-4 w-4 ml-1" />
                 חזור לעריכה
@@ -290,7 +342,7 @@ export function CreateBriefingDialog() {
             </div>
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-4 px-6 pb-6 overflow-y-auto">
             <div>
               <Label>תאריך</Label>
               <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
