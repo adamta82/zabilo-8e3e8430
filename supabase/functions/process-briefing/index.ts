@@ -309,7 +309,10 @@ function normalizePreviewData(payload: any): BriefingPreviewPayload {
       : [],
   };
 
-  if (!title || !html || transcript.trim().length < 10 || sections.length === 0) {
+  // Always rebuild html from edited sections/attendance to reflect user edits
+  const html = buildBriefingHtml(sections, attendance);
+
+  if (!title || transcript.trim().length < 10 || sections.length === 0) {
     throw new Error('previewData is incomplete');
   }
 
