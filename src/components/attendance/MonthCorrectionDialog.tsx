@@ -40,6 +40,8 @@ export function MonthCorrectionDialog({ open, onOpenChange, year, month, correct
   const [outTime, setOutTime] = useState('17:00');
   const [markType, setMarkType] = useState<DayMarkType>('vacation');
   const [markNote, setMarkNote] = useState('');
+  const [changeLog, setChangeLog] = useState<Array<{ date: string; kind: 'hours' | 'mark'; before: string; after: string }>>([]);
+  const [showPreview, setShowPreview] = useState(false);
 
   const dayData = useMemo(() => {
     const days = eachDayOfInterval({ start: monthStart, end: monthEnd });
@@ -68,6 +70,8 @@ export function MonthCorrectionDialog({ open, onOpenChange, year, month, correct
 
   const handleSaveHours = async (d: typeof dayData[number]) => {
     const dateStr = format(d.day, 'yyyy-MM-dd');
+    const before = `${d.inEv ? format(parseISO(d.inEv.event_time), 'HH:mm') : '—'} ← ${d.outEv ? format(parseISO(d.outEv.event_time), 'HH:mm') : '—'}`;
+    const after = `${inTime} ← ${outTime}`;
     const inIso = new Date(`${dateStr}T${inTime}:00`).toISOString();
     const outIso = new Date(`${dateStr}T${outTime}:00`).toISOString();
     if (d.inEv) {
@@ -80,15 +84,19 @@ export function MonthCorrectionDialog({ open, onOpenChange, year, month, correct
     } else {
       await insertCorrection.mutateAsync({ type: 'out', event_time: outIso, correction_request_id: correctionRequestId });
     }
+    setChangeLog((l) => [...l.filter((c) => !(c.date === dateStr && c.kind === 'hours')), { date: dateStr, kind: 'hours', before, after }]);
     setEditingDate(null);
   };
 
   const handleSaveMark = async (d: typeof dayData[number]) => {
     const dateStr = format(d.day, 'yyyy-MM-dd');
+    const before = d.mark ? DAY_MARK_LABELS[d.mark.type] + (d.mark.note ? ` (${d.mark.note})` : '') : '—';
+    const after = DAY_MARK_LABELS[markType] + (markNote ? ` (${markNote})` : '');
     await upsertMark.mutateAsync({
       date: dateStr, type: markType, note: markNote || null,
       correction_request_id: correctionRequestId,
     });
+    setChangeLog((l) => [...l.filter((c) => !(c.date === dateStr && c.kind === 'mark')), { date: dateStr, kind: 'mark', before, after }]);
     setEditingDate(null);
   };
 
