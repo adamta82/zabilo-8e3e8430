@@ -417,6 +417,19 @@ function BoolSetting({ id, field, label, value, mutate }: any) {
   );
 }
 
+function RequestCorrectionButton({ userId, fromDate }: { userId: string; fromDate: string }) {
+  const requestCorr = useRequestMonthCorrections();
+  const ref = parseISO(fromDate);
+  const year = ref.getFullYear();
+  const month = ref.getMonth() + 1;
+  return (
+    <Button size="sm" variant="ghost" title="בקש תיקונים לחודש שנבחר"
+      onClick={() => requestCorr.mutate({ user_id: userId, year, month, message: 'נא לעדכן דיווחים חסרים/לא מדויקים' })}>
+      <MailQuestion className="h-4 w-4" />
+    </Button>
+  );
+}
+
 function EmployeeReportDialog({
   employee, fromDate, toDate, events, onClose,
 }: {
