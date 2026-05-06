@@ -227,17 +227,58 @@ export type Database = {
         }
         Relationships: []
       }
+      clock_event_edits: {
+        Row: {
+          action: string
+          edited_at: string
+          edited_by: string
+          event_id: string
+          id: string
+          new_values: Json | null
+          old_values: Json | null
+          reason: string | null
+          user_id: string
+        }
+        Insert: {
+          action: string
+          edited_at?: string
+          edited_by: string
+          event_id: string
+          id?: string
+          new_values?: Json | null
+          old_values?: Json | null
+          reason?: string | null
+          user_id: string
+        }
+        Update: {
+          action?: string
+          edited_at?: string
+          edited_by?: string
+          event_id?: string
+          id?: string
+          new_values?: Json | null
+          old_values?: Json | null
+          reason?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       clock_events: {
         Row: {
           approved_at: string | null
           approved_by: string | null
+          correction_request_id: string | null
           created_at: string
+          edit_count: number
           event_time: string
           gps_accuracy: number | null
           gps_lat: number | null
           gps_lng: number | null
           id: string
           is_approved: boolean
+          is_correction: boolean
+          last_edited_at: string | null
+          last_edited_by: string | null
           location_id: string | null
           method: Database["public"]["Enums"]["clock_event_method"]
           notes: string | null
@@ -250,13 +291,18 @@ export type Database = {
         Insert: {
           approved_at?: string | null
           approved_by?: string | null
+          correction_request_id?: string | null
           created_at?: string
+          edit_count?: number
           event_time?: string
           gps_accuracy?: number | null
           gps_lat?: number | null
           gps_lng?: number | null
           id?: string
           is_approved?: boolean
+          is_correction?: boolean
+          last_edited_at?: string | null
+          last_edited_by?: string | null
           location_id?: string | null
           method: Database["public"]["Enums"]["clock_event_method"]
           notes?: string | null
@@ -269,13 +315,18 @@ export type Database = {
         Update: {
           approved_at?: string | null
           approved_by?: string | null
+          correction_request_id?: string | null
           created_at?: string
+          edit_count?: number
           event_time?: string
           gps_accuracy?: number | null
           gps_lat?: number | null
           gps_lng?: number | null
           id?: string
           is_approved?: boolean
+          is_correction?: boolean
+          last_edited_at?: string | null
+          last_edited_by?: string | null
           location_id?: string | null
           method?: Database["public"]["Enums"]["clock_event_method"]
           notes?: string | null
@@ -323,6 +374,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      day_marks: {
+        Row: {
+          correction_request_id: string | null
+          created_at: string
+          created_by: string
+          date: string
+          id: string
+          note: string | null
+          type: Database["public"]["Enums"]["day_mark_type"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          correction_request_id?: string | null
+          created_at?: string
+          created_by: string
+          date: string
+          id?: string
+          note?: string | null
+          type: Database["public"]["Enums"]["day_mark_type"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          correction_request_id?: string | null
+          created_at?: string
+          created_by?: string
+          date?: string
+          id?: string
+          note?: string | null
+          type?: Database["public"]["Enums"]["day_mark_type"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       departments: {
         Row: {
@@ -578,6 +665,48 @@ export type Database = {
           nfc_tag_id?: string | null
           qr_secret?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      month_correction_requests: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          id: string
+          message: string | null
+          month: number
+          requested_at: string
+          requested_by: string
+          status: string
+          updated_at: string
+          user_id: string
+          year: number
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          message?: string | null
+          month: number
+          requested_at?: string
+          requested_by: string
+          status?: string
+          updated_at?: string
+          user_id: string
+          year: number
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          message?: string | null
+          month?: number
+          requested_at?: string
+          requested_by?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+          year?: number
         }
         Relationships: []
       }
@@ -864,6 +993,7 @@ export type Database = {
         | "request_rejected"
       clock_event_method: "qr" | "nfc" | "manual" | "wfh"
       clock_event_type: "in" | "out"
+      day_mark_type: "vacation" | "sick" | "absent" | "reserve" | "other"
       request_status:
         | "pending"
         | "approved"
@@ -1007,6 +1137,7 @@ export const Constants = {
       ],
       clock_event_method: ["qr", "nfc", "manual", "wfh"],
       clock_event_type: ["in", "out"],
+      day_mark_type: ["vacation", "sick", "absent", "reserve", "other"],
       request_status: [
         "pending",
         "approved",
