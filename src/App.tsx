@@ -25,6 +25,7 @@ import ReadTracking from "./pages/ReadTracking";
 import BriefingsArchive from "./pages/BriefingsArchive";
 import Attendance from "./pages/Attendance";
 import AttendanceAdmin from "./pages/AttendanceAdmin";
+import ScanLocation from "./pages/ScanLocation";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -32,15 +33,17 @@ const queryClient = new QueryClient();
 function AppRoutes() {
   const { user, isLoading } = useAuth();
 
-  // Redirect to dashboard if already logged in
+  // Redirect to dashboard (or ?redirect=) if already logged in
   if (!isLoading && user && window.location.pathname === '/login') {
-    return <Navigate to="/" replace />;
+    const params = new URLSearchParams(window.location.search);
+    return <Navigate to={params.get('redirect') || '/'} replace />;
   }
 
   return (
     <Routes>
       {/* Public Routes */}
       <Route path="/login" element={<Login />} />
+      <Route path="/scan/:locId" element={<ScanLocation />} />
 
       {/* Protected Routes */}
       <Route

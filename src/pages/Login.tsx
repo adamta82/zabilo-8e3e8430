@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,6 +11,8 @@ import { Loader2, LogIn, UserPlus } from 'lucide-react';
 
 export default function Login() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const redirectTo = searchParams.get('redirect') || '/';
   const { signIn, signUp } = useAuth();
   const { toast } = useToast();
   
@@ -43,7 +45,7 @@ export default function Login() {
         title: 'התחברת בהצלחה!',
         description: 'ברוך הבא ל-Zabilo Book',
       });
-      navigate('/');
+      navigate(redirectTo);
     }
 
     setIsLoading(false);

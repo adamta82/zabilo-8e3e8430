@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { format, parseISO, differenceInSeconds, startOfDay, endOfDay, subDays, eachDayOfInterval } from 'date-fns';
+import { format, parseISO, differenceInSeconds, startOfDay, endOfDay, subDays, eachDayOfInterval, startOfMonth, endOfMonth, subMonths, startOfWeek, endOfWeek } from 'date-fns';
 import { he } from 'date-fns/locale';
 import { Download, MapPin, FileText, MailQuestion } from 'lucide-react';
 import { useRequestMonthCorrections } from '@/hooks/useDayMarks';
@@ -135,11 +135,13 @@ export default function AttendanceAdmin() {
         <p className="text-sm text-muted-foreground">תמונה מלאה של נוכחות העובדים, מיקומים, שעות והגדרות</p>
       </div>
 
+      <DateRangePicker fromDate={fromDate} toDate={toDate} setFromDate={setFromDate} setToDate={setToDate} />
+
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <SummaryCard label="בעבודה כרגע" value={inWork.length} sub={`${officeInWork.length} בשטח · ${wfhInWork.length} מהבית`} tone="success" />
         <SummaryCard label="לא בעבודה" value={notIn.length} sub="עובדים פעילים שלא נכנסו" tone="muted" />
         <SummaryCard label="עובדים פעילים" value={activeEmployees.length} sub="במערכת" tone="default" />
-        <SummaryCard label="אירועים בטווח" value={rangeEvents.length} sub={`${fromDate} → ${toDate}`} tone="default" />
+        <SummaryCard label="כניסות/יציאות בטווח" value={rangeEvents.length} sub={`${fromDate} → ${toDate}`} tone="default" />
       </div>
 
       <Tabs defaultValue="live">
@@ -189,15 +191,7 @@ export default function AttendanceAdmin() {
 
         <TabsContent value="events" className="mt-4 space-y-4">
           <Card>
-            <CardContent className="p-4 grid grid-cols-1 md:grid-cols-5 gap-3">
-              <div>
-                <Label>מתאריך</Label>
-                <Input type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} />
-              </div>
-              <div>
-                <Label>עד תאריך</Label>
-                <Input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} />
-              </div>
+            <CardContent className="p-4 grid grid-cols-1 md:grid-cols-3 gap-3">
               <div>
                 <Label>שיטה</Label>
                 <Select value={methodFilter} onValueChange={setMethodFilter}>
@@ -414,6 +408,84 @@ function BoolSetting({ id, field, label, value, mutate }: any) {
       <Label>{label}</Label>
       <Switch checked={value} onCheckedChange={(checked) => mutate({ id, patch: { [field]: checked } })} />
     </div>
+  );
+}
+
+function DateRangePicker({ fromDate, toDate, setFromDate, setToDate }: {
+  fromDate: string; toDate: string; setFromDate: (s: string) => void; setToDate: (s: string) => void;
+}) {
+  const applyPreset = (preset: string) => {
+    const today = new Date();
+    let from: Date, to: Date;
+    switch (preset) {
+      case 'today': from = startOfDay(today); to = endOfDay(today); break;
+      case 'week': from = startOfWeek(today, { weekStartsOn: 0 }); to = endOfWeek(today, { weekStartsOn: 0 }); break;
+      case 'month': from = startOfMonth(today); to = endOfMonth(today); break;
+      case 'last-month': {
+        const m = subMonths(today, 1);
+        from = startOfMonth(m); to = endOfMonth(m); break;
+      }
+      case 'last-30': from = subDays(today, 29); to = today; break;
+      default: return;
+    }
+    setFromDate(format(from, 'yyyy-MM-dd'));
+    setToDate(format(to, 'yyyy-MM-dd'));
+  };
+
+  // Calendar months for selector — last 12 months
+  const monthOptions = useMemo(() => {
+    const arr: { value: string; label: string }[] = [];
+    for (let i = 0; i < 12; i++) {
+      const d = subMonths(new Date(), i);
+      arr.push({ value: format(d, 'yyyy-MM'), label: format(d, 'MMMM yyyy', { locale: he }) });
+    }
+    return arr;
+  }, []);
+
+  const currentMonthValue = (() => {
+    const f = parseISO(fromDate);
+    const t = parseISO(toDate);
+    if (format(startOfMonth(f), 'yyyy-MM-dd') === fromDate && format(endOfMonth(f), 'yyyy-MM-dd') === toDate
+      && format(f, 'yyyy-MM') === format(t, 'yyyy-MM')) return format(f, 'yyyy-MM');
+    return '';
+  })();
+
+  const selectMonth = (val: string) => {
+    const [y, m] = val.split('-').map(Number);
+    const d = new Date(y, m - 1, 1);
+    setFromDate(format(startOfMonth(d), 'yyyy-MM-dd'));
+    setToDate(format(endOfMonth(d), 'yyyy-MM-dd'));
+  };
+
+  return (
+    <Card>
+      <CardContent className="p-4 flex flex-col md:flex-row md:items-end gap-3 flex-wrap">
+        <div className="flex-1 min-w-[140px]">
+          <Label className="text-xs">מתאריך</Label>
+          <Input type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} />
+        </div>
+        <div className="flex-1 min-w-[140px]">
+          <Label className="text-xs">עד תאריך</Label>
+          <Input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} />
+        </div>
+        <div className="flex-1 min-w-[160px]">
+          <Label className="text-xs">חודש קלנדרי</Label>
+          <Select value={currentMonthValue} onValueChange={selectMonth}>
+            <SelectTrigger><SelectValue placeholder="בחר/י חודש" /></SelectTrigger>
+            <SelectContent>
+              {monthOptions.map((m) => <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="flex flex-wrap gap-1">
+          <Button size="sm" variant="outline" onClick={() => applyPreset('today')}>היום</Button>
+          <Button size="sm" variant="outline" onClick={() => applyPreset('week')}>השבוע</Button>
+          <Button size="sm" variant="outline" onClick={() => applyPreset('month')}>החודש</Button>
+          <Button size="sm" variant="outline" onClick={() => applyPreset('last-month')}>חודש קודם</Button>
+          <Button size="sm" variant="outline" onClick={() => applyPreset('last-30')}>30 ימים</Button>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 

@@ -41,10 +41,12 @@ export function QrScannerDialog({ open, onOpenChange }: Props) {
             } catch {}
             scannerRef.current = null;
 
-            // Accept either raw uuid or zabilo:loc:<uuid>
+            // Accept raw uuid, zabilo:loc:<uuid>, or full /scan/<uuid> URL
             let locId = decoded.trim();
-            const match = locId.match(/^zabilo:loc:(.+)$/);
-            if (match) locId = match[1];
+            const urlMatch = locId.match(/\/scan\/([0-9a-f-]{36})/i);
+            if (urlMatch) locId = urlMatch[1];
+            const protoMatch = locId.match(/^zabilo:loc:(.+)$/);
+            if (protoMatch) locId = protoMatch[1];
 
             qrToggle.mutate(locId, {
               onSettled: () => onOpenChange(false),
