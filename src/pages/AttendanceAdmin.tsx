@@ -148,11 +148,11 @@ export default function AttendanceAdmin() {
 
       <Tabs defaultValue="live">
         <TabsList className="grid grid-cols-5 w-full">
-          <TabsTrigger value="live">סטטוס חי</TabsTrigger>
-          <TabsTrigger value="events">לוג אירועים</TabsTrigger>
-          <TabsTrigger value="hours">דוח שעות</TabsTrigger>
-          <TabsTrigger value="locations">מיקומים</TabsTrigger>
           <TabsTrigger value="settings">הגדרות</TabsTrigger>
+          <TabsTrigger value="locations">מיקומים</TabsTrigger>
+          <TabsTrigger value="hours">דוח שעות</TabsTrigger>
+          <TabsTrigger value="events">לוג אירועים</TabsTrigger>
+          <TabsTrigger value="live">סטטוס חי</TabsTrigger>
         </TabsList>
 
         <TabsContent value="live" className="mt-4 space-y-4">
