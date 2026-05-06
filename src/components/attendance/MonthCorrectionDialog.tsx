@@ -195,14 +195,58 @@ export function MonthCorrectionDialog({ open, onOpenChange, year, month, correct
           <Button variant="outline" className="w-full sm:w-auto" onClick={() => onOpenChange(false)}>
             סגירה
           </Button>
-          <Button className="w-full sm:w-auto" onClick={async () => {
-            await completeCorr.mutateAsync(correctionRequestId);
-            onOpenChange(false);
-          }}>
+          <Button className="w-full sm:w-auto" onClick={() => setShowPreview(true)}>
             <Check className="ml-2 h-4 w-4" />
-            סיימתי — שלח למנהל
+            סיימתי — תצוגה מקדימה
           </Button>
         </DialogFooter>
+
+        {showPreview && (
+          <Dialog open={showPreview} onOpenChange={setShowPreview}>
+            <DialogContent className="max-w-lg">
+              <DialogHeader>
+                <DialogTitle>אישור שליחה למנהל</DialogTitle>
+                <DialogDescription>
+                  להלן השינויים שביצעת במהלך עדכון החודש. אישור ישלח את הבקשה כסגורה למנהל.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="max-h-[50vh] overflow-y-auto -mx-2 px-2">
+                {changeLog.length === 0 ? (
+                  <p className="text-sm text-muted-foreground py-4 text-center">לא בוצעו שינויים בחודש זה.</p>
+                ) : (
+                  <ul className="space-y-2">
+                    {changeLog.map((c, i) => (
+                      <li key={i} className="border rounded-md p-2 text-sm">
+                        <div className="font-medium">
+                          {format(new Date(c.date), 'EEEE dd/MM', { locale: he })}
+                          <Badge variant="outline" className="mr-2 text-[10px]">
+                            {c.kind === 'hours' ? 'שעות' : 'סימון יום'}
+                          </Badge>
+                        </div>
+                        <div className="text-xs text-muted-foreground mt-1">
+                          <span className="line-through">{c.before}</span>
+                          {' → '}
+                          <span className="text-foreground font-medium">{c.after}</span>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+              <DialogFooter className="flex-col sm:flex-row gap-2">
+                <Button variant="outline" onClick={() => setShowPreview(false)}>חזרה לעריכה</Button>
+                <Button onClick={async () => {
+                  await completeCorr.mutateAsync(correctionRequestId);
+                  setShowPreview(false);
+                  onOpenChange(false);
+                }}>
+                  <Check className="ml-2 h-4 w-4" />
+                  אישור ושליחה למנהל
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        )}
       </DialogContent>
     </Dialog>
   );
