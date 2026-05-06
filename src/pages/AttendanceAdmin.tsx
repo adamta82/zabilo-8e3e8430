@@ -54,11 +54,14 @@ export default function AttendanceAdmin() {
   const { data: rangeEvents = [] } = useAllClockEvents(fromIso, toIso);
 
   const filteredEvents = useMemo(() => {
-    return rangeEvents.filter((e) => {
-      if (methodFilter !== 'all' && e.method !== methodFilter) return false;
-      if (userFilter !== 'all' && e.user_id !== userFilter) return false;
-      return true;
-    });
+    return rangeEvents
+      .filter((e) => {
+        if (methodFilter !== 'all' && e.method !== methodFilter) return false;
+        if (userFilter !== 'all' && e.user_id !== userFilter) return false;
+        return true;
+      })
+      .slice()
+      .reverse();
   }, [rangeEvents, methodFilter, userFilter]);
 
   const activeEmployees = employees.filter((e: any) => e.is_active !== false);
