@@ -134,6 +134,17 @@ function AppRoutes() {
         }
       />
 
+      <Route
+        path="/attendance"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <Attendance />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
+
       {/* Admin Routes */}
       <Route
         path="/shifts"
