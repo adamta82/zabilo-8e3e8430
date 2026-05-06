@@ -488,6 +488,8 @@ function DateRangePicker({ fromDate, toDate, setFromDate, setToDate }: {
     </Card>
   );
 }
+
+function RequestCorrectionButton({ userId, fromDate }: { userId: string; fromDate: string }) {
   const requestCorr = useRequestMonthCorrections();
   const ref = parseISO(fromDate);
   const year = ref.getFullYear();
