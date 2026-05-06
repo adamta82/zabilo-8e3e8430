@@ -411,7 +411,83 @@ function BoolSetting({ id, field, label, value, mutate }: any) {
   );
 }
 
-function RequestCorrectionButton({ userId, fromDate }: { userId: string; fromDate: string }) {
+function DateRangePicker({ fromDate, toDate, setFromDate, setToDate }: {
+  fromDate: string; toDate: string; setFromDate: (s: string) => void; setToDate: (s: string) => void;
+}) {
+  const applyPreset = (preset: string) => {
+    const today = new Date();
+    let from: Date, to: Date;
+    switch (preset) {
+      case 'today': from = startOfDay(today); to = endOfDay(today); break;
+      case 'week': from = startOfWeek(today, { weekStartsOn: 0 }); to = endOfWeek(today, { weekStartsOn: 0 }); break;
+      case 'month': from = startOfMonth(today); to = endOfMonth(today); break;
+      case 'last-month': {
+        const m = subMonths(today, 1);
+        from = startOfMonth(m); to = endOfMonth(m); break;
+      }
+      case 'last-30': from = subDays(today, 29); to = today; break;
+      default: return;
+    }
+    setFromDate(format(from, 'yyyy-MM-dd'));
+    setToDate(format(to, 'yyyy-MM-dd'));
+  };
+
+  // Calendar months for selector — last 12 months
+  const monthOptions = useMemo(() => {
+    const arr: { value: string; label: string }[] = [];
+    for (let i = 0; i < 12; i++) {
+      const d = subMonths(new Date(), i);
+      arr.push({ value: format(d, 'yyyy-MM'), label: format(d, 'MMMM yyyy', { locale: he }) });
+    }
+    return arr;
+  }, []);
+
+  const currentMonthValue = (() => {
+    const f = parseISO(fromDate);
+    const t = parseISO(toDate);
+    if (format(startOfMonth(f), 'yyyy-MM-dd') === fromDate && format(endOfMonth(f), 'yyyy-MM-dd') === toDate
+      && format(f, 'yyyy-MM') === format(t, 'yyyy-MM')) return format(f, 'yyyy-MM');
+    return '';
+  })();
+
+  const selectMonth = (val: string) => {
+    const [y, m] = val.split('-').map(Number);
+    const d = new Date(y, m - 1, 1);
+    setFromDate(format(startOfMonth(d), 'yyyy-MM-dd'));
+    setToDate(format(endOfMonth(d), 'yyyy-MM-dd'));
+  };
+
+  return (
+    <Card>
+      <CardContent className="p-4 flex flex-col md:flex-row md:items-end gap-3 flex-wrap">
+        <div className="flex-1 min-w-[140px]">
+          <Label className="text-xs">מתאריך</Label>
+          <Input type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} />
+        </div>
+        <div className="flex-1 min-w-[140px]">
+          <Label className="text-xs">עד תאריך</Label>
+          <Input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} />
+        </div>
+        <div className="flex-1 min-w-[160px]">
+          <Label className="text-xs">חודש קלנדרי</Label>
+          <Select value={currentMonthValue} onValueChange={selectMonth}>
+            <SelectTrigger><SelectValue placeholder="בחר/י חודש" /></SelectTrigger>
+            <SelectContent>
+              {monthOptions.map((m) => <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="flex flex-wrap gap-1">
+          <Button size="sm" variant="outline" onClick={() => applyPreset('today')}>היום</Button>
+          <Button size="sm" variant="outline" onClick={() => applyPreset('week')}>השבוע</Button>
+          <Button size="sm" variant="outline" onClick={() => applyPreset('month')}>החודש</Button>
+          <Button size="sm" variant="outline" onClick={() => applyPreset('last-month')}>חודש קודם</Button>
+          <Button size="sm" variant="outline" onClick={() => applyPreset('last-30')}>30 ימים</Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
   const requestCorr = useRequestMonthCorrections();
   const ref = parseISO(fromDate);
   const year = ref.getFullYear();
