@@ -382,8 +382,31 @@ export default function AttendanceAdmin() {
           onClose={() => setReportEmployee(null)}
         />
       )}
+
+      <GpsMapSheet
+        open={gpsSheet.open}
+        onOpenChange={(o) => setGpsSheet({ ...gpsSheet, open: o })}
+        lat={gpsSheet.lat ?? null}
+        lng={gpsSheet.lng ?? null}
+        accuracy={gpsSheet.accuracy}
+        title={gpsSheet.title}
+        subtitle={gpsSheet.subtitle}
+      />
     </div>
   );
+}
+
+function GpsAddressCell({ lat, lng }: { lat: number; lng: number }) {
+  const [addr, setAddr] = useState<string | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    reverseGeocode(lat, lng).then((a) => { if (!cancelled) setAddr(a); });
+    return () => { cancelled = true; };
+  }, [lat, lng]);
+  if (!addr) return <span className="text-xs text-muted-foreground" dir="ltr">{lat.toFixed(4)}, {lng.toFixed(4)}</span>;
+  // Show short version (first 2 parts)
+  const short = addr.split(',').slice(0, 2).join(',').trim();
+  return <span className="text-xs" title={addr}>{short}</span>;
 }
 
 function SummaryCard({ label, value, sub, tone }: { label: string; value: number; sub?: string; tone?: string }) {
