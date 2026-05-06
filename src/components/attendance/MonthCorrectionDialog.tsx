@@ -111,7 +111,7 @@ export function MonthCorrectionDialog({ open, onOpenChange, year, month, correct
           </DialogDescription>
         </DialogHeader>
 
-        <ScrollArea className="flex-1 min-h-0 px-4 sm:px-6">
+        <div className="flex-1 min-h-0 overflow-y-auto px-4 sm:px-6">
           <ul className="divide-y">
             {dayData.map((d) => {
               const dateStr = format(d.day, 'yyyy-MM-dd');
@@ -189,7 +189,7 @@ export function MonthCorrectionDialog({ open, onOpenChange, year, month, correct
               );
             })}
           </ul>
-        </ScrollArea>
+        </div>
 
         <DialogFooter className="flex-col sm:flex-row gap-2 p-4 sm:p-6 pt-2 shrink-0 border-t">
           <Button variant="outline" className="w-full sm:w-auto" onClick={() => onOpenChange(false)}>
