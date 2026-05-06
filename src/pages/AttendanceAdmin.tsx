@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { format, parseISO, differenceInSeconds, startOfDay, endOfDay, subDays, eachDayOfInterval, startOfMonth, endOfMonth, subMonths, startOfWeek, endOfWeek } from 'date-fns';
 import { he } from 'date-fns/locale';
 import { Download, MapPin, FileText, MailQuestion } from 'lucide-react';
@@ -20,6 +20,7 @@ import { useAllClockEvents, useLatestEventPerUser, useUpdateAttendanceSettings, 
 import { useAttendanceSettings } from '@/hooks/useAttendance';
 import { useEmployees } from '@/hooks/useEmployees';
 import { LocationsManager } from '@/components/attendance/LocationsManager';
+import { GpsMapSheet, reverseGeocode } from '@/components/attendance/GpsMapSheet';
 
 const METHOD_LABELS: Record<string, string> = { qr: 'QR', nfc: 'NFC', manual: 'ידני', wfh: 'מהבית' };
 
@@ -46,6 +47,7 @@ export default function AttendanceAdmin() {
   const [methodFilter, setMethodFilter] = useState<string>('all');
   const [userFilter, setUserFilter] = useState<string>('all');
   const [reportEmployee, setReportEmployee] = useState<any | null>(null);
+  const [gpsSheet, setGpsSheet] = useState<{ open: boolean; lat?: number; lng?: number; accuracy?: number; title?: string; subtitle?: string }>({ open: false });
 
   const fromIso = startOfDay(parseISO(fromDate)).toISOString();
   const toIso = endOfDay(parseISO(toDate)).toISOString();
@@ -254,16 +256,24 @@ export default function AttendanceAdmin() {
                       <TableCell className="text-sm tabular-nums whitespace-nowrap">
                         {format(parseISO(e.event_time), 'dd/MM/yyyy HH:mm', { locale: he })}
                       </TableCell>
-                      <TableCell className="text-sm">{e.location?.name || '—'}</TableCell>
+                      <TableCell className="text-sm max-w-[220px]">
+                        {e.location?.name ? (
+                          <span>{e.location.name}</span>
+                        ) : e.gps_lat && e.gps_lng ? (
+                          <GpsAddressCell lat={e.gps_lat} lng={e.gps_lng} />
+                        ) : '—'}
+                      </TableCell>
                       <TableCell>
                         {e.gps_lat && e.gps_lng ? (
-                          <a
-                            href={`https://maps.google.com/?q=${e.gps_lat},${e.gps_lng}`}
-                            target="_blank" rel="noreferrer"
-                            className="text-primary text-xs inline-flex items-center gap-1 hover:underline"
+                          <Button
+                            variant="ghost" size="sm" className="h-7 px-2 text-xs"
+                            onClick={() => setGpsSheet({
+                              open: true, lat: e.gps_lat!, lng: e.gps_lng!, accuracy: e.gps_accuracy ?? undefined,
+                              title: e.profile?.full_name, subtitle: format(parseISO(e.event_time), 'dd/MM/yyyy HH:mm', { locale: he }),
+                            })}
                           >
-                            <MapPin className="h-3 w-3" />הצג
-                          </a>
+                            <MapPin className="ml-1 h-3 w-3" />הצג
+                          </Button>
                         ) : '—'}
                       </TableCell>
                       <TableCell className="text-xs text-muted-foreground max-w-xs truncate">{e.notes || '—'}</TableCell>
@@ -372,8 +382,31 @@ export default function AttendanceAdmin() {
           onClose={() => setReportEmployee(null)}
         />
       )}
+
+      <GpsMapSheet
+        open={gpsSheet.open}
+        onOpenChange={(o) => setGpsSheet({ ...gpsSheet, open: o })}
+        lat={gpsSheet.lat ?? null}
+        lng={gpsSheet.lng ?? null}
+        accuracy={gpsSheet.accuracy}
+        title={gpsSheet.title}
+        subtitle={gpsSheet.subtitle}
+      />
     </div>
   );
+}
+
+function GpsAddressCell({ lat, lng }: { lat: number; lng: number }) {
+  const [addr, setAddr] = useState<string | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    reverseGeocode(lat, lng).then((a) => { if (!cancelled) setAddr(a); });
+    return () => { cancelled = true; };
+  }, [lat, lng]);
+  if (!addr) return <span className="text-xs text-muted-foreground" dir="ltr">{lat.toFixed(4)}, {lng.toFixed(4)}</span>;
+  // Show short version (first 2 parts)
+  const short = addr.split(',').slice(0, 2).join(',').trim();
+  return <span className="text-xs" title={addr}>{short}</span>;
 }
 
 function SummaryCard({ label, value, sub, tone }: { label: string; value: number; sub?: string; tone?: string }) {
