@@ -102,8 +102,8 @@ export function MonthCorrectionDialog({ open, onOpenChange, year, month, correct
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col">
-        <DialogHeader>
+      <DialogContent className="max-w-2xl h-[90vh] sm:h-auto sm:max-h-[90vh] flex flex-col p-0 gap-0">
+        <DialogHeader className="p-4 sm:p-6 pb-2 shrink-0">
           <DialogTitle>עדכון דיווחים — {format(monthRef, 'MMMM yyyy', { locale: he })}</DialogTitle>
           <DialogDescription>
             ימים בלי דיווח מודגשים באדום. ניתן לעדכן שעות, להוסיף דיווח חסר, או לסמן יום שלא עבדת.
@@ -111,7 +111,7 @@ export function MonthCorrectionDialog({ open, onOpenChange, year, month, correct
           </DialogDescription>
         </DialogHeader>
 
-        <ScrollArea className="flex-1 -mx-6 px-6">
+        <ScrollArea className="flex-1 min-h-0 px-4 sm:px-6">
           <ul className="divide-y">
             {dayData.map((d) => {
               const dateStr = format(d.day, 'yyyy-MM-dd');
@@ -191,7 +191,7 @@ export function MonthCorrectionDialog({ open, onOpenChange, year, month, correct
           </ul>
         </ScrollArea>
 
-        <DialogFooter className="flex-col sm:flex-row gap-2">
+        <DialogFooter className="flex-col sm:flex-row gap-2 p-4 sm:p-6 pt-2 shrink-0 border-t">
           <Button variant="outline" className="w-full sm:w-auto" onClick={() => onOpenChange(false)}>
             סגירה
           </Button>
