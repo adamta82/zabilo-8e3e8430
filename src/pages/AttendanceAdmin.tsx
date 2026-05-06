@@ -135,11 +135,13 @@ export default function AttendanceAdmin() {
         <p className="text-sm text-muted-foreground">תמונה מלאה של נוכחות העובדים, מיקומים, שעות והגדרות</p>
       </div>
 
+      <DateRangePicker fromDate={fromDate} toDate={toDate} setFromDate={setFromDate} setToDate={setToDate} />
+
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <SummaryCard label="בעבודה כרגע" value={inWork.length} sub={`${officeInWork.length} בשטח · ${wfhInWork.length} מהבית`} tone="success" />
         <SummaryCard label="לא בעבודה" value={notIn.length} sub="עובדים פעילים שלא נכנסו" tone="muted" />
         <SummaryCard label="עובדים פעילים" value={activeEmployees.length} sub="במערכת" tone="default" />
-        <SummaryCard label="אירועים בטווח" value={rangeEvents.length} sub={`${fromDate} → ${toDate}`} tone="default" />
+        <SummaryCard label="כניסות/יציאות בטווח" value={rangeEvents.length} sub={`${fromDate} → ${toDate}`} tone="default" />
       </div>
 
       <Tabs defaultValue="live">
