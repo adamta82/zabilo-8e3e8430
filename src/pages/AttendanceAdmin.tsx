@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { format, parseISO, differenceInSeconds, startOfDay, endOfDay, subDays, eachDayOfInterval, startOfMonth, endOfMonth, subMonths, startOfWeek, endOfWeek } from 'date-fns';
 import { he } from 'date-fns/locale';
-import { Download, MapPin, FileText, MailQuestion, Pencil, Plus, Trash2 } from 'lucide-react';
+import { Download, MapPin, FileText, MailQuestion, Pencil, Plus, Trash2, Eye } from 'lucide-react';
 import { useRequestMonthCorrections, useAdminCorrectionsForMonth } from '@/hooks/useDayMarks';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
