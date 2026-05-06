@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate, Navigate } from 'react-router-dom';
-import { Loader2, CheckCircle2, XCircle, LogIn, LogOut } from 'lucide-react';
+import { Loader2, CheckCircle2, XCircle, LogIn, LogOut, MapPin } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { useQrToggle } from '@/hooks/useAttendance';
+import { captureGpsSilently } from '@/lib/gps';
+import { reverseGeocode } from '@/components/attendance/GpsMapSheet';
 
 export default function ScanLocation() {
   const { locId } = useParams<{ locId: string }>();
@@ -14,14 +16,22 @@ export default function ScanLocation() {
   const [state, setState] = useState<'idle' | 'pending' | 'success' | 'error'>('idle');
   const [resultType, setResultType] = useState<'in' | 'out' | null>(null);
   const [errMsg, setErrMsg] = useState<string>('');
+  const [gps, setGps] = useState<{ lat: number; lng: number; accuracy: number } | null>(null);
+  const [address, setAddress] = useState<string | null>(null);
 
   useEffect(() => {
     if (loading || !user || !locId || state !== 'idle') return;
     setState('pending');
     qrToggle.mutate(locId, {
-      onSuccess: (data: any) => {
+      onSuccess: async (data: any) => {
         setResultType(data?.type ?? null);
         setState('success');
+        const g = await captureGpsSilently();
+        if (g) {
+          setGps(g);
+          const a = await reverseGeocode(g.lat, g.lng);
+          setAddress(a);
+        }
       },
       onError: (e: any) => {
         setErrMsg(e?.message || 'שגיאה ברישום');
@@ -33,6 +43,11 @@ export default function ScanLocation() {
   if (!loading && !user) {
     return <Navigate to={`/login?redirect=/scan/${locId}`} replace />;
   }
+
+  const delta = 0.003;
+  const mapSrc = gps
+    ? `https://www.openstreetmap.org/export/embed.html?bbox=${gps.lng - delta},${gps.lat - delta},${gps.lng + delta},${gps.lat + delta}&layer=mapnik&marker=${gps.lat},${gps.lng}`
+    : null;
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-background">
@@ -53,6 +68,32 @@ export default function ScanLocation() {
                 {resultType === 'in' ? <LogIn className="h-4 w-4" /> : <LogOut className="h-4 w-4" />}
                 {new Date().toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' })}
               </p>
+
+              {gps && mapSrc && (
+                <div className="space-y-2 text-right">
+                  <div className="flex items-center gap-1 text-xs text-muted-foreground justify-end">
+                    <MapPin className="h-3 w-3" />
+                    <span>מיקום הסריקה</span>
+                  </div>
+                  <div className="text-sm font-medium">
+                    {address || (
+                      <span className="text-muted-foreground text-xs">
+                        <Loader2 className="inline h-3 w-3 animate-spin ml-1" />מאתר כתובת...
+                      </span>
+                    )}
+                  </div>
+                  <iframe
+                    title="map"
+                    src={mapSrc}
+                    className="w-full h-48 rounded-md border"
+                    loading="lazy"
+                  />
+                  <div dir="ltr" className="text-[10px] text-muted-foreground font-mono text-center">
+                    {gps.lat.toFixed(5)}, {gps.lng.toFixed(5)} (±{Math.round(gps.accuracy)}מ׳)
+                  </div>
+                </div>
+              )}
+
               <Button className="w-full" onClick={() => navigate('/attendance')}>
                 למסך נוכחות
               </Button>
