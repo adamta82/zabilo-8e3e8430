@@ -24,6 +24,7 @@ import ArticleView from "./pages/ArticleView";
 import ReadTracking from "./pages/ReadTracking";
 import BriefingsArchive from "./pages/BriefingsArchive";
 import Attendance from "./pages/Attendance";
+import AttendanceAdmin from "./pages/AttendanceAdmin";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -140,6 +141,17 @@ function AppRoutes() {
           <ProtectedRoute>
             <AppLayout>
               <Attendance />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/attendance/admin"
+        element={
+          <ProtectedRoute requireAdmin>
+            <AppLayout>
+              <AttendanceAdmin />
             </AppLayout>
           </ProtectedRoute>
         }
