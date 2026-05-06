@@ -42,8 +42,8 @@ export default function AttendanceAdmin() {
   const { data: settings } = useAttendanceSettings();
   const updateSettings = useUpdateAttendanceSettings();
 
-  const [fromDate, setFromDate] = useState(format(subDays(new Date(), 30), 'yyyy-MM-dd'));
-  const [toDate, setToDate] = useState(format(new Date(), 'yyyy-MM-dd'));
+  const [fromDate, setFromDate] = useState(format(startOfMonth(new Date()), 'yyyy-MM-dd'));
+  const [toDate, setToDate] = useState(format(endOfMonth(new Date()), 'yyyy-MM-dd'));
   const [methodFilter, setMethodFilter] = useState<string>('all');
   const [userFilter, setUserFilter] = useState<string>('all');
   const [reportEmployee, setReportEmployee] = useState<any | null>(null);
