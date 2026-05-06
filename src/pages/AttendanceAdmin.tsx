@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { format, parseISO, differenceInSeconds, startOfDay, endOfDay, subDays, eachDayOfInterval, startOfMonth, endOfMonth, subMonths, startOfWeek, endOfWeek } from 'date-fns';
 import { he } from 'date-fns/locale';
-import { Download, MapPin, FileText, MailQuestion, Pencil, Plus, Trash2 } from 'lucide-react';
+import { Download, MapPin, FileText, MailQuestion, Pencil, Plus, Trash2, Eye } from 'lucide-react';
 import { useRequestMonthCorrections, useAdminCorrectionsForMonth } from '@/hooks/useDayMarks';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -21,6 +21,7 @@ import { useAttendanceSettings, useUpdateClockEvent, useAdminInsertEvent, useAdm
 import { useEmployees } from '@/hooks/useEmployees';
 import { LocationsManager } from '@/components/attendance/LocationsManager';
 import { GpsMapSheet, reverseGeocode } from '@/components/attendance/GpsMapSheet';
+import { CorrectionChangesDialog } from '@/components/attendance/CorrectionChangesDialog';
 
 const METHOD_LABELS: Record<string, string> = { qr: 'QR', nfc: 'NFC', manual: 'ידני', wfh: 'מהבית' };
 
@@ -333,7 +334,7 @@ export default function AttendanceAdmin() {
                           <Button size="sm" variant="ghost" onClick={() => emp && setReportEmployee(emp)}>
                             <FileText className="h-4 w-4" />
                           </Button>
-                          <RequestCorrectionButton userId={h.user_id} fromDate={fromDate} toDate={toDate} />
+                          <RequestCorrectionButton userId={h.user_id} fromDate={fromDate} toDate={toDate} employeeName={h.full_name} />
                         </TableCell>
                       </TableRow>
                     );
@@ -525,41 +526,63 @@ function DateRangePicker({ fromDate, toDate, setFromDate, setToDate }: {
   );
 }
 
-function RequestCorrectionButton({ userId, fromDate, toDate }: { userId: string; fromDate: string; toDate: string }) {
+function RequestCorrectionButton({ userId, fromDate, toDate, employeeName }: { userId: string; fromDate: string; toDate: string; employeeName: string }) {
   const requestCorr = useRequestMonthCorrections();
   const ref = parseISO(fromDate);
   const year = ref.getFullYear();
   const month = ref.getMonth() + 1;
-  // Only show indication if the selected range matches a single calendar month
   const isFullMonth = format(startOfMonth(ref), 'yyyy-MM-dd') === fromDate
     && format(endOfMonth(ref), 'yyyy-MM-dd') === toDate;
   const { data: corrections } = useAdminCorrectionsForMonth(year, month);
-  const status = isFullMonth ? corrections?.get(userId)?.status : undefined;
-
+  const correction = isFullMonth ? corrections?.get(userId) : undefined;
+  const status = correction?.status;
   const sent = status === 'open';
   const completed = status === 'completed';
+  const [changesOpen, setChangesOpen] = useState(false);
 
   const title = completed
-    ? 'העובד השיב — הבקשה הושלמה'
+    ? 'העובד השיב — לחץ לשליחה מחודשת'
     : sent
       ? 'נשלחה בקשה — ממתין לעובד'
       : 'בקש תיקונים לחודש שנבחר';
 
   return (
-    <Button
-      size="sm"
-      variant="ghost"
-      className={completed ? 'text-success' : sent ? 'text-warning' : ''}
-      title={title}
-      onClick={() => requestCorr.mutate({ user_id: userId, year, month, message: 'נא לעדכן דיווחים חסרים/לא מדויקים' })}
-    >
-      <span className="relative inline-flex">
-        <MailQuestion className="h-4 w-4" />
-        {(sent || completed) && (
-          <span className={`absolute -top-1 -left-1 h-2 w-2 rounded-full ${completed ? 'bg-success' : 'bg-warning'}`} />
-        )}
-      </span>
-    </Button>
+    <>
+      <Button
+        size="sm"
+        variant="ghost"
+        className={completed ? 'text-success' : sent ? 'text-warning' : ''}
+        title={title}
+        onClick={() => requestCorr.mutate({ user_id: userId, year, month, message: 'נא לעדכן דיווחים חסרים/לא מדויקים' })}
+      >
+        <span className="relative inline-flex">
+          <MailQuestion className="h-4 w-4" />
+          {(sent || completed) && (
+            <span className={`absolute -top-1 -left-1 h-2 w-2 rounded-full ${completed ? 'bg-success' : 'bg-warning'}`} />
+          )}
+        </span>
+      </Button>
+      {completed && correction && (
+        <Button
+          size="sm"
+          variant="ghost"
+          className="text-success"
+          title="צפייה בשינויים שעודכנו ע״י העובד"
+          onClick={() => setChangesOpen(true)}
+        >
+          <Eye className="h-4 w-4" />
+        </Button>
+      )}
+      {completed && correction && (
+        <CorrectionChangesDialog
+          open={changesOpen}
+          onOpenChange={setChangesOpen}
+          correctionRequestId={correction.id}
+          employeeName={employeeName}
+          monthLabel={format(ref, 'MMMM yyyy', { locale: he })}
+        />
+      )}
+    </>
   );
 }
 
