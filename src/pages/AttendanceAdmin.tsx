@@ -525,15 +525,40 @@ function DateRangePicker({ fromDate, toDate, setFromDate, setToDate }: {
   );
 }
 
-function RequestCorrectionButton({ userId, fromDate }: { userId: string; fromDate: string }) {
+function RequestCorrectionButton({ userId, fromDate, toDate }: { userId: string; fromDate: string; toDate: string }) {
   const requestCorr = useRequestMonthCorrections();
   const ref = parseISO(fromDate);
   const year = ref.getFullYear();
   const month = ref.getMonth() + 1;
+  // Only show indication if the selected range matches a single calendar month
+  const isFullMonth = format(startOfMonth(ref), 'yyyy-MM-dd') === fromDate
+    && format(endOfMonth(ref), 'yyyy-MM-dd') === toDate;
+  const { data: corrections } = useAdminCorrectionsForMonth(year, month);
+  const status = isFullMonth ? corrections?.get(userId)?.status : undefined;
+
+  const sent = status === 'open';
+  const completed = status === 'completed';
+
+  const title = completed
+    ? 'העובד השיב — הבקשה הושלמה'
+    : sent
+      ? 'נשלחה בקשה — ממתין לעובד'
+      : 'בקש תיקונים לחודש שנבחר';
+
   return (
-    <Button size="sm" variant="ghost" title="בקש תיקונים לחודש שנבחר"
-      onClick={() => requestCorr.mutate({ user_id: userId, year, month, message: 'נא לעדכן דיווחים חסרים/לא מדויקים' })}>
-      <MailQuestion className="h-4 w-4" />
+    <Button
+      size="sm"
+      variant="ghost"
+      className={completed ? 'text-success' : sent ? 'text-warning' : ''}
+      title={title}
+      onClick={() => requestCorr.mutate({ user_id: userId, year, month, message: 'נא לעדכן דיווחים חסרים/לא מדויקים' })}
+    >
+      <span className="relative inline-flex">
+        <MailQuestion className="h-4 w-4" />
+        {(sent || completed) && (
+          <span className={`absolute -top-1 -left-1 h-2 w-2 rounded-full ${completed ? 'bg-success' : 'bg-warning'}`} />
+        )}
+      </span>
     </Button>
   );
 }
