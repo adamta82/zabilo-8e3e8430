@@ -1,48 +1,58 @@
 import { useEffect, useMemo, useState } from 'react';
-import { format, differenceInSeconds, parseISO, subDays } from 'date-fns';
+import {
+  format, differenceInSeconds, parseISO, startOfMonth, endOfMonth,
+  eachDayOfInterval, isSameDay, isAfter, addMonths, subMonths, isSaturday, startOfDay,
+} from 'date-fns';
 import { he } from 'date-fns/locale';
-import { Clock, Home, LogIn, LogOut, Trash2, QrCode } from 'lucide-react';
+import {
+  Clock, Home, LogOut, QrCode, ChevronRight, ChevronLeft, AlertCircle, Calendar as CalendarIcon,
+} from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import {
-  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
-  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
-} from '@/components/ui/alert-dialog';
-import {
-  useCurrentClockStatus, useMyClockEvents, useClockIn, useClockOut, useDeleteSession, useAttendanceSettings,
+  useCurrentClockStatus, useMyEventsInRange, useClockIn, useClockOut, useAttendanceSettings,
 } from '@/hooks/useAttendance';
+import { useMyDayMarks, useMyOpenCorrections, DAY_MARK_LABELS } from '@/hooks/useDayMarks';
 import { QrScannerDialog } from '@/components/attendance/QrScannerDialog';
+import { MonthCorrectionDialog } from '@/components/attendance/MonthCorrectionDialog';
 
-const METHOD_LABELS: Record<string, string> = {
-  qr: 'QR',
-  nfc: 'NFC',
-  manual: 'ידני',
-  wfh: 'מהבית',
-};
+const METHOD_LABELS: Record<string, string> = { qr: 'QR', nfc: 'NFC', manual: 'ידני', wfh: 'מהבית' };
 
-function formatDuration(seconds: number) {
+function fmtDuration(seconds: number) {
   const h = Math.floor(seconds / 3600).toString().padStart(2, '0');
   const m = Math.floor((seconds % 3600) / 60).toString().padStart(2, '0');
   const s = (seconds % 60).toString().padStart(2, '0');
   return `${h}:${m}:${s}`;
 }
+function fmtHM(seconds: number) {
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  return `${h}ש' ${m.toString().padStart(2, '0')}ד'`;
+}
 
 export default function Attendance() {
   const { data: status } = useCurrentClockStatus();
-  const { data: events = [] } = useMyClockEvents(100);
   const { data: settings } = useAttendanceSettings();
   const clockIn = useClockIn();
   const clockOut = useClockOut();
-  const deleteSession = useDeleteSession();
 
   const isClockedIn = status?.type === 'in';
   const [now, setNow] = useState(Date.now());
   const [qrOpen, setQrOpen] = useState(false);
+
+  // Month navigation
+  const [monthRef, setMonthRef] = useState(() => startOfMonth(new Date()));
+  const monthStart = startOfMonth(monthRef);
+  const monthEnd = endOfMonth(monthRef);
+  const today = startOfDay(new Date());
+
+  const { data: events = [] } = useMyEventsInRange(monthStart.toISOString(), monthEnd.toISOString());
+  const { data: dayMarks = [] } = useMyDayMarks(format(monthStart, 'yyyy-MM-dd'), format(monthEnd, 'yyyy-MM-dd'));
+  const { data: openCorrections = [] } = useMyOpenCorrections();
+
+  const [correctionDialog, setCorrectionDialog] = useState<{ open: boolean; year?: number; month?: number; id?: string }>({ open: false });
 
   useEffect(() => {
     if (!isClockedIn) return;
@@ -50,61 +60,71 @@ export default function Attendance() {
     return () => clearInterval(t);
   }, [isClockedIn]);
 
-  const elapsedSeconds = useMemo(() => {
+  const elapsed = useMemo(() => {
     if (!isClockedIn || !status) return 0;
     return Math.max(0, differenceInSeconds(new Date(now), parseISO(status.event_time)));
   }, [isClockedIn, status, now]);
 
-  // Manual entry state
-  const todayStr = format(new Date(), 'yyyy-MM-dd');
-  const nowStr = format(new Date(), 'HH:mm');
-  const [mDate, setMDate] = useState(todayStr);
-  const [mTime, setMTime] = useState(nowStr);
-  const [mNotes, setMNotes] = useState('');
-  const maxDaysBack = settings?.manual_entry_max_days_back ?? 7;
-  const minDate = format(subDays(new Date(), maxDaysBack), 'yyyy-MM-dd');
-
-  const sessions = useMemo(() => {
-    const sorted = [...events].sort((a, b) =>
-      new Date(a.event_time).getTime() - new Date(b.event_time).getTime()
-    );
-    const result: Array<{ in?: typeof events[number]; out?: typeof events[number] }> = [];
-    let current: { in?: typeof events[number]; out?: typeof events[number] } | null = null;
-    for (const ev of sorted) {
-      if (ev.type === 'in') {
-        if (current) result.push(current);
-        current = { in: ev };
-      } else if (ev.type === 'out') {
-        if (current) {
-          current.out = ev;
-          result.push(current);
-          current = null;
+  // Group events into sessions per day
+  const dayData = useMemo(() => {
+    const days = eachDayOfInterval({ start: monthStart, end: monthEnd });
+    return days.map((day) => {
+      const dayEvents = events
+        .filter((e) => isSameDay(parseISO(e.event_time), day))
+        .sort((a, b) => new Date(a.event_time).getTime() - new Date(b.event_time).getTime());
+      // Pair sessions
+      const sessions: Array<{ in?: typeof events[number]; out?: typeof events[number] }> = [];
+      let cur: { in?: typeof events[number]; out?: typeof events[number] } | null = null;
+      for (const ev of dayEvents) {
+        if (ev.type === 'in') {
+          if (cur) sessions.push(cur);
+          cur = { in: ev };
         } else {
-          result.push({ out: ev });
+          if (cur) { cur.out = ev; sessions.push(cur); cur = null; }
+          else sessions.push({ out: ev });
         }
       }
-    }
-    if (current) result.push(current);
-    return result.reverse();
-  }, [events]);
+      if (cur) sessions.push(cur);
+      const totalSec = sessions.reduce((sum, s) => {
+        if (s.in && s.out) return sum + differenceInSeconds(parseISO(s.out.event_time), parseISO(s.in.event_time));
+        return sum;
+      }, 0);
+      const mark = dayMarks.find((m) => m.date === format(day, 'yyyy-MM-dd'));
+      const isFuture = isAfter(day, today);
+      const isSat = isSaturday(day);
+      const hasReport = sessions.length > 0;
+      return { day, sessions, totalSec, mark, isFuture, isSat, hasReport };
+    });
+  }, [events, dayMarks, monthStart, monthEnd, today]);
 
-  const handleManualSubmit = (type: 'in' | 'out') => {
-    const isoTime = new Date(`${mDate}T${mTime}:00`).toISOString();
-    if (type === 'in') {
-      clockIn.mutate({ method: 'manual', event_time: isoTime, notes: mNotes || null });
-    } else {
-      clockOut.mutate({ method: 'manual', event_time: isoTime, notes: mNotes || null });
-    }
-    setMNotes('');
-  };
+  const totalMonthSec = dayData.reduce((s, d) => s + d.totalSec, 0);
+  const isCurrentMonth = isSameDay(monthStart, startOfMonth(new Date()));
 
   return (
     <div className="container mx-auto p-4 space-y-6 max-w-3xl">
       <div>
         <h1 className="text-2xl font-bold">נוכחות ושעות</h1>
-        <p className="text-sm text-muted-foreground">דווח/י על שעות עבודה ועקוב/י אחרי ההיסטוריה שלך</p>
+        <p className="text-sm text-muted-foreground">דווח/י על שעות עבודה ועקוב/י אחרי ההיסטוריה החודשית</p>
       </div>
 
+      {/* Open correction requests */}
+      {openCorrections.map((c) => (
+        <Alert key={c.id} className="border-warning bg-warning/10">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>בקשת תיקונים פתוחה — {format(new Date(c.year, c.month - 1, 1), 'MMMM yyyy', { locale: he })}</AlertTitle>
+          <AlertDescription className="space-y-2">
+            <p className="text-sm">{c.message || 'המנהל ביקש לעדכן את דיווחי הנוכחות עבור החודש.'}</p>
+            <Button size="sm" onClick={() => {
+              setMonthRef(startOfMonth(new Date(c.year, c.month - 1, 1)));
+              setCorrectionDialog({ open: true, year: c.year, month: c.month, id: c.id });
+            }}>
+              עדכון דיווחים
+            </Button>
+          </AlertDescription>
+        </Alert>
+      ))}
+
+      {/* Current status */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -114,168 +134,119 @@ export default function Attendance() {
         </CardHeader>
         <CardContent className="space-y-4">
           {isClockedIn && status ? (
-            <div className="text-center py-4">
-              <div className="text-4xl md:text-5xl font-mono font-bold tabular-nums">
-                {formatDuration(elapsedSeconds)}
-              </div>
+            <div className="text-center py-2">
+              <div className="text-4xl md:text-5xl font-mono font-bold tabular-nums">{fmtDuration(elapsed)}</div>
               <div className="text-sm text-muted-foreground mt-2">
                 כניסה: {format(parseISO(status.event_time), 'HH:mm — dd/MM/yyyy', { locale: he })}
               </div>
               <Badge variant="outline" className="mt-2">{METHOD_LABELS[status.method] || status.method}</Badge>
             </div>
           ) : (
-            <p className="text-center text-muted-foreground py-4">לחץ על אחד הכפתורים למטה כדי להתחיל</p>
+            <p className="text-center text-muted-foreground py-2">לחץ על אחד הכפתורים למטה כדי להתחיל</p>
           )}
-        </CardContent>
-      </Card>
 
-      <Tabs defaultValue="quick">
-        <TabsList className="grid grid-cols-2 w-full">
-          <TabsTrigger value="quick">פעולה מהירה</TabsTrigger>
-          <TabsTrigger value="manual">דיווח ידני</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="quick" className="space-y-3 mt-4">
-          {settings?.allow_qr !== false && (
-            <Button
-              size="lg"
-              variant="outline"
-              className="w-full h-16 text-lg"
-              onClick={() => setQrOpen(true)}
-            >
-              <QrCode className="ml-2 h-5 w-5" />
-              סריקת QR (כניסה / יציאה)
-            </Button>
-          )}
-          {!isClockedIn ? (
-            <>
-              {settings?.allow_wfh !== false && (
-                <Button
-                  size="lg"
-                  className="w-full h-16 text-lg"
-                  onClick={() => clockIn.mutate({ method: 'wfh' })}
-                  disabled={clockIn.isPending}
-                >
+          <div className="grid gap-2">
+            {settings?.allow_qr !== false && (
+              <Button size="lg" variant="outline" className="w-full h-14" onClick={() => setQrOpen(true)}>
+                <QrCode className="ml-2 h-5 w-5" />
+                סריקת QR (כניסה / יציאה)
+              </Button>
+            )}
+            {!isClockedIn ? (
+              settings?.allow_wfh !== false && (
+                <Button size="lg" className="w-full h-14" onClick={() => clockIn.mutate({ method: 'wfh' })}
+                  disabled={clockIn.isPending}>
                   <Home className="ml-2 h-5 w-5" />
                   כניסה מהבית
                 </Button>
-              )}
-            </>
-          ) : (
-            <Button
-              size="lg"
-              variant="destructive"
-              className="w-full h-16 text-lg"
-              onClick={() => clockOut.mutate({ method: status?.method || 'manual' })}
-              disabled={clockOut.isPending}
-            >
-              <LogOut className="ml-2 h-5 w-5" />
-              יציאה מהעבודה
-            </Button>
-          )}
-        </TabsContent>
+              )
+            ) : (
+              <Button size="lg" variant="destructive" className="w-full h-14"
+                onClick={() => clockOut.mutate({ method: status?.method || 'wfh' })}
+                disabled={clockOut.isPending}>
+                <LogOut className="ml-2 h-5 w-5" />
+                יציאה מהעבודה
+              </Button>
+            )}
+          </div>
+        </CardContent>
+      </Card>
 
-        <TabsContent value="manual" className="mt-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">דיווח ידני</CardTitle>
-              <p className="text-xs text-muted-foreground">
-                ניתן לדווח עד {maxDaysBack} ימים אחורה. רשומות ידניות מסומנות כ"ידני".
-              </p>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <Label htmlFor="m-date">תאריך</Label>
-                  <Input id="m-date" type="date" value={mDate} min={minDate} max={todayStr}
-                    onChange={(e) => setMDate(e.target.value)} />
-                </div>
-                <div>
-                  <Label htmlFor="m-time">שעה</Label>
-                  <Input id="m-time" type="time" value={mTime} onChange={(e) => setMTime(e.target.value)} />
-                </div>
-              </div>
-              <div>
-                <Label htmlFor="m-notes">הערה (אופציונלי)</Label>
-                <Textarea id="m-notes" value={mNotes} onChange={(e) => setMNotes(e.target.value)}
-                  placeholder="לדוגמה: עבדתי על פרויקט X" rows={2} />
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                <Button onClick={() => handleManualSubmit('in')} disabled={clockIn.isPending}>
-                  <LogIn className="ml-2 h-4 w-4" />
-                  רישום כניסה
-                </Button>
-                <Button variant="secondary" onClick={() => handleManualSubmit('out')} disabled={clockOut.isPending}>
-                  <LogOut className="ml-2 h-4 w-4" />
-                  רישום יציאה
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
-
+      {/* Monthly history */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">היסטוריה אחרונה</CardTitle>
+          <div className="flex items-center justify-between gap-2">
+            <CardTitle className="text-base flex items-center gap-2">
+              <CalendarIcon className="h-4 w-4" />
+              היסטוריה חודשית
+            </CardTitle>
+            <div className="flex items-center gap-1">
+              <Button variant="ghost" size="icon" onClick={() => setMonthRef((m) => subMonths(m, 1))}>
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+              <div className="text-sm font-medium min-w-[110px] text-center">
+                {format(monthRef, 'MMMM yyyy', { locale: he })}
+              </div>
+              <Button variant="ghost" size="icon" disabled={isCurrentMonth}
+                onClick={() => setMonthRef((m) => addMonths(m, 1))}>
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+          <div className="flex items-center justify-between text-xs text-muted-foreground pt-1">
+            <span>סה"כ חודש: <strong className="text-foreground">{fmtHM(totalMonthSec)}</strong></span>
+          </div>
         </CardHeader>
-        <CardContent>
-          {sessions.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-6">אין רשומות עדיין</p>
-          ) : (
-            <ul className="divide-y">
-              {sessions.map((s, idx) => {
-                const ref = s.in || s.out!;
-                const dateStr = format(parseISO(ref.event_time), 'EEEE dd/MM/yyyy', { locale: he });
-                const inTime = s.in ? format(parseISO(s.in.event_time), 'HH:mm') : '—';
-                const outTime = s.out ? format(parseISO(s.out.event_time), 'HH:mm') : '— (פתוח)';
-                const duration = s.in && s.out
-                  ? formatDuration(differenceInSeconds(parseISO(s.out.event_time), parseISO(s.in.event_time)))
-                  : null;
-                const ids = [s.in?.id, s.out?.id].filter(Boolean) as string[];
-                return (
-                  <li key={idx} className="py-3 flex items-center justify-between gap-2">
-                    <div className="min-w-0 flex-1">
-                      <div className="text-sm font-medium">{dateStr}</div>
-                      <div className="text-xs text-muted-foreground">
-                        {inTime} ← {outTime}
-                        {duration && <span className="mr-2">· {duration}</span>}
+        <CardContent className="p-0">
+          <ul className="divide-y">
+            {dayData.map(({ day, sessions, totalSec, mark, isFuture, isSat, hasReport }) => {
+              const dateLabel = format(day, 'EEEE dd/MM', { locale: he });
+              return (
+                <li key={day.toISOString()}
+                  className={`px-4 py-3 flex items-start justify-between gap-3 ${isSat ? 'bg-muted/40' : ''} ${isFuture ? 'opacity-50' : ''}`}>
+                  <div className="min-w-0 flex-1">
+                    <div className="text-sm font-medium">{dateLabel}</div>
+                    {isSat ? (
+                      <div className="text-xs text-muted-foreground mt-0.5">שבת</div>
+                    ) : mark ? (
+                      <div className="text-xs mt-0.5">
+                        <Badge variant="secondary" className="text-[10px]">{DAY_MARK_LABELS[mark.type]}</Badge>
+                        {mark.note && <span className="text-muted-foreground mr-1">— {mark.note}</span>}
                       </div>
-                      <div className="flex gap-1 mt-1">
-                        <Badge variant="outline" className="text-[10px]">
-                          {METHOD_LABELS[ref.method] || ref.method}
-                        </Badge>
-                        {ref.notes && <span className="text-[11px] text-muted-foreground truncate">"{ref.notes}"</span>}
+                    ) : sessions.length > 0 ? (
+                      <div className="text-xs text-muted-foreground mt-0.5 space-y-0.5">
+                        {sessions.map((s, i) => (
+                          <div key={i}>
+                            {s.in ? format(parseISO(s.in.event_time), 'HH:mm') : '—'}
+                            {' ← '}
+                            {s.out ? format(parseISO(s.out.event_time), 'HH:mm') : '— (פתוח)'}
+                          </div>
+                        ))}
                       </div>
-                    </div>
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-8 w-8">
-                          <Trash2 className="h-4 w-4 text-muted-foreground" />
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>למחוק את הסשן?</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            פעולה זו תמחק גם את הכניסה וגם את היציאה של הסשן. אינה הפיכה.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>ביטול</AlertDialogCancel>
-                          <AlertDialogAction onClick={() => deleteSession.mutate(ids)}>מחיקה</AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  </li>
-                );
-              })}
-            </ul>
-          )}
+                    ) : !isFuture ? (
+                      <div className="text-xs text-destructive mt-0.5">אין דיווח</div>
+                    ) : null}
+                  </div>
+                  {hasReport && (
+                    <div className="text-sm font-mono tabular-nums">{fmtHM(totalSec)}</div>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
         </CardContent>
       </Card>
 
       <QrScannerDialog open={qrOpen} onOpenChange={setQrOpen} />
+      {correctionDialog.open && correctionDialog.year && correctionDialog.month && (
+        <MonthCorrectionDialog
+          open={correctionDialog.open}
+          onOpenChange={(o) => setCorrectionDialog({ ...correctionDialog, open: o })}
+          year={correctionDialog.year}
+          month={correctionDialog.month}
+          correctionRequestId={correctionDialog.id!}
+        />
+      )}
     </div>
   );
 }

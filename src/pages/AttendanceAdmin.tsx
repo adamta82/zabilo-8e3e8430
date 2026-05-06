@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react';
 import { format, parseISO, differenceInSeconds, startOfDay, endOfDay, subDays, eachDayOfInterval } from 'date-fns';
 import { he } from 'date-fns/locale';
-import { Download, MapPin, FileText } from 'lucide-react';
+import { Download, MapPin, FileText, MailQuestion } from 'lucide-react';
+import { useRequestMonthCorrections } from '@/hooks/useDayMarks';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -321,10 +322,11 @@ export default function AttendanceAdmin() {
                         <TableCell className="text-xs text-muted-foreground">
                           {Object.entries(h.methods).map(([m, c]) => `${METHOD_LABELS[m]}: ${c}`).join(' · ') || '—'}
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="flex gap-1">
                           <Button size="sm" variant="ghost" onClick={() => emp && setReportEmployee(emp)}>
                             <FileText className="h-4 w-4" />
                           </Button>
+                          <RequestCorrectionButton userId={h.user_id} fromDate={fromDate} />
                         </TableCell>
                       </TableRow>
                     );
@@ -412,6 +414,19 @@ function BoolSetting({ id, field, label, value, mutate }: any) {
       <Label>{label}</Label>
       <Switch checked={value} onCheckedChange={(checked) => mutate({ id, patch: { [field]: checked } })} />
     </div>
+  );
+}
+
+function RequestCorrectionButton({ userId, fromDate }: { userId: string; fromDate: string }) {
+  const requestCorr = useRequestMonthCorrections();
+  const ref = parseISO(fromDate);
+  const year = ref.getFullYear();
+  const month = ref.getMonth() + 1;
+  return (
+    <Button size="sm" variant="ghost" title="בקש תיקונים לחודש שנבחר"
+      onClick={() => requestCorr.mutate({ user_id: userId, year, month, message: 'נא לעדכן דיווחים חסרים/לא מדויקים' })}>
+      <MailQuestion className="h-4 w-4" />
+    </Button>
   );
 }
 
