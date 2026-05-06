@@ -98,6 +98,54 @@ export type Database = {
           },
         ]
       }
+      attendance_settings: {
+        Row: {
+          allow_manual: boolean
+          allow_nfc: boolean
+          allow_qr: boolean
+          allow_wfh: boolean
+          created_at: string
+          daily_hours: number
+          id: string
+          manual_entry_max_days_back: number
+          overtime_multiplier: number
+          qr_rotation_seconds: number
+          require_gps_for_qr: boolean
+          updated_at: string
+          weekly_overtime_threshold: number
+        }
+        Insert: {
+          allow_manual?: boolean
+          allow_nfc?: boolean
+          allow_qr?: boolean
+          allow_wfh?: boolean
+          created_at?: string
+          daily_hours?: number
+          id?: string
+          manual_entry_max_days_back?: number
+          overtime_multiplier?: number
+          qr_rotation_seconds?: number
+          require_gps_for_qr?: boolean
+          updated_at?: string
+          weekly_overtime_threshold?: number
+        }
+        Update: {
+          allow_manual?: boolean
+          allow_nfc?: boolean
+          allow_qr?: boolean
+          allow_wfh?: boolean
+          created_at?: string
+          daily_hours?: number
+          id?: string
+          manual_entry_max_days_back?: number
+          overtime_multiplier?: number
+          qr_rotation_seconds?: number
+          require_gps_for_qr?: boolean
+          updated_at?: string
+          weekly_overtime_threshold?: number
+        }
+        Relationships: []
+      }
       automations: {
         Row: {
           action_type: Database["public"]["Enums"]["automation_action"]
@@ -178,6 +226,74 @@ export type Database = {
           sender_id?: string
         }
         Relationships: []
+      }
+      clock_events: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          created_at: string
+          event_time: string
+          gps_accuracy: number | null
+          gps_lat: number | null
+          gps_lng: number | null
+          id: string
+          is_approved: boolean
+          location_id: string | null
+          method: Database["public"]["Enums"]["clock_event_method"]
+          notes: string | null
+          outside_geofence: boolean
+          shift_id: string | null
+          type: Database["public"]["Enums"]["clock_event_type"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          event_time?: string
+          gps_accuracy?: number | null
+          gps_lat?: number | null
+          gps_lng?: number | null
+          id?: string
+          is_approved?: boolean
+          location_id?: string | null
+          method: Database["public"]["Enums"]["clock_event_method"]
+          notes?: string | null
+          outside_geofence?: boolean
+          shift_id?: string | null
+          type: Database["public"]["Enums"]["clock_event_type"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          event_time?: string
+          gps_accuracy?: number | null
+          gps_lat?: number | null
+          gps_lng?: number | null
+          id?: string
+          is_approved?: boolean
+          location_id?: string | null
+          method?: Database["public"]["Enums"]["clock_event_method"]
+          notes?: string | null
+          outside_geofence?: boolean
+          shift_id?: string | null
+          type?: Database["public"]["Enums"]["clock_event_type"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clock_events_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       comment_likes: {
         Row: {
@@ -422,6 +538,48 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      locations: {
+        Row: {
+          address: string | null
+          created_at: string
+          geofence_radius: number
+          id: string
+          is_active: boolean
+          lat: number | null
+          lng: number | null
+          name: string
+          nfc_tag_id: string | null
+          qr_secret: string
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          created_at?: string
+          geofence_radius?: number
+          id?: string
+          is_active?: boolean
+          lat?: number | null
+          lng?: number | null
+          name: string
+          nfc_tag_id?: string | null
+          qr_secret?: string
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          created_at?: string
+          geofence_radius?: number
+          id?: string
+          is_active?: boolean
+          lat?: number | null
+          lng?: number | null
+          name?: string
+          nfc_tag_id?: string | null
+          qr_secret?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       profiles: {
         Row: {
@@ -704,6 +862,8 @@ export type Database = {
         | "request_created"
         | "request_approved"
         | "request_rejected"
+      clock_event_method: "qr" | "nfc" | "manual" | "wfh"
+      clock_event_type: "in" | "out"
       request_status:
         | "pending"
         | "approved"
@@ -845,6 +1005,8 @@ export const Constants = {
         "request_approved",
         "request_rejected",
       ],
+      clock_event_method: ["qr", "nfc", "manual", "wfh"],
+      clock_event_type: ["in", "out"],
       request_status: [
         "pending",
         "approved",

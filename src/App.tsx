@@ -23,6 +23,7 @@ import DepartmentKnowledge from "./pages/DepartmentKnowledge";
 import ArticleView from "./pages/ArticleView";
 import ReadTracking from "./pages/ReadTracking";
 import BriefingsArchive from "./pages/BriefingsArchive";
+import Attendance from "./pages/Attendance";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -128,6 +129,17 @@ function AppRoutes() {
           <ProtectedRoute>
             <AppLayout>
               <MyArea />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/attendance"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <Attendance />
             </AppLayout>
           </ProtectedRoute>
         }

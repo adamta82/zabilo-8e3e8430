@@ -12,6 +12,7 @@ import {
   BookOpen,
   BarChart2,
   Sunrise,
+  Timer,
 } from 'lucide-react';
 import {
   Sidebar,
@@ -35,6 +36,7 @@ import { useUnreadCount } from '@/hooks/useKnowledge';
 const mainMenuItems = [
   { title: 'מרכז הידע', url: '/', icon: BookOpen, showBadge: true },
   { title: 'לוח שנה', url: '/dashboard', icon: CalendarDays },
+  { title: 'נוכחות ושעות', url: '/attendance', icon: Timer },
   { title: 'הבקשות שלי', url: '/requests', icon: FileText },
   { title: 'מבנה ארגוני', url: '/org-chart', icon: Network },
   { title: 'האזור שלי', url: '/my-area', icon: UserCircle },
