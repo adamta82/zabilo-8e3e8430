@@ -47,6 +47,7 @@ export default function AttendanceAdmin() {
   const [methodFilter, setMethodFilter] = useState<string>('all');
   const [userFilter, setUserFilter] = useState<string>('all');
   const [reportEmployee, setReportEmployee] = useState<any | null>(null);
+  const [gpsSheet, setGpsSheet] = useState<{ open: boolean; lat?: number; lng?: number; accuracy?: number; title?: string; subtitle?: string }>({ open: false });
 
   const fromIso = startOfDay(parseISO(fromDate)).toISOString();
   const toIso = endOfDay(parseISO(toDate)).toISOString();
