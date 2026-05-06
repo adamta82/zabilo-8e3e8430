@@ -8,7 +8,7 @@ import { useQrToggle } from '@/hooks/useAttendance';
 
 export default function ScanLocation() {
   const { locId } = useParams<{ locId: string }>();
-  const { user, loading } = useAuth();
+  const { user, isLoading: loading } = useAuth();
   const navigate = useNavigate();
   const qrToggle = useQrToggle();
   const [state, setState] = useState<'idle' | 'pending' | 'success' | 'error'>('idle');
