@@ -43,6 +43,7 @@ const mainMenuItems = [
 ];
 
 const adminMenuItems = [
+  { title: 'ניהול נוכחות', url: '/attendance/admin', icon: Timer },
   { title: 'שיבוץ משמרות', url: '/shifts', icon: ClipboardList },
   { title: 'ניהול עובדים', url: '/employees', icon: Users },
   { title: 'ניהול מחלקות', url: '/departments', icon: Building2 },
