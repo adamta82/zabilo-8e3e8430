@@ -134,7 +134,7 @@ export default function AttendanceAdmin() {
   };
 
   return (
-    <div dir="rtl" className="container mx-auto max-w-7xl space-y-6 p-4 text-right">
+    <div className="container mx-auto p-4 space-y-6 max-w-7xl">
       <div>
         <h1 className="text-2xl font-bold">ניהול נוכחות</h1>
         <p className="text-sm text-muted-foreground">תמונה מלאה של נוכחות העובדים, מיקומים, שעות והגדרות</p>
@@ -149,7 +149,7 @@ export default function AttendanceAdmin() {
         <SummaryCard label="כניסות/יציאות בטווח" value={rangeEvents.length} sub={`${fromDate} → ${toDate}`} tone="default" />
       </div>
 
-      <Tabs defaultValue="live" dir="rtl">
+      <Tabs defaultValue="live">
         <TabsList className="grid grid-cols-5 w-full">
           <TabsTrigger value="settings">הגדרות</TabsTrigger>
           <TabsTrigger value="locations">מיקומים</TabsTrigger>
@@ -159,7 +159,7 @@ export default function AttendanceAdmin() {
         </TabsList>
 
         <TabsContent value="live" className="mt-4 space-y-4">
-           <Card dir="rtl">
+          <Card>
             <CardHeader><CardTitle className="text-base">סטטוס לכל עובד</CardTitle></CardHeader>
             <CardContent className="p-0">
               <div className="divide-y">
@@ -167,7 +167,7 @@ export default function AttendanceAdmin() {
                   const s = statusMap.get(emp.user_id);
                   const isIn = s?.type === 'in';
                   return (
-                    <div key={emp.id} className="flex flex-row-reverse items-center gap-3 p-3 text-right">
+                    <div key={emp.id} className="flex items-center gap-3 p-3">
                       <Avatar className="h-9 w-9">
                         <AvatarImage src={emp.avatar_url || undefined} />
                         <AvatarFallback>{initials(emp.full_name)}</AvatarFallback>
@@ -195,8 +195,8 @@ export default function AttendanceAdmin() {
         </TabsContent>
 
         <TabsContent value="events" className="mt-4 space-y-4">
-           <Card dir="rtl">
-              <CardContent className="grid grid-cols-1 gap-3 p-4 text-right md:grid-cols-3">
+          <Card>
+            <CardContent className="p-4 grid grid-cols-1 md:grid-cols-3 gap-3">
               <div>
                 <Label>שיטה</Label>
                 <Select value={methodFilter} onValueChange={setMethodFilter}>
@@ -230,9 +230,9 @@ export default function AttendanceAdmin() {
             </CardContent>
           </Card>
 
-           <Card dir="rtl">
+          <Card>
             <CardContent className="p-0 overflow-x-auto">
-              <Table dir="rtl">
+              <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>עובד</TableHead>
@@ -289,8 +289,8 @@ export default function AttendanceAdmin() {
         </TabsContent>
 
         <TabsContent value="hours" className="mt-4 space-y-4">
-           <Card dir="rtl">
-              <CardHeader className="flex flex-row-reverse items-center justify-between text-right">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
               <div>
                 <CardTitle className="text-base">דוח שעות לפי עובד</CardTitle>
                 <p className="text-xs text-muted-foreground">{fromDate} → {toDate}</p>
@@ -300,7 +300,7 @@ export default function AttendanceAdmin() {
               </Button>
             </CardHeader>
             <CardContent className="p-0 overflow-x-auto">
-              <Table dir="rtl">
+              <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>עובד</TableHead>
@@ -329,7 +329,7 @@ export default function AttendanceAdmin() {
                         <TableCell className="text-xs text-muted-foreground">
                           {Object.entries(h.methods).map(([m, c]) => `${METHOD_LABELS[m]}: ${c}`).join(' · ') || '—'}
                         </TableCell>
-                        <TableCell className="flex flex-row-reverse gap-1">
+                        <TableCell className="flex gap-1">
                           <Button size="sm" variant="ghost" onClick={() => emp && setReportEmployee(emp)}>
                             <FileText className="h-4 w-4" />
                           </Button>
@@ -350,7 +350,7 @@ export default function AttendanceAdmin() {
 
         <TabsContent value="settings" className="mt-4">
           {settings && (
-             <Card dir="rtl">
+            <Card>
               <CardHeader><CardTitle className="text-base">הגדרות נוכחות</CardTitle></CardHeader>
               <CardContent className="space-y-5">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
