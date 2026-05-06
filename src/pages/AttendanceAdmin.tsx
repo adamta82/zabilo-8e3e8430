@@ -256,16 +256,24 @@ export default function AttendanceAdmin() {
                       <TableCell className="text-sm tabular-nums whitespace-nowrap">
                         {format(parseISO(e.event_time), 'dd/MM/yyyy HH:mm', { locale: he })}
                       </TableCell>
-                      <TableCell className="text-sm">{e.location?.name || '—'}</TableCell>
+                      <TableCell className="text-sm max-w-[220px]">
+                        {e.location?.name ? (
+                          <span>{e.location.name}</span>
+                        ) : e.gps_lat && e.gps_lng ? (
+                          <GpsAddressCell lat={e.gps_lat} lng={e.gps_lng} />
+                        ) : '—'}
+                      </TableCell>
                       <TableCell>
                         {e.gps_lat && e.gps_lng ? (
-                          <a
-                            href={`https://maps.google.com/?q=${e.gps_lat},${e.gps_lng}`}
-                            target="_blank" rel="noreferrer"
-                            className="text-primary text-xs inline-flex items-center gap-1 hover:underline"
+                          <Button
+                            variant="ghost" size="sm" className="h-7 px-2 text-xs"
+                            onClick={() => setGpsSheet({
+                              open: true, lat: e.gps_lat!, lng: e.gps_lng!, accuracy: e.gps_accuracy ?? undefined,
+                              title: e.profile?.full_name, subtitle: format(parseISO(e.event_time), 'dd/MM/yyyy HH:mm', { locale: he }),
+                            })}
                           >
-                            <MapPin className="h-3 w-3" />הצג
-                          </a>
+                            <MapPin className="ml-1 h-3 w-3" />הצג
+                          </Button>
                         ) : '—'}
                       </TableCell>
                       <TableCell className="text-xs text-muted-foreground max-w-xs truncate">{e.notes || '—'}</TableCell>
