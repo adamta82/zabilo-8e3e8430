@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { format, parseISO, differenceInSeconds, startOfDay, endOfDay, subDays, eachDayOfInterval, startOfMonth, endOfMonth, subMonths, startOfWeek, endOfWeek } from 'date-fns';
 import { he } from 'date-fns/locale';
-import { Download, MapPin, FileText, MailQuestion } from 'lucide-react';
+import { Download, MapPin, FileText, MailQuestion, Pencil, Plus, Trash2 } from 'lucide-react';
 import { useRequestMonthCorrections } from '@/hooks/useDayMarks';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -14,10 +14,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle,
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
 } from '@/components/ui/dialog';
 import { useAllClockEvents, useLatestEventPerUser, useUpdateAttendanceSettings, type AdminClockEvent } from '@/hooks/useAttendanceAdmin';
-import { useAttendanceSettings } from '@/hooks/useAttendance';
+import { useAttendanceSettings, useUpdateClockEvent, useAdminInsertEvent, useAdminDeleteEvent } from '@/hooks/useAttendance';
 import { useEmployees } from '@/hooks/useEmployees';
 import { LocationsManager } from '@/components/attendance/LocationsManager';
 import { GpsMapSheet, reverseGeocode } from '@/components/attendance/GpsMapSheet';
