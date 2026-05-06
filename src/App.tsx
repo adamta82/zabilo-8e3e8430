@@ -42,6 +42,7 @@ function AppRoutes() {
     <Routes>
       {/* Public Routes */}
       <Route path="/login" element={<Login />} />
+      <Route path="/scan/:locId" element={<ScanLocation />} />
 
       {/* Protected Routes */}
       <Route
