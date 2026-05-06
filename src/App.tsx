@@ -33,9 +33,10 @@ const queryClient = new QueryClient();
 function AppRoutes() {
   const { user, isLoading } = useAuth();
 
-  // Redirect to dashboard if already logged in
+  // Redirect to dashboard (or ?redirect=) if already logged in
   if (!isLoading && user && window.location.pathname === '/login') {
-    return <Navigate to="/" replace />;
+    const params = new URLSearchParams(window.location.search);
+    return <Navigate to={params.get('redirect') || '/'} replace />;
   }
 
   return (
