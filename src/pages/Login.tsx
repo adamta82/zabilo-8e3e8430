@@ -11,6 +11,8 @@ import { Loader2, LogIn, UserPlus } from 'lucide-react';
 
 export default function Login() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const redirectTo = searchParams.get('redirect') || '/';
   const { signIn, signUp } = useAuth();
   const { toast } = useToast();
   
