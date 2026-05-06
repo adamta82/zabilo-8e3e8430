@@ -134,7 +134,8 @@ export function LocationsManager() {
 }
 
 function QrPrintDialog({ location, onClose }: { location: Location; onClose: () => void }) {
-  const qrValue = `zabilo:loc:${location.id}`;
+  // Use full URL so the QR can be scanned by any phone camera (not just the in-app scanner).
+  const qrValue = `${window.location.origin}/scan/${location.id}`;
   const handlePrint = () => {
     const svg = document.getElementById('qr-print-svg');
     if (!svg) return;
@@ -151,7 +152,7 @@ function QrPrintDialog({ location, onClose }: { location: Location; onClose: () 
       <h1>${location.name}</h1>
       <p>${location.address || ''}</p>
       ${svg.outerHTML}
-      <p style="margin-top:24px;font-size:14px">סרוק כדי לרשום כניסה / יציאה</p>
+      <p style="margin-top:24px;font-size:14px">סרקו עם מצלמת הטלפון לכניסה / יציאה</p>
       </body></html>
     `);
     w.document.close();
@@ -165,8 +166,9 @@ function QrPrintDialog({ location, onClose }: { location: Location; onClose: () 
         <div className="flex flex-col items-center gap-3 p-4 bg-white rounded-lg">
           <QRCodeSVG id="qr-print-svg" value={qrValue} size={240} level="M" />
           <p className="text-xs text-muted-foreground text-center">
-            הדפס/י את ה-QR ותלה/י במיקום העבודה. עובדים יסרקו כדי לדווח כניסה/יציאה אוטומטית.
+            הדפס/י את ה-QR ותלה/י במיקום העבודה. עובדים יסרקו אותו ישירות ממצלמת הטלפון או מתוך האפליקציה — וייכנסו/יצאו אוטומטית.
           </p>
+          <p dir="ltr" className="text-[10px] text-muted-foreground break-all">{qrValue}</p>
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>סגירה</Button>
