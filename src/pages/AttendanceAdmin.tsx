@@ -322,10 +322,11 @@ export default function AttendanceAdmin() {
                         <TableCell className="text-xs text-muted-foreground">
                           {Object.entries(h.methods).map(([m, c]) => `${METHOD_LABELS[m]}: ${c}`).join(' · ') || '—'}
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="flex gap-1">
                           <Button size="sm" variant="ghost" onClick={() => emp && setReportEmployee(emp)}>
                             <FileText className="h-4 w-4" />
                           </Button>
+                          <RequestCorrectionButton userId={h.user_id} fromDate={fromDate} />
                         </TableCell>
                       </TableRow>
                     );
