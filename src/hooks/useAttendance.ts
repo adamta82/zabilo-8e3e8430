@@ -60,6 +60,92 @@ export function useMyClockEvents(limit = 100) {
   });
 }
 
+/** Events for the user in a date range (used by monthly view) */
+export function useMyEventsInRange(fromIso: string, toIso: string) {
+  const { user } = useAuth();
+  return useQuery({
+    queryKey: ['my-events-range', user?.id, fromIso, toIso],
+    enabled: !!user,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('clock_events' as any)
+        .select('*')
+        .eq('user_id', user!.id)
+        .gte('event_time', fromIso)
+        .lte('event_time', toIso)
+        .order('event_time', { ascending: true });
+      if (error) throw error;
+      return ((data as any) || []) as ClockEvent[];
+    },
+  });
+}
+
+/** Update an event's time/notes with audit logging */
+export function useUpdateClockEvent() {
+  const qc = useQueryClient();
+  const { user } = useAuth();
+  const { toast } = useToast();
+  return useMutation({
+    mutationFn: async (params: { id: string; event_time?: string; notes?: string | null; reason?: string }) => {
+      const { data: existing, error: fetchErr } = await supabase
+        .from('clock_events' as any).select('*').eq('id', params.id).single();
+      if (fetchErr) throw fetchErr;
+      const old = existing as any;
+      const next: any = { last_edited_by: user!.id, last_edited_at: new Date().toISOString(),
+        edit_count: (old.edit_count || 0) + 1 };
+      if (params.event_time) next.event_time = params.event_time;
+      if (params.notes !== undefined) next.notes = params.notes;
+      const { error } = await supabase.from('clock_events' as any).update(next).eq('id', params.id);
+      if (error) throw error;
+      await supabase.from('clock_event_edits' as any).insert({
+        event_id: params.id, user_id: old.user_id, edited_by: user!.id, action: 'update',
+        old_values: { event_time: old.event_time, notes: old.notes },
+        new_values: { event_time: next.event_time ?? old.event_time, notes: next.notes ?? old.notes },
+        reason: params.reason ?? null,
+      } as any);
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['my-events-range'] });
+      qc.invalidateQueries({ queryKey: ['my-clock-events'] });
+      qc.invalidateQueries({ queryKey: ['clock-status'] });
+      toast({ title: 'הרשומה עודכנה' });
+    },
+    onError: (e: any) => toast({ title: 'שגיאה', description: e.message, variant: 'destructive' }),
+  });
+}
+
+/** Insert a correction event (manager-requested) with audit log */
+export function useInsertCorrectionEvent() {
+  const qc = useQueryClient();
+  const { user } = useAuth();
+  const { toast } = useToast();
+  return useMutation({
+    mutationFn: async (params: {
+      type: ClockEventType; event_time: string; notes?: string | null;
+      correction_request_id?: string | null;
+    }) => {
+      const { data, error } = await supabase.from('clock_events' as any).insert({
+        user_id: user!.id, type: params.type, method: 'manual',
+        event_time: params.event_time, notes: params.notes ?? null,
+        is_correction: true, correction_request_id: params.correction_request_id ?? null,
+        last_edited_by: user!.id, last_edited_at: new Date().toISOString(),
+      } as any).select().single();
+      if (error) throw error;
+      await supabase.from('clock_event_edits' as any).insert({
+        event_id: (data as any).id, user_id: user!.id, edited_by: user!.id,
+        action: 'create', new_values: { event_time: params.event_time, notes: params.notes, type: params.type },
+        reason: 'תיקון חודשי',
+      } as any);
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['my-events-range'] });
+      qc.invalidateQueries({ queryKey: ['my-clock-events'] });
+      toast({ title: 'נוסף דיווח תיקון' });
+    },
+    onError: (e: any) => toast({ title: 'שגיאה', description: e.message, variant: 'destructive' }),
+  });
+}
+
 async function insertEvent(params: {
   user_id: string;
   type: ClockEventType;
