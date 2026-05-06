@@ -80,6 +80,83 @@ export function useMyEventsInRange(fromIso: string, toIso: string) {
   });
 }
 
+/** Admin: events for a specific user in a date range */
+export function useUserEventsInRange(userId: string | null, fromIso: string, toIso: string) {
+  return useQuery({
+    queryKey: ['user-events-range', userId, fromIso, toIso],
+    enabled: !!userId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('clock_events' as any)
+        .select('*')
+        .eq('user_id', userId!)
+        .gte('event_time', fromIso)
+        .lte('event_time', toIso)
+        .order('event_time', { ascending: true });
+      if (error) throw error;
+      return ((data as any) || []) as ClockEvent[];
+    },
+  });
+}
+
+/** Admin: insert a clock event for any user with audit log */
+export function useAdminInsertEvent() {
+  const qc = useQueryClient();
+  const { user } = useAuth();
+  const { toast } = useToast();
+  return useMutation({
+    mutationFn: async (params: { user_id: string; type: ClockEventType; event_time: string; notes?: string | null; reason?: string }) => {
+      const { data, error } = await supabase.from('clock_events' as any).insert({
+        user_id: params.user_id, type: params.type, method: 'manual',
+        event_time: params.event_time, notes: params.notes ?? null,
+        is_correction: true,
+        last_edited_by: user!.id, last_edited_at: new Date().toISOString(),
+      } as any).select().single();
+      if (error) throw error;
+      await supabase.from('clock_event_edits' as any).insert({
+        event_id: (data as any).id, user_id: params.user_id, edited_by: user!.id,
+        action: 'create',
+        new_values: { event_time: params.event_time, notes: params.notes, type: params.type },
+        reason: params.reason ?? 'הוספה ע״י מנהל',
+      } as any);
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['user-events-range'] });
+      qc.invalidateQueries({ queryKey: ['admin-clock-events'] });
+      toast({ title: 'נוסף דיווח' });
+    },
+    onError: (e: any) => toast({ title: 'שגיאה', description: e.message, variant: 'destructive' }),
+  });
+}
+
+/** Admin: delete any clock event with audit log */
+export function useAdminDeleteEvent() {
+  const qc = useQueryClient();
+  const { user } = useAuth();
+  const { toast } = useToast();
+  return useMutation({
+    mutationFn: async (params: { id: string; reason?: string }) => {
+      const { data: existing } = await supabase.from('clock_events' as any).select('*').eq('id', params.id).single();
+      const old = existing as any;
+      const { error } = await supabase.from('clock_events' as any).delete().eq('id', params.id);
+      if (error) throw error;
+      if (old) {
+        await supabase.from('clock_event_edits' as any).insert({
+          event_id: params.id, user_id: old.user_id, edited_by: user!.id,
+          action: 'delete', old_values: { event_time: old.event_time, notes: old.notes, type: old.type },
+          reason: params.reason ?? 'מחיקה ע״י מנהל',
+        } as any);
+      }
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['user-events-range'] });
+      qc.invalidateQueries({ queryKey: ['admin-clock-events'] });
+      toast({ title: 'הרשומה נמחקה' });
+    },
+    onError: (e: any) => toast({ title: 'שגיאה', description: e.message, variant: 'destructive' }),
+  });
+}
+
 /** Update an event's time/notes with audit logging */
 export function useUpdateClockEvent() {
   const qc = useQueryClient();
