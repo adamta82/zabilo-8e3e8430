@@ -543,7 +543,15 @@ function EmployeeReportDialog({
 }: {
   employee: any; fromDate: string; toDate: string; events: AdminClockEvent[]; onClose: () => void;
 }) {
-  // Group events by day
+  const updateEvent = useUpdateClockEvent();
+  const insertEvent = useAdminInsertEvent();
+  const deleteEvent = useAdminDeleteEvent();
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editTime, setEditTime] = useState('');
+  const [addingDate, setAddingDate] = useState<string | null>(null);
+  const [newInTime, setNewInTime] = useState('09:00');
+  const [newOutTime, setNewOutTime] = useState('17:00');
+
   const days = useMemo(() => {
     const range = eachDayOfInterval({ start: parseISO(fromDate), end: parseISO(toDate) }).reverse();
     return range.map((d) => {
@@ -551,7 +559,6 @@ function EmployeeReportDialog({
       const dayEvents = events
         .filter((e) => format(parseISO(e.event_time), 'yyyy-MM-dd') === dayKey)
         .sort((a, b) => new Date(a.event_time).getTime() - new Date(b.event_time).getTime());
-      // pair into sessions
       const sessions: Array<{ in?: AdminClockEvent; out?: AdminClockEvent }> = [];
       let curr: { in?: AdminClockEvent; out?: AdminClockEvent } | null = null;
       for (const ev of dayEvents) {
@@ -568,11 +575,29 @@ function EmployeeReportDialog({
         if (s.in && s.out) return acc + Math.max(0, differenceInSeconds(parseISO(s.out.event_time), parseISO(s.in.event_time)));
         return acc;
       }, 0);
-      return { date: d, sessions, totalSec };
+      return { date: d, dayKey, sessions, totalSec };
     });
   }, [events, fromDate, toDate]);
 
   const grandTotal = days.reduce((acc, d) => acc + d.totalSec, 0);
+
+  const startEdit = (ev: AdminClockEvent) => {
+    setEditingId(ev.id);
+    setEditTime(format(parseISO(ev.event_time), 'HH:mm'));
+  };
+  const saveEdit = async (ev: AdminClockEvent) => {
+    const dateStr = format(parseISO(ev.event_time), 'yyyy-MM-dd');
+    const iso = new Date(`${dateStr}T${editTime}:00`).toISOString();
+    await updateEvent.mutateAsync({ id: ev.id, event_time: iso, reason: 'עריכה ע״י מנהל' });
+    setEditingId(null);
+  };
+  const addSession = async (dateStr: string) => {
+    const inIso = new Date(`${dateStr}T${newInTime}:00`).toISOString();
+    const outIso = new Date(`${dateStr}T${newOutTime}:00`).toISOString();
+    await insertEvent.mutateAsync({ user_id: employee.user_id, type: 'in', event_time: inIso, reason: 'הוספה ע״י מנהל' });
+    await insertEvent.mutateAsync({ user_id: employee.user_id, type: 'out', event_time: outIso, reason: 'הוספה ע״י מנהל' });
+    setAddingDate(null);
+  };
 
   const exportCsv = () => {
     const rows = [['תאריך', 'כניסה', 'יציאה', 'שיטה', 'מיקום', 'GPS', 'משך', 'הערה']];
@@ -604,6 +629,9 @@ function EmployeeReportDialog({
             <Avatar className="h-8 w-8"><AvatarFallback>{initials(employee.full_name)}</AvatarFallback></Avatar>
             דוח נוכחות — {employee.full_name}
           </DialogTitle>
+          <DialogDescription>
+            ניתן לערוך, להוסיף או למחוק דיווחים. כל שינוי נשמר ביומן ביקורת.
+          </DialogDescription>
         </DialogHeader>
         <div className="flex items-center justify-between mb-3">
           <div className="text-sm text-muted-foreground">
@@ -614,26 +642,70 @@ function EmployeeReportDialog({
           </Button>
         </div>
         <div className="flex-1 overflow-y-auto space-y-2">
-          {days.map((d, idx) => (
-            <Card key={idx} className={d.sessions.length === 0 ? 'opacity-50' : ''}>
+          {days.map((d) => (
+            <Card key={d.dayKey} className={d.sessions.length === 0 ? 'opacity-60' : ''}>
               <CardContent className="p-3">
-                <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center justify-between mb-2 gap-2">
                   <div className="text-sm font-medium">
                     {format(d.date, 'EEEE dd/MM/yyyy', { locale: he })}
                   </div>
-                  <Badge variant={d.totalSec > 0 ? 'default' : 'secondary'} className="text-[10px]">
-                    {d.totalSec > 0 ? formatHours(d.totalSec) : 'אין נוכחות'}
-                  </Badge>
+                  <div className="flex items-center gap-2">
+                    <Badge variant={d.totalSec > 0 ? 'default' : 'secondary'} className="text-[10px]">
+                      {d.totalSec > 0 ? formatHours(d.totalSec) : 'אין נוכחות'}
+                    </Badge>
+                    <Button size="sm" variant="ghost" className="h-7 px-2" onClick={() => setAddingDate(d.dayKey)}>
+                      <Plus className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
                 </div>
+
+                {addingDate === d.dayKey && (
+                  <div className="bg-muted/40 p-2 rounded-md mb-2 flex items-end gap-2 flex-wrap">
+                    <div>
+                      <Label className="text-[10px]">כניסה</Label>
+                      <Input type="time" value={newInTime} onChange={(e) => setNewInTime(e.target.value)} className="h-8 w-28" />
+                    </div>
+                    <div>
+                      <Label className="text-[10px]">יציאה</Label>
+                      <Input type="time" value={newOutTime} onChange={(e) => setNewOutTime(e.target.value)} className="h-8 w-28" />
+                    </div>
+                    <Button size="sm" onClick={() => addSession(d.dayKey)}>הוספה</Button>
+                    <Button size="sm" variant="ghost" onClick={() => setAddingDate(null)}>ביטול</Button>
+                  </div>
+                )}
+
                 {d.sessions.length > 0 && (
                   <ul className="space-y-1 text-xs">
                     {d.sessions.map((s, i) => {
                       const ref = s.in || s.out!;
-                      return (
-                        <li key={i} className="flex items-center gap-2 flex-wrap">
-                          <span className="tabular-nums">
-                            {s.in ? format(parseISO(s.in.event_time), 'HH:mm') : '—'} ← {s.out ? format(parseISO(s.out.event_time), 'HH:mm') : 'פתוח'}
+                      const renderEv = (ev: AdminClockEvent | undefined, fallback: string) => {
+                        if (!ev) return <span className="text-muted-foreground">{fallback}</span>;
+                        if (editingId === ev.id) {
+                          return (
+                            <span className="inline-flex items-center gap-1">
+                              <Input type="time" value={editTime} onChange={(e) => setEditTime(e.target.value)} className="h-7 w-24" />
+                              <Button size="sm" className="h-7 px-2" onClick={() => saveEdit(ev)}>שמור</Button>
+                              <Button size="sm" variant="ghost" className="h-7 px-2" onClick={() => setEditingId(null)}>ביטול</Button>
+                            </span>
+                          );
+                        }
+                        return (
+                          <span className="inline-flex items-center gap-1">
+                            <span className="tabular-nums">{format(parseISO(ev.event_time), 'HH:mm')}</span>
+                            <button onClick={() => startEdit(ev)} className="text-muted-foreground hover:text-foreground" title="ערוך">
+                              <Pencil className="h-3 w-3" />
+                            </button>
+                            <button onClick={() => deleteEvent.mutate({ id: ev.id, reason: 'מחיקה ע״י מנהל' })} className="text-muted-foreground hover:text-destructive" title="מחק">
+                              <Trash2 className="h-3 w-3" />
+                            </button>
                           </span>
+                        );
+                      };
+                      return (
+                        <li key={i} className="flex items-center gap-2 flex-wrap py-1 border-b last:border-0">
+                          {renderEv(s.in, 'אין כניסה')}
+                          <span className="text-muted-foreground">←</span>
+                          {renderEv(s.out, 'פתוח')}
                           <Badge variant="outline" className="text-[9px]">{METHOD_LABELS[ref.method]}</Badge>
                           {ref.location?.name && <span className="text-muted-foreground">· {ref.location.name}</span>}
                           {ref.gps_lat && ref.gps_lng && (
@@ -642,6 +714,7 @@ function EmployeeReportDialog({
                               <MapPin className="h-3 w-3" />GPS
                             </a>
                           )}
+                          {((ref as any).edit_count ?? 0) > 0 && <Badge variant="secondary" className="text-[9px]">נערך</Badge>}
                           {ref.notes && <span className="text-muted-foreground italic">"{ref.notes}"</span>}
                         </li>
                       );
@@ -652,6 +725,9 @@ function EmployeeReportDialog({
             </Card>
           ))}
         </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>סגירה</Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
