@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { format, parseISO, differenceInSeconds, startOfDay, endOfDay, subDays, eachDayOfInterval, startOfMonth, endOfMonth, subMonths, startOfWeek, endOfWeek } from 'date-fns';
 import { he } from 'date-fns/locale';
 import { Download, MapPin, FileText, MailQuestion, Pencil, Plus, Trash2 } from 'lucide-react';
-import { useRequestMonthCorrections } from '@/hooks/useDayMarks';
+import { useRequestMonthCorrections, useAdminCorrectionsForMonth } from '@/hooks/useDayMarks';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -333,7 +333,7 @@ export default function AttendanceAdmin() {
                           <Button size="sm" variant="ghost" onClick={() => emp && setReportEmployee(emp)}>
                             <FileText className="h-4 w-4" />
                           </Button>
-                          <RequestCorrectionButton userId={h.user_id} fromDate={fromDate} />
+                          <RequestCorrectionButton userId={h.user_id} fromDate={fromDate} toDate={toDate} />
                         </TableCell>
                       </TableRow>
                     );
@@ -525,15 +525,40 @@ function DateRangePicker({ fromDate, toDate, setFromDate, setToDate }: {
   );
 }
 
-function RequestCorrectionButton({ userId, fromDate }: { userId: string; fromDate: string }) {
+function RequestCorrectionButton({ userId, fromDate, toDate }: { userId: string; fromDate: string; toDate: string }) {
   const requestCorr = useRequestMonthCorrections();
   const ref = parseISO(fromDate);
   const year = ref.getFullYear();
   const month = ref.getMonth() + 1;
+  // Only show indication if the selected range matches a single calendar month
+  const isFullMonth = format(startOfMonth(ref), 'yyyy-MM-dd') === fromDate
+    && format(endOfMonth(ref), 'yyyy-MM-dd') === toDate;
+  const { data: corrections } = useAdminCorrectionsForMonth(year, month);
+  const status = isFullMonth ? corrections?.get(userId)?.status : undefined;
+
+  const sent = status === 'open';
+  const completed = status === 'completed';
+
+  const title = completed
+    ? 'העובד השיב — הבקשה הושלמה'
+    : sent
+      ? 'נשלחה בקשה — ממתין לעובד'
+      : 'בקש תיקונים לחודש שנבחר';
+
   return (
-    <Button size="sm" variant="ghost" title="בקש תיקונים לחודש שנבחר"
-      onClick={() => requestCorr.mutate({ user_id: userId, year, month, message: 'נא לעדכן דיווחים חסרים/לא מדויקים' })}>
-      <MailQuestion className="h-4 w-4" />
+    <Button
+      size="sm"
+      variant="ghost"
+      className={completed ? 'text-success' : sent ? 'text-warning' : ''}
+      title={title}
+      onClick={() => requestCorr.mutate({ user_id: userId, year, month, message: 'נא לעדכן דיווחים חסרים/לא מדויקים' })}
+    >
+      <span className="relative inline-flex">
+        <MailQuestion className="h-4 w-4" />
+        {(sent || completed) && (
+          <span className={`absolute -top-1 -left-1 h-2 w-2 rounded-full ${completed ? 'bg-success' : 'bg-warning'}`} />
+        )}
+      </span>
     </Button>
   );
 }
