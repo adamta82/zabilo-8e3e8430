@@ -45,6 +45,11 @@ export function LocationsManager() {
 
   return (
     <div className="space-y-3">
+      <div className="rounded-lg border bg-muted/40 p-3 text-xs text-muted-foreground">
+        <strong className="text-foreground">איך מגדירים QR לעובדים?</strong>{' '}
+        צרו מיקום חדש (למשל "משרד ראשי"), לחצו על אייקון ה-QR ואז "הדפסה". תלו את המדבקה במיקום —
+        עובדים יכולים לסרוק אותה ישירות ממצלמת הטלפון או דרך כפתור הסריקה באפליקציה.
+      </div>
       <div className="flex justify-between items-center">
         <h3 className="font-medium">מיקומי עבודה</h3>
         <Dialog open={newOpen} onOpenChange={setNewOpen}>
