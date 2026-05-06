@@ -167,7 +167,7 @@ export default function AttendanceAdmin() {
                   const s = statusMap.get(emp.user_id);
                   const isIn = s?.type === 'in';
                   return (
-                    <div key={emp.id} className="flex items-center gap-3 p-3">
+                    <div key={emp.id} className="flex flex-row-reverse items-center gap-3 p-3 text-right">
                       <Avatar className="h-9 w-9">
                         <AvatarImage src={emp.avatar_url || undefined} />
                         <AvatarFallback>{initials(emp.full_name)}</AvatarFallback>
@@ -196,7 +196,7 @@ export default function AttendanceAdmin() {
 
         <TabsContent value="events" className="mt-4 space-y-4">
            <Card dir="rtl">
-            <CardContent className="p-4 grid grid-cols-1 md:grid-cols-3 gap-3">
+              <CardContent className="grid grid-cols-1 gap-3 p-4 text-right md:grid-cols-3">
               <div>
                 <Label>שיטה</Label>
                 <Select value={methodFilter} onValueChange={setMethodFilter}>
@@ -290,7 +290,7 @@ export default function AttendanceAdmin() {
 
         <TabsContent value="hours" className="mt-4 space-y-4">
            <Card dir="rtl">
-            <CardHeader className="flex flex-row items-center justify-between">
+              <CardHeader className="flex flex-row-reverse items-center justify-between text-right">
               <div>
                 <CardTitle className="text-base">דוח שעות לפי עובד</CardTitle>
                 <p className="text-xs text-muted-foreground">{fromDate} → {toDate}</p>
@@ -329,7 +329,7 @@ export default function AttendanceAdmin() {
                         <TableCell className="text-xs text-muted-foreground">
                           {Object.entries(h.methods).map(([m, c]) => `${METHOD_LABELS[m]}: ${c}`).join(' · ') || '—'}
                         </TableCell>
-                        <TableCell className="flex gap-1">
+                        <TableCell className="flex flex-row-reverse gap-1">
                           <Button size="sm" variant="ghost" onClick={() => emp && setReportEmployee(emp)}>
                             <FileText className="h-4 w-4" />
                           </Button>
