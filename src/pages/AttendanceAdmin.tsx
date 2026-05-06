@@ -21,6 +21,8 @@ import { useAttendanceSettings, useUpdateClockEvent, useAdminInsertEvent, useAdm
 import { useEmployees } from '@/hooks/useEmployees';
 import { LocationsManager } from '@/components/attendance/LocationsManager';
 import { GpsMapSheet, reverseGeocode } from '@/components/attendance/GpsMapSheet';
+import { CorrectionChangesDialog } from '@/components/attendance/CorrectionChangesDialog';
+import { useState as useReactState } from 'react';
 
 const METHOD_LABELS: Record<string, string> = { qr: 'QR', nfc: 'NFC', manual: 'ידני', wfh: 'מהבית' };
 
