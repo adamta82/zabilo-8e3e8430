@@ -191,15 +191,7 @@ export default function AttendanceAdmin() {
 
         <TabsContent value="events" className="mt-4 space-y-4">
           <Card>
-            <CardContent className="p-4 grid grid-cols-1 md:grid-cols-5 gap-3">
-              <div>
-                <Label>מתאריך</Label>
-                <Input type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} />
-              </div>
-              <div>
-                <Label>עד תאריך</Label>
-                <Input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} />
-              </div>
+            <CardContent className="p-4 grid grid-cols-1 md:grid-cols-3 gap-3">
               <div>
                 <Label>שיטה</Label>
                 <Select value={methodFilter} onValueChange={setMethodFilter}>
