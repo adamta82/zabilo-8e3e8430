@@ -97,7 +97,7 @@ export default function AttendanceAdmin() {
       const name = evs[0]?.profile?.full_name || 'לא ידוע';
       result.push({ user_id: uid, full_name: name, seconds: total, sessions, methods });
     });
-    return result.sort((a, b) => b.seconds - a.seconds);
+    return result.sort((a, b) => a.seconds - b.seconds);
   }, [rangeEvents]);
 
   // Export hours summary as CSV
