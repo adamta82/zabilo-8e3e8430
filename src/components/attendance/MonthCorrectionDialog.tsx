@@ -191,7 +191,7 @@ export function MonthCorrectionDialog({ open, onOpenChange, year, month, correct
           </ul>
         </ScrollArea>
 
-        <DialogFooter className="flex-col sm:flex-row gap-2">
+        <DialogFooter className="flex-col sm:flex-row gap-2 p-4 sm:p-6 pt-2 shrink-0 border-t">
           <Button variant="outline" className="w-full sm:w-auto" onClick={() => onOpenChange(false)}>
             סגירה
           </Button>
