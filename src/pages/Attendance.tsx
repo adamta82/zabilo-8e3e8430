@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { format, differenceInSeconds, parseISO, subDays } from 'date-fns';
 import { he } from 'date-fns/locale';
-import { Clock, Home, LogIn, LogOut, Trash2 } from 'lucide-react';
+import { Clock, Home, LogIn, LogOut, Trash2, QrCode } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -14,8 +14,9 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import {
-  useCurrentClockStatus, useMyClockEvents, useClockIn, useClockOut, useDeleteClockEvent, useAttendanceSettings,
+  useCurrentClockStatus, useMyClockEvents, useClockIn, useClockOut, useDeleteSession, useAttendanceSettings,
 } from '@/hooks/useAttendance';
+import { QrScannerDialog } from '@/components/attendance/QrScannerDialog';
 
 const METHOD_LABELS: Record<string, string> = {
   qr: 'QR',
@@ -37,10 +38,11 @@ export default function Attendance() {
   const { data: settings } = useAttendanceSettings();
   const clockIn = useClockIn();
   const clockOut = useClockOut();
-  const deleteEvent = useDeleteClockEvent();
+  const deleteSession = useDeleteSession();
 
   const isClockedIn = status?.type === 'in';
   const [now, setNow] = useState(Date.now());
+  const [qrOpen, setQrOpen] = useState(false);
 
   useEffect(() => {
     if (!isClockedIn) return;
@@ -62,7 +64,6 @@ export default function Attendance() {
   const maxDaysBack = settings?.manual_entry_max_days_back ?? 7;
   const minDate = format(subDays(new Date(), maxDaysBack), 'yyyy-MM-dd');
 
-  // Group events into pairs (in/out) for history
   const sessions = useMemo(() => {
     const sorted = [...events].sort((a, b) =>
       new Date(a.event_time).getTime() - new Date(b.event_time).getTime()
@@ -89,11 +90,10 @@ export default function Attendance() {
 
   const handleManualSubmit = (type: 'in' | 'out') => {
     const isoTime = new Date(`${mDate}T${mTime}:00`).toISOString();
-    const method = isClockedIn ? 'manual' : 'manual';
     if (type === 'in') {
-      clockIn.mutate({ method, event_time: isoTime, notes: mNotes || null });
+      clockIn.mutate({ method: 'manual', event_time: isoTime, notes: mNotes || null });
     } else {
-      clockOut.mutate({ method, event_time: isoTime, notes: mNotes || null });
+      clockOut.mutate({ method: 'manual', event_time: isoTime, notes: mNotes || null });
     }
     setMNotes('');
   };
@@ -105,7 +105,6 @@ export default function Attendance() {
         <p className="text-sm text-muted-foreground">דווח/י על שעות עבודה ועקוב/י אחרי ההיסטוריה שלך</p>
       </div>
 
-      {/* Live status card */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -136,29 +135,31 @@ export default function Attendance() {
           <TabsTrigger value="manual">דיווח ידני</TabsTrigger>
         </TabsList>
 
-        {/* Quick actions */}
         <TabsContent value="quick" className="space-y-3 mt-4">
+          {settings?.allow_qr !== false && (
+            <Button
+              size="lg"
+              variant="outline"
+              className="w-full h-16 text-lg"
+              onClick={() => setQrOpen(true)}
+            >
+              <QrCode className="ml-2 h-5 w-5" />
+              סריקת QR (כניסה / יציאה)
+            </Button>
+          )}
           {!isClockedIn ? (
             <>
-              <Button
-                size="lg"
-                className="w-full h-16 text-lg"
-                onClick={() => clockIn.mutate({ method: 'wfh' })}
-                disabled={clockIn.isPending}
-              >
-                <Home className="ml-2 h-5 w-5" />
-                כניסה מהבית
-              </Button>
-              <Button
-                size="lg"
-                variant="secondary"
-                className="w-full h-16 text-lg"
-                onClick={() => clockIn.mutate({ method: 'manual' })}
-                disabled={clockIn.isPending}
-              >
-                <LogIn className="ml-2 h-5 w-5" />
-                כניסה כללית (עכשיו)
-              </Button>
+              {settings?.allow_wfh !== false && (
+                <Button
+                  size="lg"
+                  className="w-full h-16 text-lg"
+                  onClick={() => clockIn.mutate({ method: 'wfh' })}
+                  disabled={clockIn.isPending}
+                >
+                  <Home className="ml-2 h-5 w-5" />
+                  כניסה מהבית
+                </Button>
+              )}
             </>
           ) : (
             <Button
@@ -174,7 +175,6 @@ export default function Attendance() {
           )}
         </TabsContent>
 
-        {/* Manual entry */}
         <TabsContent value="manual" className="mt-4">
           <Card>
             <CardHeader>
@@ -187,34 +187,18 @@ export default function Attendance() {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <Label htmlFor="m-date">תאריך</Label>
-                  <Input
-                    id="m-date"
-                    type="date"
-                    value={mDate}
-                    min={minDate}
-                    max={todayStr}
-                    onChange={(e) => setMDate(e.target.value)}
-                  />
+                  <Input id="m-date" type="date" value={mDate} min={minDate} max={todayStr}
+                    onChange={(e) => setMDate(e.target.value)} />
                 </div>
                 <div>
                   <Label htmlFor="m-time">שעה</Label>
-                  <Input
-                    id="m-time"
-                    type="time"
-                    value={mTime}
-                    onChange={(e) => setMTime(e.target.value)}
-                  />
+                  <Input id="m-time" type="time" value={mTime} onChange={(e) => setMTime(e.target.value)} />
                 </div>
               </div>
               <div>
                 <Label htmlFor="m-notes">הערה (אופציונלי)</Label>
-                <Textarea
-                  id="m-notes"
-                  value={mNotes}
-                  onChange={(e) => setMNotes(e.target.value)}
-                  placeholder="לדוגמה: עבדתי על פרויקט X"
-                  rows={2}
-                />
+                <Textarea id="m-notes" value={mNotes} onChange={(e) => setMNotes(e.target.value)}
+                  placeholder="לדוגמה: עבדתי על פרויקט X" rows={2} />
               </div>
               <div className="grid grid-cols-2 gap-2">
                 <Button onClick={() => handleManualSubmit('in')} disabled={clockIn.isPending}>
@@ -231,7 +215,6 @@ export default function Attendance() {
         </TabsContent>
       </Tabs>
 
-      {/* History */}
       <Card>
         <CardHeader>
           <CardTitle className="text-base">היסטוריה אחרונה</CardTitle>
@@ -249,6 +232,7 @@ export default function Attendance() {
                 const duration = s.in && s.out
                   ? formatDuration(differenceInSeconds(parseISO(s.out.event_time), parseISO(s.in.event_time)))
                   : null;
+                const ids = [s.in?.id, s.out?.id].filter(Boolean) as string[];
                 return (
                   <li key={idx} className="py-3 flex items-center justify-between gap-2">
                     <div className="min-w-0 flex-1">
@@ -264,14 +248,25 @@ export default function Attendance() {
                         {ref.notes && <span className="text-[11px] text-muted-foreground truncate">"{ref.notes}"</span>}
                       </div>
                     </div>
-                    <div className="flex gap-1">
-                      {s.in && (
-                        <DeleteBtn id={s.in.id} onConfirm={(id) => deleteEvent.mutate(id)} />
-                      )}
-                      {s.out && (
-                        <DeleteBtn id={s.out.id} onConfirm={(id) => deleteEvent.mutate(id)} />
-                      )}
-                    </div>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-8 w-8">
+                          <Trash2 className="h-4 w-4 text-muted-foreground" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>למחוק את הסשן?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            פעולה זו תמחק גם את הכניסה וגם את היציאה של הסשן. אינה הפיכה.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>ביטול</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => deleteSession.mutate(ids)}>מחיקה</AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                   </li>
                 );
               })}
@@ -279,28 +274,8 @@ export default function Attendance() {
           )}
         </CardContent>
       </Card>
-    </div>
-  );
-}
 
-function DeleteBtn({ id, onConfirm }: { id: string; onConfirm: (id: string) => void }) {
-  return (
-    <AlertDialog>
-      <AlertDialogTrigger asChild>
-        <Button variant="ghost" size="icon" className="h-7 w-7">
-          <Trash2 className="h-3.5 w-3.5 text-muted-foreground" />
-        </Button>
-      </AlertDialogTrigger>
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>למחוק את הרשומה?</AlertDialogTitle>
-          <AlertDialogDescription>פעולה זו אינה הפיכה.</AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel>ביטול</AlertDialogCancel>
-          <AlertDialogAction onClick={() => onConfirm(id)}>מחיקה</AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+      <QrScannerDialog open={qrOpen} onOpenChange={setQrOpen} />
+    </div>
   );
 }
