@@ -45,7 +45,7 @@ export default function Login() {
         title: 'התחברת בהצלחה!',
         description: 'ברוך הבא ל-Zabilo Book',
       });
-      navigate('/');
+      navigate(redirectTo);
     }
 
     setIsLoading(false);
