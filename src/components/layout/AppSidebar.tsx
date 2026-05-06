@@ -12,6 +12,7 @@ import {
   BookOpen,
   BarChart2,
   Sunrise,
+  Timer,
 } from 'lucide-react';
 import {
   Sidebar,
