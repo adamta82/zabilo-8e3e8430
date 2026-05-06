@@ -172,6 +172,24 @@ export function useRequestMonthCorrections() {
   });
 }
 
+/** Admin: fetch all correction requests in a year/month, keyed by user_id */
+export function useAdminCorrectionsForMonth(year: number, month: number) {
+  return useQuery({
+    queryKey: ['admin-corrections', year, month],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('month_correction_requests' as any)
+        .select('*')
+        .eq('year', year)
+        .eq('month', month);
+      if (error) throw error;
+      const map = new Map<string, MonthCorrectionRequest>();
+      ((data as any) || []).forEach((r: MonthCorrectionRequest) => map.set(r.user_id, r));
+      return map;
+    },
+  });
+}
+
 // ===== Audit log helper =====
 export async function logClockEdit(params: {
   event_id: string;
