@@ -20,6 +20,7 @@ import { useAllClockEvents, useLatestEventPerUser, useUpdateAttendanceSettings, 
 import { useAttendanceSettings } from '@/hooks/useAttendance';
 import { useEmployees } from '@/hooks/useEmployees';
 import { LocationsManager } from '@/components/attendance/LocationsManager';
+import { GpsMapSheet, reverseGeocode } from '@/components/attendance/GpsMapSheet';
 
 const METHOD_LABELS: Record<string, string> = { qr: 'QR', nfc: 'NFC', manual: 'ידני', wfh: 'מהבית' };
 
