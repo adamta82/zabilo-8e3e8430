@@ -448,6 +448,14 @@ function DayView({ date, dateStr, events, shifts, holiday, birthdays, employees,
   const [birthdayRecipient, setBirthdayRecipient] = useState<any | null>(null);
   const wfhEvents = events.filter((e: any) => e.type === 'wfh');
   const vacationEvents = events.filter((e: any) => e.type === 'vacation');
+  const wfhUserIds = useMemo(
+    () => new Set(wfhEvents.map((e: any) => e.user_id).filter(Boolean)),
+    [wfhEvents]
+  );
+  const wfhProfileIds = useMemo(
+    () => new Set(wfhEvents.map((e: any) => e.profiles?.id).filter(Boolean)),
+    [wfhEvents]
+  );
 
   // Group shifts by department
   const shiftsByDept = useMemo(() => {
