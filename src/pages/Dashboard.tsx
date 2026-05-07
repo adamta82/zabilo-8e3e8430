@@ -515,8 +515,14 @@ function DayView({ date, dateStr, events, shifts, holiday, birthdays, employees,
                                   {s.profiles?.full_name?.split(' ').map((w: string) => w[0]).join('').slice(0, 2)}
                                 </AvatarFallback>
                               </Avatar>
-                              <div className="flex-1">
+                              <div className="flex-1 flex items-center gap-2">
                                 <div className="text-sm font-semibold">{s.profiles?.full_name}</div>
+                                {(wfhProfileIds.has(s.profiles?.id) || wfhUserIds.has(s.profiles?.user_id)) && (
+                                  <Badge variant="outline" className="text-[10px] bg-info/10 text-info border-info/30 gap-1">
+                                    <Home className="h-3 w-3" />
+                                    מהבית
+                                  </Badge>
+                                )}
                               </div>
                               <Badge variant="outline" className="text-xs" dir="ltr">{s.start_time} — {s.end_time}</Badge>
                             </div>
