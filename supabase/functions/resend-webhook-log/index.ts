@@ -94,11 +94,10 @@ Deno.serve(async (req) => {
     try {
       const target = new URL(log.url);
       const host = target.hostname.toLowerCase();
-      const hasAuth = Object.keys(outHeaders).some((h) => h.toLowerCase() === "authorization");
-      if (!hasAuth && host.includes("bulldog-wp.co.il")) {
+      if (host.includes("bulldog-wp.co.il")) {
         const bulldogToken = Deno.env.get("BULLDOG_WHATSAPP_TOKEN");
-        if (bulldogToken) {
-          outHeaders["Authorization"] = `Bearer ${bulldogToken}`;
+        if (bulldogToken && !outHeaders["Token"]) {
+          outHeaders["Token"] = bulldogToken;
         }
       }
     } catch (_) { /* ignore URL parse errors */ }
