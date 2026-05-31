@@ -1,11 +1,12 @@
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { ScrollText, ChevronDown, ChevronUp, RefreshCw } from 'lucide-react';
+import { useQuery, useMutation } from '@tanstack/react-query';
+import { ScrollText, ChevronDown, ChevronUp, RefreshCw, Send, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 interface WebhookLog {
   id: string;
