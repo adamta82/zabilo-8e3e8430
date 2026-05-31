@@ -135,8 +135,27 @@ export function WebhookLogsCard() {
                         {new Date(log.created_at).toLocaleString('he-IL')}
                       </span>
                     </div>
-                    {isOpen ? <ChevronUp className="h-4 w-4 shrink-0" /> : <ChevronDown className="h-4 w-4 shrink-0" />}
-                  </button>
+                    <div className="flex items-center gap-2 shrink-0">
+                      {log.url && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={(e) => handleResend(log.id, e)}
+                          disabled={resendingId === log.id}
+                          className="gap-1 h-7 px-2 text-xs"
+                        >
+                          {resendingId === log.id ? (
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                          ) : (
+                            <Send className="h-3 w-3" />
+                          )}
+                          שלח שוב
+                        </Button>
+                      )}
+                      {isOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                    </div>
+                  </div>
+
                   {isOpen && (
                     <div className="border-t bg-muted/30 p-3 space-y-3 text-xs" dir="ltr">
                       {log.url && (
