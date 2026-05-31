@@ -119,9 +119,12 @@ export function WebhookLogsCard() {
               const isOpen = expandedId === log.id;
               return (
                 <div key={log.id} className="border rounded-lg overflow-hidden">
-                  <button
+                  <div
+                    role="button"
+                    tabIndex={0}
                     onClick={() => setExpandedId(isOpen ? null : log.id)}
-                    className="w-full flex items-center justify-between p-3 hover:bg-muted/50 transition text-right"
+                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setExpandedId(isOpen ? null : log.id); } }}
+                    className="w-full flex items-center justify-between p-3 hover:bg-muted/50 transition text-right cursor-pointer"
                   >
                     <div className="flex items-center gap-3 flex-1 min-w-0">
                       <Badge variant={statusVariant(log.response_status)}>
