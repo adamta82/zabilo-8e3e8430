@@ -90,6 +90,20 @@ Deno.serve(async (req) => {
       }
     }
 
+    // Re-attach auth tokens for known outbound providers (logs don't store secrets)
+    try {
+      const target = new URL(log.url);
+      const host = target.hostname.toLowerCase();
+      if (host.includes("bulldog-wp.co.il")) {
+        const bulldogToken = Deno.env.get("BULLDOG_WHATSAPP_TOKEN");
+        if (bulldogToken && !outHeaders["Token"]) {
+          outHeaders["Token"] = bulldogToken;
+        }
+      }
+    } catch (_) { /* ignore URL parse errors */ }
+
+
+
     const method = (log.method || "POST").toUpperCase();
     const bodyStr = log.body === null || log.body === undefined
       ? undefined
