@@ -1,11 +1,12 @@
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { ScrollText, ChevronDown, ChevronUp, RefreshCw } from 'lucide-react';
+import { useQuery, useMutation } from '@tanstack/react-query';
+import { ScrollText, ChevronDown, ChevronUp, RefreshCw, Send, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 interface WebhookLog {
   id: string;
@@ -22,6 +23,41 @@ interface WebhookLog {
 
 export function WebhookLogsCard() {
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [resendingId, setResendingId] = useState<string | null>(null);
+  const { toast } = useToast();
+
+  const resendMutation = useMutation({
+    mutationFn: async (logId: string) => {
+      const { data, error } = await supabase.functions.invoke('resend-webhook-log', {
+        body: { log_id: logId },
+      });
+      if (error) throw error;
+      return data as { success: boolean; status: number | null; error: string | null };
+    },
+    onSuccess: (data) => {
+      if (data?.success) {
+        toast({ title: 'נשלח מחדש בהצלחה', description: `סטטוס: ${data.status}` });
+      } else {
+        toast({
+          title: 'השליחה החוזרת נכשלה',
+          description: data?.error || `סטטוס: ${data?.status}`,
+          variant: 'destructive',
+        });
+      }
+      refetch();
+    },
+    onError: (e: Error) => {
+      toast({ title: 'שגיאה בשליחה חוזרת', description: e.message, variant: 'destructive' });
+    },
+    onSettled: () => setResendingId(null),
+  });
+
+  const handleResend = (logId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setResendingId(logId);
+    resendMutation.mutate(logId);
+  };
+
 
   const { data: logs, isLoading, refetch, isFetching } = useQuery({
     queryKey: ['webhook-logs'],
@@ -83,9 +119,12 @@ export function WebhookLogsCard() {
               const isOpen = expandedId === log.id;
               return (
                 <div key={log.id} className="border rounded-lg overflow-hidden">
-                  <button
+                  <div
+                    role="button"
+                    tabIndex={0}
                     onClick={() => setExpandedId(isOpen ? null : log.id)}
-                    className="w-full flex items-center justify-between p-3 hover:bg-muted/50 transition text-right"
+                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setExpandedId(isOpen ? null : log.id); } }}
+                    className="w-full flex items-center justify-between p-3 hover:bg-muted/50 transition text-right cursor-pointer"
                   >
                     <div className="flex items-center gap-3 flex-1 min-w-0">
                       <Badge variant={statusVariant(log.response_status)}>
@@ -99,8 +138,27 @@ export function WebhookLogsCard() {
                         {new Date(log.created_at).toLocaleString('he-IL')}
                       </span>
                     </div>
-                    {isOpen ? <ChevronUp className="h-4 w-4 shrink-0" /> : <ChevronDown className="h-4 w-4 shrink-0" />}
-                  </button>
+                    <div className="flex items-center gap-2 shrink-0">
+                      {log.url && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={(e) => handleResend(log.id, e)}
+                          disabled={resendingId === log.id}
+                          className="gap-1 h-7 px-2 text-xs"
+                        >
+                          {resendingId === log.id ? (
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                          ) : (
+                            <Send className="h-3 w-3" />
+                          )}
+                          שלח שוב
+                        </Button>
+                      )}
+                      {isOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                    </div>
+                  </div>
+
                   {isOpen && (
                     <div className="border-t bg-muted/30 p-3 space-y-3 text-xs" dir="ltr">
                       {log.url && (
