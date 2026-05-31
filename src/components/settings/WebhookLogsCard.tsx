@@ -23,6 +23,41 @@ interface WebhookLog {
 
 export function WebhookLogsCard() {
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [resendingId, setResendingId] = useState<string | null>(null);
+  const { toast } = useToast();
+
+  const resendMutation = useMutation({
+    mutationFn: async (logId: string) => {
+      const { data, error } = await supabase.functions.invoke('resend-webhook-log', {
+        body: { log_id: logId },
+      });
+      if (error) throw error;
+      return data as { success: boolean; status: number | null; error: string | null };
+    },
+    onSuccess: (data) => {
+      if (data?.success) {
+        toast({ title: 'נשלח מחדש בהצלחה', description: `סטטוס: ${data.status}` });
+      } else {
+        toast({
+          title: 'השליחה החוזרת נכשלה',
+          description: data?.error || `סטטוס: ${data?.status}`,
+          variant: 'destructive',
+        });
+      }
+      refetch();
+    },
+    onError: (e: Error) => {
+      toast({ title: 'שגיאה בשליחה חוזרת', description: e.message, variant: 'destructive' });
+    },
+    onSettled: () => setResendingId(null),
+  });
+
+  const handleResend = (logId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setResendingId(logId);
+    resendMutation.mutate(logId);
+  };
+
 
   const { data: logs, isLoading, refetch, isFetching } = useQuery({
     queryKey: ['webhook-logs'],
