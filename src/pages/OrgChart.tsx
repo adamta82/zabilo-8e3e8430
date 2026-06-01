@@ -128,7 +128,7 @@ export default function OrgChart() {
     queryKey: ['org-chart'],
     queryFn: async () => {
       const [profilesRes, deptsRes, rolesRes] = await Promise.all([
-        supabase.from('profiles').select('id, full_name, job_title, is_partner, department_id, approver_id').order('full_name'),
+        supabase.from('profiles').select('id, full_name, job_title, is_partner, department_id, approver_id').eq('is_active', true).order('full_name'),
         supabase.from('departments').select('id, name, icon, manager_id').order('name'),
         supabase.from('user_roles').select('user_id, role'),
       ]);
