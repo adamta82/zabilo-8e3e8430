@@ -270,15 +270,29 @@ export function EditEmployeeDialog({ employee, open, onOpenChange }: EditEmploye
 
           <div className="flex items-center justify-between py-2 sm:col-span-2">
             <div className="space-y-0.5">
-              <Label htmlFor="auto-approve-requests">אישור אוטומטי לבקשות</Label>
+              <Label htmlFor="auto-approve-wfh">אישור אוטומטי לעבודה מהבית</Label>
               <p className="text-xs text-muted-foreground">
-                בקשות חופשה ועבודה מהבית של העובד יאושרו אוטומטית ללא צורך באישור מנהל
+                בקשות עבודה מהבית של העובד יאושרו אוטומטית ללא צורך באישור מנהל
               </p>
             </div>
             <Switch
-              id="auto-approve-requests"
-              checked={autoApproveRequests}
-              onCheckedChange={setAutoApproveRequests}
+              id="auto-approve-wfh"
+              checked={autoApproveWfh}
+              onCheckedChange={setAutoApproveWfh}
+            />
+          </div>
+
+          <div className="flex items-center justify-between py-2 sm:col-span-2">
+            <div className="space-y-0.5">
+              <Label htmlFor="auto-approve-vacation">אישור אוטומטי לחופשה</Label>
+              <p className="text-xs text-muted-foreground">
+                בקשות חופשה של העובד יאושרו אוטומטית ללא צורך באישור מנהל
+              </p>
+            </div>
+            <Switch
+              id="auto-approve-vacation"
+              checked={autoApproveVacation}
+              onCheckedChange={setAutoApproveVacation}
             />
           </div>
           </div>
