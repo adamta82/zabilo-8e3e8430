@@ -264,6 +264,20 @@ export function EditEmployeeDialog({ employee, open, onOpenChange }: EditEmploye
               onCheckedChange={setCanManageShifts}
             />
           </div>
+
+          <div className="flex items-center justify-between py-2 sm:col-span-2">
+            <div className="space-y-0.5">
+              <Label htmlFor="auto-approve-requests">אישור אוטומטי לבקשות</Label>
+              <p className="text-xs text-muted-foreground">
+                בקשות חופשה ועבודה מהבית של העובד יאושרו אוטומטית ללא צורך באישור מנהל
+              </p>
+            </div>
+            <Switch
+              id="auto-approve-requests"
+              checked={autoApproveRequests}
+              onCheckedChange={setAutoApproveRequests}
+            />
+          </div>
           </div>
         </div>
 
