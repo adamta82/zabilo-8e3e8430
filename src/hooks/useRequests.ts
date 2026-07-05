@@ -81,17 +81,17 @@ export function useCreateRequest() {
 
   return useMutation({
     mutationFn: async (request: Omit<RequestInsert, 'user_id'>) => {
-      // Check if user has auto-approval for vacation/wfh requests
+      // Check if user has auto-approval for this request type
       let autoApproved = false;
       if (request.type === 'wfh' || request.type === 'vacation') {
         const { data: profile } = await supabase
           .from('profiles')
-          .select('auto_approve_requests')
+          .select('auto_approve_wfh, auto_approve_vacation')
           .eq('user_id', user!.id)
           .maybeSingle();
-        if ((profile as any)?.auto_approve_requests) {
-          autoApproved = true;
-        }
+        const p: any = profile;
+        if (request.type === 'wfh' && p?.auto_approve_wfh) autoApproved = true;
+        if (request.type === 'vacation' && p?.auto_approve_vacation) autoApproved = true;
       }
 
       const insertPayload: RequestInsert = {

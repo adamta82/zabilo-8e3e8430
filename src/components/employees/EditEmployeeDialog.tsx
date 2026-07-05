@@ -46,7 +46,8 @@ export function EditEmployeeDialog({ employee, open, onOpenChange }: EditEmploye
   const [canManageShifts, setCanManageShifts] = useState(false);
   const [birthDay, setBirthDay] = useState<string>('');
   const [birthMonth, setBirthMonth] = useState<string>('');
-  const [autoApproveRequests, setAutoApproveRequests] = useState(false);
+  const [autoApproveWfh, setAutoApproveWfh] = useState(false);
+  const [autoApproveVacation, setAutoApproveVacation] = useState(false);
 
   useEffect(() => {
     if (employee) {
@@ -59,7 +60,8 @@ export function EditEmployeeDialog({ employee, open, onOpenChange }: EditEmploye
       setIsPartner((employee as any).is_partner || false);
       setJobTitle((employee as any).job_title || '');
       setCanManageShifts((employee as any).can_manage_shifts === true);
-      setAutoApproveRequests((employee as any).auto_approve_requests === true);
+      setAutoApproveWfh((employee as any).auto_approve_wfh === true);
+      setAutoApproveVacation((employee as any).auto_approve_vacation === true);
       const bd = (employee as any).birth_date as string | null;
       if (bd) {
         const [, m, d] = bd.split('-');
@@ -93,7 +95,8 @@ export function EditEmployeeDialog({ employee, open, onOpenChange }: EditEmploye
         is_partner: isPartner,
         job_title: jobTitle || null,
         can_manage_shifts: canManageShifts,
-        auto_approve_requests: autoApproveRequests,
+        auto_approve_wfh: autoApproveWfh,
+        auto_approve_vacation: autoApproveVacation,
         birth_date,
       } as any,
       newRole: role,
@@ -267,15 +270,29 @@ export function EditEmployeeDialog({ employee, open, onOpenChange }: EditEmploye
 
           <div className="flex items-center justify-between py-2 sm:col-span-2">
             <div className="space-y-0.5">
-              <Label htmlFor="auto-approve-requests">אישור אוטומטי לבקשות</Label>
+              <Label htmlFor="auto-approve-wfh">אישור אוטומטי לעבודה מהבית</Label>
               <p className="text-xs text-muted-foreground">
-                בקשות חופשה ועבודה מהבית של העובד יאושרו אוטומטית ללא צורך באישור מנהל
+                בקשות עבודה מהבית של העובד יאושרו אוטומטית ללא צורך באישור מנהל
               </p>
             </div>
             <Switch
-              id="auto-approve-requests"
-              checked={autoApproveRequests}
-              onCheckedChange={setAutoApproveRequests}
+              id="auto-approve-wfh"
+              checked={autoApproveWfh}
+              onCheckedChange={setAutoApproveWfh}
+            />
+          </div>
+
+          <div className="flex items-center justify-between py-2 sm:col-span-2">
+            <div className="space-y-0.5">
+              <Label htmlFor="auto-approve-vacation">אישור אוטומטי לחופשה</Label>
+              <p className="text-xs text-muted-foreground">
+                בקשות חופשה של העובד יאושרו אוטומטית ללא צורך באישור מנהל
+              </p>
+            </div>
+            <Switch
+              id="auto-approve-vacation"
+              checked={autoApproveVacation}
+              onCheckedChange={setAutoApproveVacation}
             />
           </div>
           </div>
