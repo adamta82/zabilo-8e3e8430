@@ -714,7 +714,8 @@ export type Database = {
         Row: {
           address: string | null
           approver_id: string | null
-          auto_approve_requests: boolean
+          auto_approve_vacation: boolean
+          auto_approve_wfh: boolean
           avatar_url: string | null
           birth_date: string | null
           calendar_emails: string[] | null
@@ -740,7 +741,8 @@ export type Database = {
         Insert: {
           address?: string | null
           approver_id?: string | null
-          auto_approve_requests?: boolean
+          auto_approve_vacation?: boolean
+          auto_approve_wfh?: boolean
           avatar_url?: string | null
           birth_date?: string | null
           calendar_emails?: string[] | null
@@ -766,7 +768,8 @@ export type Database = {
         Update: {
           address?: string | null
           approver_id?: string | null
-          auto_approve_requests?: boolean
+          auto_approve_vacation?: boolean
+          auto_approve_wfh?: boolean
           avatar_url?: string | null
           birth_date?: string | null
           calendar_emails?: string[] | null
