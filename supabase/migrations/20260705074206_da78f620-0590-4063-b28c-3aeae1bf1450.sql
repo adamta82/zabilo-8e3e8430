@@ -1,0 +1,1 @@
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS auto_approve_requests boolean NOT NULL DEFAULT false;
