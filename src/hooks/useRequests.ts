@@ -81,12 +81,34 @@ export function useCreateRequest() {
 
   return useMutation({
     mutationFn: async (request: Omit<RequestInsert, 'user_id'>) => {
+      // Check if user has auto-approval for vacation/wfh requests
+      let autoApproved = false;
+      if (request.type === 'wfh' || request.type === 'vacation') {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('auto_approve_requests')
+          .eq('user_id', user!.id)
+          .maybeSingle();
+        if ((profile as any)?.auto_approve_requests) {
+          autoApproved = true;
+        }
+      }
+
+      const insertPayload: RequestInsert = {
+        ...request,
+        user_id: user!.id,
+        ...(autoApproved
+          ? {
+              status: 'approved' as RequestStatus,
+              approved_by: user!.id,
+              approved_at: new Date().toISOString(),
+            }
+          : {}),
+      };
+
       const { data, error } = await supabase
         .from('requests')
-        .insert({
-          ...request,
-          user_id: user!.id,
-        })
+        .insert(insertPayload)
         .select()
         .single();
 
@@ -94,13 +116,16 @@ export function useCreateRequest() {
 
       try {
         await supabase.functions.invoke('send-webhook', {
-          body: { event: 'request_created', request_id: data.id },
+          body: {
+            event: autoApproved ? 'request_approved' : 'request_created',
+            request_id: data.id,
+          },
         });
       } catch (webhookError) {
         console.error('Webhook error:', webhookError);
       }
 
-      return data;
+      return { ...data, _autoApproved: autoApproved };
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['requests'] });
