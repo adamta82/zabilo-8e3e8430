@@ -127,9 +127,12 @@ export function useCreateRequest() {
 
       return { ...data, _autoApproved: autoApproved };
     },
-    onSuccess: () => {
+    onSuccess: (data: any) => {
       queryClient.invalidateQueries({ queryKey: ['requests'] });
-      toast({ title: 'הבקשה נוצרה בהצלחה', description: 'הבקשה נשלחה לאישור' });
+      toast({
+        title: 'הבקשה נוצרה בהצלחה',
+        description: data?._autoApproved ? 'הבקשה אושרה אוטומטית' : 'הבקשה נשלחה לאישור',
+      });
     },
     onError: (error) => {
       toast({ title: 'שגיאה ביצירת הבקשה', description: error.message, variant: 'destructive' });
