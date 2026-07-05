@@ -60,7 +60,8 @@ export function EditEmployeeDialog({ employee, open, onOpenChange }: EditEmploye
       setIsPartner((employee as any).is_partner || false);
       setJobTitle((employee as any).job_title || '');
       setCanManageShifts((employee as any).can_manage_shifts === true);
-      setAutoApproveRequests((employee as any).auto_approve_requests === true);
+      setAutoApproveWfh((employee as any).auto_approve_wfh === true);
+      setAutoApproveVacation((employee as any).auto_approve_vacation === true);
       const bd = (employee as any).birth_date as string | null;
       if (bd) {
         const [, m, d] = bd.split('-');
