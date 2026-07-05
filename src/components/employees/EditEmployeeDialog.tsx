@@ -93,6 +93,7 @@ export function EditEmployeeDialog({ employee, open, onOpenChange }: EditEmploye
         is_partner: isPartner,
         job_title: jobTitle || null,
         can_manage_shifts: canManageShifts,
+        auto_approve_requests: autoApproveRequests,
         birth_date,
       } as any,
       newRole: role,
