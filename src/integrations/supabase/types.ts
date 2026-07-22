@@ -528,6 +528,7 @@ export type Database = {
           id: string
           is_pinned: boolean
           is_published: boolean
+          raw_transcript: string | null
           title: string
           updated_at: string
         }
@@ -541,6 +542,7 @@ export type Database = {
           id?: string
           is_pinned?: boolean
           is_published?: boolean
+          raw_transcript?: string | null
           title: string
           updated_at?: string
         }
@@ -554,6 +556,7 @@ export type Database = {
           id?: string
           is_pinned?: boolean
           is_published?: boolean
+          raw_transcript?: string | null
           title?: string
           updated_at?: string
         }
