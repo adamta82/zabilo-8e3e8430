@@ -126,6 +126,19 @@ export default function ArticleView() {
         dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(article.content) }}
       />
 
+      {isAdmin && article.article_type === 'briefing' && (article as any).raw_transcript && (
+        <Collapsible>
+          <CollapsibleTrigger asChild>
+            <Button variant="outline" className="w-full">הצג תמלול גולמי</Button>
+          </CollapsibleTrigger>
+          <CollapsibleContent className="mt-3 p-4 rounded-lg border bg-muted/30 whitespace-pre-wrap text-sm leading-relaxed">
+            {(article as any).raw_transcript}
+          </CollapsibleContent>
+        </Collapsible>
+      )}
+
+
+
 
       {/* Read progress */}
       <div className="rounded-lg border bg-muted/30 p-4 space-y-2">

@@ -427,6 +427,7 @@ Deno.serve(async (req) => {
       .from("knowledge_articles")
       .update({
         content: previewPayload.html,
+        raw_transcript: previewPayload.transcript,
         is_published: true,
       })
       .eq("id", article.id);
