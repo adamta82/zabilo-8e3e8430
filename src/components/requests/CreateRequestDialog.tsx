@@ -83,6 +83,7 @@ export function CreateRequestDialog({ open, onOpenChange }: CreateRequestDialogP
 
   const resetForm = () => {
     setRequestType("");
+    setTargetUserId("");
     setWfhDate(undefined);
     setWfhTasks([{ id: "1", description: "", estimatedHours: 1, reference: "" }]);
     setWfhChecklist({});
@@ -221,6 +222,31 @@ export function CreateRequestDialog({ open, onOpenChange }: CreateRequestDialogP
         </DialogHeader>
 
         <div className="space-y-6 py-4">
+          {/* Submit on behalf of another employee (Adam only) */}
+          {canSubmitForOthers && (
+            <div className="space-y-2">
+              <Label>עבור מי הבקשה?</Label>
+              <Select value={targetUserId || "self"} onValueChange={(v) => setTargetUserId(v === "self" ? "" : v)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="בחר עובד" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="self">עבורי (אדם)</SelectItem>
+                  {employees
+                    ?.filter((e) => e.user_id !== user?.id)
+                    .map((e) => (
+                      <SelectItem key={e.user_id} value={e.user_id}>
+                        {e.full_name}
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+              {targetUserId && (
+                <p className="text-xs text-muted-foreground">הבקשה תוגש בשם העובד ותאושר אוטומטית על ידך.</p>
+              )}
+            </div>
+          )}
+
           {/* Request Type Selection */}
           <div className="space-y-2">
             <Label>סוג הבקשה</Label>
