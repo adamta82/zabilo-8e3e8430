@@ -80,23 +80,29 @@ export function useCreateRequest() {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: async (request: Omit<RequestInsert, 'user_id'>) => {
-      // Check if user has auto-approval for this request type
+    mutationFn: async (request: Omit<RequestInsert, 'user_id'> & { user_id?: string }) => {
+      const targetUserId = request.user_id || user!.id;
+      const onBehalf = targetUserId !== user!.id;
+
+      // Check if the target user has auto-approval for this request type
       let autoApproved = false;
       if (request.type === 'wfh' || request.type === 'vacation') {
         const { data: profile } = await supabase
           .from('profiles')
           .select('auto_approve_wfh, auto_approve_vacation')
-          .eq('user_id', user!.id)
+          .eq('user_id', targetUserId)
           .maybeSingle();
         const p: any = profile;
         if (request.type === 'wfh' && p?.auto_approve_wfh) autoApproved = true;
         if (request.type === 'vacation' && p?.auto_approve_vacation) autoApproved = true;
       }
 
+      // Requests submitted on behalf of someone else by a manager are approved directly
+      if (onBehalf) autoApproved = true;
+
       const insertPayload: RequestInsert = {
         ...request,
-        user_id: user!.id,
+        user_id: targetUserId,
         ...(autoApproved
           ? {
               status: 'approved' as RequestStatus,

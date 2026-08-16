@@ -22,6 +22,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { cn } from "@/lib/utils";
 import { useCreateRequest } from "@/hooks/useRequests";
+import { useAuth } from "@/contexts/AuthContext";
+import { useEmployees } from "@/hooks/useEmployees";
 import { Link } from "react-router-dom";
 import type { Database } from "@/integrations/supabase/types";
 
@@ -54,8 +56,13 @@ interface CreateRequestDialogProps {
 
 export function CreateRequestDialog({ open, onOpenChange }: CreateRequestDialogProps) {
   const createRequest = useCreateRequest();
+  const { user } = useAuth();
+  const canSubmitForOthers = user?.email?.toLowerCase() === "adam@zabilo.com";
+  const { data: employees } = useEmployees();
 
+  const [targetUserId, setTargetUserId] = useState<string>("");
   const [requestType, setRequestType] = useState<RequestType | "">("");
+
 
   // WFH state
   const [wfhDate, setWfhDate] = useState<Date>();
@@ -76,6 +83,7 @@ export function CreateRequestDialog({ open, onOpenChange }: CreateRequestDialogP
 
   const resetForm = () => {
     setRequestType("");
+    setTargetUserId("");
     setWfhDate(undefined);
     setWfhTasks([{ id: "1", description: "", estimatedHours: 1, reference: "" }]);
     setWfhChecklist({});
@@ -151,6 +159,7 @@ export function CreateRequestDialog({ open, onOpenChange }: CreateRequestDialogP
     const baseRequest = {
       type: requestType,
       notes: notes || null,
+      ...(canSubmitForOthers && targetUserId ? { user_id: targetUserId } : {}),
     };
 
     let requestData: Parameters<typeof createRequest.mutateAsync>[0];
@@ -213,6 +222,31 @@ export function CreateRequestDialog({ open, onOpenChange }: CreateRequestDialogP
         </DialogHeader>
 
         <div className="space-y-6 py-4">
+          {/* Submit on behalf of another employee (Adam only) */}
+          {canSubmitForOthers && (
+            <div className="space-y-2">
+              <Label>עבור מי הבקשה?</Label>
+              <Select value={targetUserId || "self"} onValueChange={(v) => setTargetUserId(v === "self" ? "" : v)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="בחר עובד" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="self">עבורי (אדם)</SelectItem>
+                  {employees
+                    ?.filter((e) => e.user_id !== user?.id)
+                    .map((e) => (
+                      <SelectItem key={e.user_id} value={e.user_id}>
+                        {e.full_name}
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+              {targetUserId && (
+                <p className="text-xs text-muted-foreground">הבקשה תוגש בשם העובד ותאושר אוטומטית על ידך.</p>
+              )}
+            </div>
+          )}
+
           {/* Request Type Selection */}
           <div className="space-y-2">
             <Label>סוג הבקשה</Label>
