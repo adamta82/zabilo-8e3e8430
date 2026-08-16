@@ -22,6 +22,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { cn } from "@/lib/utils";
 import { useCreateRequest } from "@/hooks/useRequests";
+import { useAuth } from "@/contexts/AuthContext";
+import { useEmployees } from "@/hooks/useEmployees";
 import { Link } from "react-router-dom";
 import type { Database } from "@/integrations/supabase/types";
 
@@ -54,8 +56,13 @@ interface CreateRequestDialogProps {
 
 export function CreateRequestDialog({ open, onOpenChange }: CreateRequestDialogProps) {
   const createRequest = useCreateRequest();
+  const { user } = useAuth();
+  const canSubmitForOthers = user?.email?.toLowerCase() === "adam@zabilo.com";
+  const { data: employees } = useEmployees();
 
+  const [targetUserId, setTargetUserId] = useState<string>("");
   const [requestType, setRequestType] = useState<RequestType | "">("");
+
 
   // WFH state
   const [wfhDate, setWfhDate] = useState<Date>();
@@ -151,6 +158,7 @@ export function CreateRequestDialog({ open, onOpenChange }: CreateRequestDialogP
     const baseRequest = {
       type: requestType,
       notes: notes || null,
+      ...(canSubmitForOthers && targetUserId ? { user_id: targetUserId } : {}),
     };
 
     let requestData: Parameters<typeof createRequest.mutateAsync>[0];
