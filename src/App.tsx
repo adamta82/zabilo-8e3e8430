@@ -27,6 +27,8 @@ import Attendance from "./pages/Attendance";
 import AttendanceAdmin from "./pages/AttendanceAdmin";
 import ScanLocation from "./pages/ScanLocation";
 import NotFound from "./pages/NotFound";
+import { ATTENDANCE_ENABLED } from "@/config/features";
+
 
 const queryClient = new QueryClient();
 
@@ -43,7 +45,7 @@ function AppRoutes() {
     <Routes>
       {/* Public Routes */}
       <Route path="/login" element={<Login />} />
-      <Route path="/scan/:locId" element={<ScanLocation />} />
+      {ATTENDANCE_ENABLED && <Route path="/scan/:locId" element={<ScanLocation />} />}
 
       {/* Protected Routes */}
       <Route
@@ -138,27 +140,37 @@ function AppRoutes() {
         }
       />
 
-      <Route
-        path="/attendance"
-        element={
-          <ProtectedRoute>
-            <AppLayout>
-              <Attendance />
-            </AppLayout>
-          </ProtectedRoute>
-        }
-      />
+      {ATTENDANCE_ENABLED ? (
+        <>
+          <Route
+            path="/attendance"
+            element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <Attendance />
+                </AppLayout>
+              </ProtectedRoute>
+            }
+          />
 
-      <Route
-        path="/attendance/admin"
-        element={
-          <ProtectedRoute requireAdmin>
-            <AppLayout>
-              <AttendanceAdmin />
-            </AppLayout>
-          </ProtectedRoute>
-        }
-      />
+          <Route
+            path="/attendance/admin"
+            element={
+              <ProtectedRoute requireAdmin>
+                <AppLayout>
+                  <AttendanceAdmin />
+                </AppLayout>
+              </ProtectedRoute>
+            }
+          />
+        </>
+      ) : (
+        <>
+          <Route path="/attendance" element={<Navigate to="/" replace />} />
+          <Route path="/attendance/admin" element={<Navigate to="/" replace />} />
+        </>
+      )}
+
 
       {/* Admin Routes */}
       <Route
