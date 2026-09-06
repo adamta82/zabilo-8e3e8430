@@ -32,24 +32,27 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
 import { useUnreadCount } from '@/hooks/useKnowledge';
+import { ATTENDANCE_ENABLED } from '@/config/features';
+
 
 const mainMenuItems = [
   { title: 'מרכז הידע', url: '/', icon: BookOpen, showBadge: true },
   { title: 'לוח שנה', url: '/dashboard', icon: CalendarDays },
-  { title: 'נוכחות ושעות', url: '/attendance', icon: Timer },
+  ...(ATTENDANCE_ENABLED ? [{ title: 'נוכחות ושעות', url: '/attendance', icon: Timer }] : []),
   { title: 'הבקשות שלי', url: '/requests', icon: FileText },
   { title: 'מבנה ארגוני', url: '/org-chart', icon: Network },
   { title: 'האזור שלי', url: '/my-area', icon: UserCircle },
 ];
 
 const adminMenuItems = [
-  { title: 'ניהול נוכחות', url: '/attendance/admin', icon: Timer },
+  ...(ATTENDANCE_ENABLED ? [{ title: 'ניהול נוכחות', url: '/attendance/admin', icon: Timer }] : []),
   { title: 'שיבוץ משמרות', url: '/shifts', icon: ClipboardList },
   { title: 'ניהול עובדים', url: '/employees', icon: Users },
   { title: 'ניהול מחלקות', url: '/departments', icon: Building2 },
   { title: 'מעקב קריאה', url: '/knowledge/tracking', icon: BarChart2 },
   { title: 'הגדרות Webhook', url: '/settings', icon: Settings },
 ];
+
 
 const shiftManagerMenuItem = { title: 'שיבוץ משמרות', url: '/shifts', icon: ClipboardList };
 
