@@ -79,7 +79,9 @@ export default function ShiftScheduler() {
   const [editingSlots, setEditingSlots] = useState(false);
   const [managingRoles, setManagingRoles] = useState(false);
   const [brush, setBrush] = useState<string | null>(null);
+  const [summaryEmp, setSummaryEmp] = useState<{ id: string; name: string } | null>(null);
   const dragging = useRef(false);
+
 
   const dates = useMemo(
     () => Array.from({ length: 7 }, (_, i) => isoDate(addDaysTo(parseLocalDate(weekStart), i))),
