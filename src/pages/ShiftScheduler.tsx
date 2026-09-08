@@ -793,6 +793,26 @@ export default function ShiftScheduler() {
           </Card>
         </>
       )}
+
+      {summaryEmp && (
+        <EmployeeWeekShiftsDialog
+          open={!!summaryEmp}
+          onOpenChange={(o) => !o && setSummaryEmp(null)}
+          employeeName={summaryEmp.name}
+          weekDays={dates.map((d) => parseLocalDate(d))}
+          getEmployeeShifts={(date) => {
+            const dayGrid = grid[date] || {};
+            return blocksFor(dayGrid, summaryEmp.id, roles, slots).map((b, i) => ({
+              id: `${date}-${i}`,
+              start_time: b.start,
+              end_time: b.end,
+            }));
+          }}
+          isWfh={(date) => wfhDates?.get(summaryEmp.id)?.has(date) ?? false}
+          departmentName={employees.find((e) => e.id === summaryEmp.id)?.departments?.name}
+        />
+      )}
     </div>
   );
 }
+
