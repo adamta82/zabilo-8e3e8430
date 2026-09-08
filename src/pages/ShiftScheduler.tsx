@@ -101,6 +101,8 @@ export default function ShiftScheduler() {
   const { data: allCells = [] } = useAllShiftCells(view === 'history');
   const { data: employeesData, isLoading: employeesLoading } = useEmployees();
   const { data: weekNotes = [] } = useShiftWeekNotes();
+  const { data: wfhDates } = useWfhDates(dates[0], dates[6]);
+
 
   const actions = useShiftCellActions(dates[0], dates[6]);
   const saveRole = useSaveShiftRole();
