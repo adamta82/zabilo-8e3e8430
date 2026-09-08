@@ -24,6 +24,9 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useEmployees } from '@/hooks/useEmployees';
 import { RoleManager } from '@/components/shifts/planner/RoleManager';
 import { PlannerHistory } from '@/components/shifts/planner/PlannerHistory';
+import { EmployeeWeekShiftsDialog } from '@/components/shifts/EmployeeWeekShiftsDialog';
+import { useWfhDates } from '@/hooks/useWfhDates';
+
 import {
   useShiftRoles,
   useShiftSlots,
