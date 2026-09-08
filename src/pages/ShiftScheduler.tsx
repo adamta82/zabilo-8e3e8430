@@ -24,6 +24,9 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useEmployees } from '@/hooks/useEmployees';
 import { RoleManager } from '@/components/shifts/planner/RoleManager';
 import { PlannerHistory } from '@/components/shifts/planner/PlannerHistory';
+import { EmployeeWeekShiftsDialog } from '@/components/shifts/EmployeeWeekShiftsDialog';
+import { useWfhDates } from '@/hooks/useWfhDates';
+
 import {
   useShiftRoles,
   useShiftSlots,
@@ -76,7 +79,9 @@ export default function ShiftScheduler() {
   const [editingSlots, setEditingSlots] = useState(false);
   const [managingRoles, setManagingRoles] = useState(false);
   const [brush, setBrush] = useState<string | null>(null);
+  const [summaryEmp, setSummaryEmp] = useState<{ id: string; name: string } | null>(null);
   const dragging = useRef(false);
+
 
   const dates = useMemo(
     () => Array.from({ length: 7 }, (_, i) => isoDate(addDaysTo(parseLocalDate(weekStart), i))),
@@ -96,6 +101,8 @@ export default function ShiftScheduler() {
   const { data: allCells = [] } = useAllShiftCells(view === 'history');
   const { data: employeesData, isLoading: employeesLoading } = useEmployees();
   const { data: weekNotes = [] } = useShiftWeekNotes();
+  const { data: wfhDates } = useWfhDates(dates[0], dates[6]);
+
 
   const actions = useShiftCellActions(dates[0], dates[6]);
   const saveRole = useSaveShiftRole();
@@ -719,7 +726,16 @@ export default function ShiftScheduler() {
                     const diff = cur - prev;
                     return (
                       <tr key={e.id}>
-                        <td className="border border-border px-2 py-1.5 text-start">{e.full_name}</td>
+                        <td className="border border-border px-2 py-1.5 text-start">
+                          <button
+                            type="button"
+                            onClick={() => setSummaryEmp({ id: e.id, name: e.full_name })}
+                            className="font-medium text-primary underline-offset-2 hover:underline"
+                          >
+                            {e.full_name}
+                          </button>
+                        </td>
+
                         {dates.map((d) => (
                           <td key={d} className="border border-border px-2 py-1.5 text-center">
                             {(stats.byEmpDay[d] || {})[e.id] ? fmtH(stats.byEmpDay[d][e.id]) : '—'}
@@ -784,6 +800,26 @@ export default function ShiftScheduler() {
           </Card>
         </>
       )}
+
+      {summaryEmp && (
+        <EmployeeWeekShiftsDialog
+          open={!!summaryEmp}
+          onOpenChange={(o) => !o && setSummaryEmp(null)}
+          employeeName={summaryEmp.name}
+          weekDays={dates.map((d) => parseLocalDate(d))}
+          getEmployeeShifts={(date) => {
+            const dayGrid = grid[date] || {};
+            return blocksFor(dayGrid, summaryEmp.id, roles, slots).map((b, i) => ({
+              id: `${date}-${i}`,
+              start_time: b.start,
+              end_time: b.end,
+            }));
+          }}
+          isWfh={(date) => wfhDates?.get(summaryEmp.id)?.has(date) ?? false}
+          departmentName={employees.find((e) => e.id === summaryEmp.id)?.departments?.name}
+        />
+      )}
     </div>
   );
 }
+
