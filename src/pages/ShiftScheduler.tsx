@@ -719,7 +719,16 @@ export default function ShiftScheduler() {
                     const diff = cur - prev;
                     return (
                       <tr key={e.id}>
-                        <td className="border border-border px-2 py-1.5 text-start">{e.full_name}</td>
+                        <td className="border border-border px-2 py-1.5 text-start">
+                          <button
+                            type="button"
+                            onClick={() => setSummaryEmp({ id: e.id, name: e.full_name })}
+                            className="font-medium text-primary underline-offset-2 hover:underline"
+                          >
+                            {e.full_name}
+                          </button>
+                        </td>
+
                         {dates.map((d) => (
                           <td key={d} className="border border-border px-2 py-1.5 text-center">
                             {(stats.byEmpDay[d] || {})[e.id] ? fmtH(stats.byEmpDay[d][e.id]) : '—'}
