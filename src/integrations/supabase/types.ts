@@ -875,6 +875,139 @@ export type Database = {
         }
         Relationships: []
       }
+      shift_cells: {
+        Row: {
+          created_at: string
+          date: string
+          employee_id: string
+          id: string
+          role_id: string
+          slot_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          date: string
+          employee_id: string
+          id?: string
+          role_id: string
+          slot_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          employee_id?: string
+          id?: string
+          role_id?: string
+          slot_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shift_cells_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shift_cells_role_id_fkey"
+            columns: ["role_id"]
+            isOneToOne: false
+            referencedRelation: "shift_roles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shift_cells_slot_id_fkey"
+            columns: ["slot_id"]
+            isOneToOne: false
+            referencedRelation: "shift_slots"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      shift_roles: {
+        Row: {
+          color: string
+          created_at: string
+          id: string
+          is_off: boolean
+          name: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          color?: string
+          created_at?: string
+          id?: string
+          is_off?: boolean
+          name: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          color?: string
+          created_at?: string
+          id?: string
+          is_off?: boolean
+          name?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      shift_slots: {
+        Row: {
+          created_at: string
+          end_time: string
+          id: string
+          sort_order: number
+          start_time: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          end_time: string
+          id?: string
+          sort_order?: number
+          start_time: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          end_time?: string
+          id?: string
+          sort_order?: number
+          start_time?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      shift_week_notes: {
+        Row: {
+          created_at: string
+          id: string
+          note: string
+          updated_at: string
+          week_start: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          note?: string
+          updated_at?: string
+          week_start: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          note?: string
+          updated_at?: string
+          week_start?: string
+        }
+        Relationships: []
+      }
       shifts: {
         Row: {
           created_at: string
