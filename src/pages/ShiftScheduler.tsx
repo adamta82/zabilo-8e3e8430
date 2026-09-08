@@ -1,719 +1,789 @@
-import { useState, useMemo, useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { format, addDays, startOfWeek, isSameDay, isToday as isTodayFn } from 'date-fns';
-import { he } from 'date-fns/locale';
-import { ChevronRight, ChevronLeft, Plus, Copy, Trash2, Search, Filter, Clock } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  ChevronLeft,
+  ChevronRight,
+  Copy,
+  CopyPlus,
+  Eraser,
+  Palette,
+  Plus,
+  Share2,
+  Sliders,
+  Trash2,
+  X,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
-import { useShifts, useCreateShift, useUpdateShift, useDeleteShift, useBulkCreateShifts, useBulkDeleteShifts } from '@/hooks/useShifts';
-import { useEmployees, type EmployeeWithRole } from '@/hooks/useEmployees';
-import { useDepartments } from '@/hooks/useDepartments';
-import { useWfhDates } from '@/hooks/useWfhDates';
-import { ShiftModal } from '@/components/shifts/ShiftModal';
-import { EmployeeWeekShiftsDialog } from '@/components/shifts/EmployeeWeekShiftsDialog';
 import { useToast } from '@/hooks/use-toast';
-import { Home } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { useEmployees } from '@/hooks/useEmployees';
+import { RoleManager } from '@/components/shifts/planner/RoleManager';
+import { PlannerHistory } from '@/components/shifts/planner/PlannerHistory';
+import {
+  useShiftRoles,
+  useShiftSlots,
+  useShiftCells,
+  useAllShiftCells,
+  useShiftCellActions,
+  useSaveShiftRole,
+  useDeleteShiftRole,
+  useSaveShiftSlot,
+  useDeleteShiftSlot,
+  useShiftWeekNotes,
+  useSaveShiftWeekNote,
+} from '@/hooks/useShiftPlanner';
+import {
+  PLANNER_LANG_BUTTONS,
+  PLANNER_STRINGS,
+  addDaysTo,
+  addMinutesStr,
+  blocksFor,
+  computeStats,
+  isoDate,
+  makeDeltaFormatter,
+  makeHourFormatter,
+  parseLocalDate,
+  shortDate,
+  sundayOf,
+  textOn,
+  type PlannerGrid,
+  type PlannerLang,
+} from '@/lib/shift-planner';
 
-const HEBREW_DAYS = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];
-
-function formatDateStr(d: Date): string {
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${y}-${m}-${day}`;
-}
-
-function timeToMin(t: string) {
-  const [h, m] = t.split(':').map(Number);
-  return h * 60 + m;
-}
-
-function getInitials(name: string) {
-  return name.split(' ').map(w => w[0]).join('').slice(0, 2);
-}
+const LANG_KEY = 'shift-planner-lang';
 
 export default function ShiftScheduler() {
-  const [view, setView] = useState<'week' | 'day'>(() =>
-    typeof window !== 'undefined' && window.innerWidth < 768 ? 'day' : 'week'
-  );
-  const [weekStartDate, setWeekStartDate] = useState(() => startOfWeek(new Date(), { weekStartsOn: 0 }));
-  const [selectedDate, setSelectedDate] = useState(formatDateStr(new Date()));
-  const [filterDept, setFilterDept] = useState('all');
-  const [search, setSearch] = useState('');
-  const [modal, setModal] = useState<{
-    employeeId: string;
-    employeeName: string;
-    date: string;
-    shiftId?: string;
-    start?: string;
-    end?: string;
-  } | null>(null);
-  const [employeeWeekView, setEmployeeWeekView] = useState<{ id: string; name: string; deptName?: string } | null>(null);
-
   const { toast } = useToast();
+  const { canManageShifts } = useAuth();
 
-  const weekDays = useMemo(() =>
-    Array.from({ length: 7 }, (_, i) => addDays(weekStartDate, i)),
-    [weekStartDate]
+  const [lang, setLang] = useState<PlannerLang>(() => {
+    const saved = typeof window !== 'undefined' ? window.localStorage.getItem(LANG_KEY) : null;
+    return saved === 'en' || saved === 'fr' ? saved : 'he';
+  });
+  const t = PLANNER_STRINGS[lang];
+  const fmtH = useMemo(() => makeHourFormatter(lang), [lang]);
+  const fmtDelta = useMemo(() => makeDeltaFormatter(fmtH), [fmtH]);
+
+  const [weekStart, setWeekStart] = useState(() => isoDate(sundayOf(new Date())));
+  const [dayIndex, setDayIndex] = useState(() => new Date().getDay());
+  const [view, setView] = useState<'planning' | 'history'>('planning');
+  const [share, setShare] = useState(false);
+  const [editingSlots, setEditingSlots] = useState(false);
+  const [managingRoles, setManagingRoles] = useState(false);
+  const [brush, setBrush] = useState<string | null>(null);
+  const dragging = useRef(false);
+
+  const dates = useMemo(
+    () => Array.from({ length: 7 }, (_, i) => isoDate(addDaysTo(parseLocalDate(weekStart), i))),
+    [weekStart]
+  );
+  const prevWeekStart = useMemo(() => isoDate(addDaysTo(parseLocalDate(weekStart), -7)), [weekStart]);
+  const prevDates = useMemo(
+    () => Array.from({ length: 7 }, (_, i) => isoDate(addDaysTo(parseLocalDate(prevWeekStart), i))),
+    [prevWeekStart]
+  );
+  const currentDate = dates[dayIndex];
+
+  const { data: roles = [], isLoading: rolesLoading } = useShiftRoles();
+  const { data: slots = [], isLoading: slotsLoading } = useShiftSlots();
+  const { data: cells = [], isLoading: cellsLoading } = useShiftCells(dates[0], dates[6]);
+  const { data: prevCells = [] } = useShiftCells(prevDates[0], prevDates[6]);
+  const { data: allCells = [] } = useAllShiftCells(view === 'history');
+  const { data: employeesData, isLoading: employeesLoading } = useEmployees();
+  const { data: weekNotes = [] } = useShiftWeekNotes();
+
+  const actions = useShiftCellActions(dates[0], dates[6]);
+  const saveRole = useSaveShiftRole();
+  const deleteRole = useDeleteShiftRole();
+  const saveSlot = useSaveShiftSlot();
+  const deleteSlot = useDeleteShiftSlot();
+  const saveNote = useSaveShiftWeekNote();
+
+  const employees = useMemo(
+    () => (employeesData || []).filter((e) => e.show_in_shifts !== false),
+    [employeesData]
   );
 
-  const weekStartStr = formatDateStr(weekDays[0]);
-  const weekEndStr = formatDateStr(weekDays[6]);
+  useEffect(() => {
+    if (!brush && roles.length) setBrush(roles.find((r) => !r.is_off)?.id ?? roles[0].id);
+  }, [roles, brush]);
 
-  const { data: shifts, isLoading: shiftsLoading } = useShifts(weekStartStr, weekEndStr);
-  const { data: employees, isLoading: employeesLoading } = useEmployees();
-  const { data: departments } = useDepartments();
-  const { data: wfhMap } = useWfhDates(weekStartStr, weekEndStr);
+  useEffect(() => {
+    window.localStorage.setItem(LANG_KEY, lang);
+  }, [lang]);
 
-  const isWfh = useCallback(
-    (employeeId: string, date: string) => !!wfhMap?.get(employeeId)?.has(date),
-    [wfhMap]
-  );
+  useEffect(() => {
+    const up = () => (dragging.current = false);
+    window.addEventListener('pointerup', up);
+    window.addEventListener('pointercancel', up);
+    return () => {
+      window.removeEventListener('pointerup', up);
+      window.removeEventListener('pointercancel', up);
+    };
+  }, []);
 
-  const createShift = useCreateShift();
-  const updateShift = useUpdateShift();
-  const deleteShift = useDeleteShift();
-  const bulkCreateShifts = useBulkCreateShifts();
-  const bulkDeleteShifts = useBulkDeleteShifts();
-
-  const isLoading = shiftsLoading || employeesLoading;
-
-  // Filter employees
-  const filteredEmployees = useMemo(() => {
-    if (!employees) return [];
-    return employees.filter(e => {
-      if ((e as any).show_in_shifts === false) return false;
-      if (filterDept !== 'all' && e.department_id !== filterDept) return false;
-      if (search && !e.full_name.includes(search)) return false;
-      return true;
+  const toGrid = (list: typeof cells): PlannerGrid => {
+    const g: PlannerGrid = {};
+    list.forEach((c) => {
+      g[c.date] = g[c.date] || {};
+      g[c.date][c.employee_id] = g[c.date][c.employee_id] || {};
+      g[c.date][c.employee_id][c.slot_id] = c.role_id;
     });
-  }, [employees, filterDept, search]);
-
-  // Get shifts for a specific employee on a specific date
-  const getEmployeeShifts = useCallback((employeeId: string, date: string) => {
-    if (!shifts) return [];
-    return shifts.filter(s => s.employee_id === employeeId && s.date === date);
-  }, [shifts]);
-
-  // Navigate
-  const navWeek = (dir: number) => {
-    setWeekStartDate(prev => addDays(prev, dir * 7));
-  };
-  const navDay = (dir: number) => {
-    const d = new Date(selectedDate);
-    d.setDate(d.getDate() + dir);
-    setSelectedDate(formatDateStr(d));
-    const ws = startOfWeek(d, { weekStartsOn: 0 });
-    setWeekStartDate(ws);
-  };
-  const goToday = () => {
-    const now = new Date();
-    setSelectedDate(formatDateStr(now));
-    setWeekStartDate(startOfWeek(now, { weekStartsOn: 0 }));
+    return g;
   };
 
-  // CRUD handlers
-  const handleSaveShift = (start: string, end: string) => {
-    if (!modal) return;
-    if (modal.shiftId) {
-      updateShift.mutate({ id: modal.shiftId, start_time: start, end_time: end });
-    } else {
-      createShift.mutate({
-        employee_id: modal.employeeId,
-        date: modal.date,
-        start_time: start,
-        end_time: end,
-      });
+  const grid = useMemo(() => toGrid(cells), [cells]);
+  const prevGrid = useMemo(() => toGrid(prevCells), [prevCells]);
+  const employeeIds = useMemo(() => employees.map((e) => e.id), [employees]);
+
+  const stats = useMemo(
+    () => computeStats(grid, dates, employeeIds, roles, slots),
+    [grid, dates, employeeIds, roles, slots]
+  );
+  const prevStats = useMemo(
+    () => computeStats(prevGrid, prevDates, employeeIds, roles, slots),
+    [prevGrid, prevDates, employeeIds, roles, slots]
+  );
+  const hasPrev = prevCells.length > 0;
+
+  const roleById = useMemo(() => new Map(roles.map((r) => [r.id, r])), [roles]);
+  const noteForWeek = weekNotes.find((n) => n.week_start === weekStart)?.note ?? '';
+  const [noteDraft, setNoteDraft] = useState(noteForWeek);
+  useEffect(() => setNoteDraft(noteForWeek), [noteForWeek, weekStart]);
+
+  /* ---------------- painting ---------------- */
+
+  const paint = useCallback(
+    (employeeId: string, slotId: string) => {
+      if (!canManageShifts || editingSlots) return;
+      const existing = grid[currentDate]?.[employeeId]?.[slotId];
+      const next = brush;
+      if (existing === next) return;
+      actions.setCell(currentDate, employeeId, slotId, next);
+    },
+    [actions, brush, canManageShifts, currentDate, editingSlots, grid]
+  );
+
+  const onPointerMove = (e: React.PointerEvent) => {
+    if (!dragging.current || editingSlots || !canManageShifts) return;
+    const el = document.elementFromPoint(e.clientX, e.clientY) as HTMLElement | null;
+    const emp = el?.dataset?.emp;
+    const slot = el?.dataset?.slot;
+    if (emp && slot) paint(emp, slot);
+  };
+
+  /* ---------------- day actions ---------------- */
+
+  const copyPreviousDay = async () => {
+    const srcIndex = dayIndex === 0 ? 6 : dayIndex - 1;
+    const ok = await actions.copyDay(dates[srcIndex], currentDate);
+    toast({ title: ok ? t.copiedFrom(t.days[srcIndex]) : t.noPrevWeek });
+  };
+
+  const duplicatePrevWeek = async () => {
+    const ok = await actions.duplicateWeek(prevDates, dates);
+    toast({ title: ok ? t.duplicated : t.noPrevWeek });
+  };
+
+  const whatsappText = useMemo(() => {
+    const dayGrid = grid[currentDate] || {};
+    const lines = [t.waTitle(t.days[dayIndex], shortDate(parseLocalDate(currentDate), t.locale)), ''];
+    employees.forEach((emp) => {
+      const bl = blocksFor(dayGrid, emp.id, roles, slots);
+      if (!bl.length) return;
+      const h = bl.reduce((a, b) => a + b.hours, 0);
+      lines.push(
+        `${emp.full_name} · ` +
+          bl.map((b) => `${b.start}–${b.end} ${roleById.get(b.roleId)?.name ?? ''}`).join(' + ') +
+          ` · ${fmtH(h)}`
+      );
+    });
+    lines.push('', `${t.waTotal}: ${fmtH(stats.dayTotals[currentDate] || 0)}`);
+    return lines.join('\n');
+  }, [grid, currentDate, dayIndex, employees, roles, slots, roleById, stats, t, fmtH]);
+
+  const copyText = async () => {
+    try {
+      await navigator.clipboard.writeText(whatsappText);
+      toast({ title: t.textCopied });
+    } catch {
+      toast({ title: t.clipboardDenied, variant: 'destructive' });
     }
   };
 
-  const handleDeleteShift = (shiftId: string) => {
-    deleteShift.mutate(shiftId);
-  };
+  const isLoading = rolesLoading || slotsLoading || cellsLoading || employeesLoading;
 
-  const handleCopyPrevWeek = async () => {
-    if (!filteredEmployees.length) return;
-    const prevWeekStartStr = formatDateStr(addDays(weekStartDate, -7));
-    const prevWeekEndStr = formatDateStr(addDays(weekStartDate, -1));
+  const weekTitle = t.weekOf(
+    shortDate(parseLocalDate(dates[0]), t.locale),
+    shortDate(parseLocalDate(dates[6]), t.locale)
+  );
 
-    // Fetch previous week shifts
-    const { data: prevShifts, error } = await supabase
-      .from('shifts')
-      .select('employee_id, date, start_time, end_time')
-      .gte('date', prevWeekStartStr)
-      .lte('date', prevWeekEndStr);
-
-    if (error || !prevShifts?.length) {
-      toast({ title: 'לא נמצאו משמרות בשבוע הקודם', variant: 'destructive' });
-      return;
-    }
-
-    // Map prev week dates to current week (add 7 days)
-    const newShifts = prevShifts.map(s => {
-      const oldDate = new Date(s.date);
-      const newDate = addDays(oldDate, 7);
-      return {
-        employee_id: s.employee_id,
-        date: formatDateStr(newDate),
-        start_time: s.start_time,
-        end_time: s.end_time,
-      };
-    });
-
-    bulkCreateShifts.mutate(newShifts);
-  };
-
-  const handleClearDay = (dateStr: string) => {
-    if (!shifts) return;
-    const dayShifts = shifts.filter(s => s.date === dateStr);
-    if (dayShifts.length === 0) return;
-    bulkDeleteShifts.mutate(dayShifts.map(s => s.id));
-    toast({ title: 'המשמרות נוקו' });
-  };
-
-  // Stats per day
-  const weekAssignment = useMemo(() => {
-    return weekDays.map(d => {
-      const ds = formatDateStr(d);
-      const assigned = filteredEmployees.filter(e => getEmployeeShifts(e.id, ds).length > 0).length;
-      return { date: ds, day: d, assigned, total: filteredEmployees.length, unassigned: filteredEmployees.length - assigned };
-    });
-  }, [weekDays, filteredEmployees, getEmployeeShifts]);
-
-  // Get department info
-  const getDeptForEmployee = (emp: EmployeeWithRole) => {
-    return departments?.find(d => d.id === emp.department_id);
-  };
-
-  const headerDate = view === 'week'
-    ? `${format(weekDays[0], 'd בMMM', { locale: he })} — ${format(weekDays[6], 'd בMMM yyyy', { locale: he })}`
-    : format(new Date(selectedDate), 'EEEE, d בMMMM yyyy', { locale: he });
-
-  return (
-    <div className="space-y-4">
-      {/* Header */}
-      <div className="flex flex-col gap-3">
-        {/* Row 1: View toggle + actions */}
-        <div className="flex items-center justify-between gap-2 flex-wrap">
-          <div className="flex items-center gap-1 bg-muted rounded-lg p-1">
-            {[{ key: 'week', label: 'שבוע' }, { key: 'day', label: 'יום' }].map(v => (
-              <Button
-                key={v.key}
-                variant={view === v.key ? 'default' : 'ghost'}
-                size="sm"
-                className="h-7 px-3 text-xs"
-                onClick={() => setView(v.key as 'week' | 'day')}
-              >
-                {v.label}
-              </Button>
-            ))}
-          </div>
-
-          <div className="flex items-center gap-1.5 flex-wrap">
-            <Button variant="outline" size="sm" className="h-7 text-xs" onClick={handleCopyPrevWeek}>
-              <Copy className="h-3 w-3 ml-1" /> <span className="hidden sm:inline">העתק שבוע קודם</span><span className="sm:hidden">העתק</span>
-            </Button>
-            {view === 'day' && (
-              <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => handleClearDay(selectedDate)}>
-                <Trash2 className="h-3 w-3 ml-1" /> נקה יום
-              </Button>
-            )}
-          </div>
-        </div>
-
-        {/* Row 2: Date navigation */}
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-1 flex-1 min-w-0">
-            <Button variant="outline" size="icon" className="h-7 w-7 shrink-0" onClick={() => view === 'week' ? navWeek(1) : navDay(1)}>
-              <ChevronRight className="h-3.5 w-3.5" />
-            </Button>
-            <Button variant="outline" size="sm" className="h-7 text-xs shrink-0" onClick={goToday}>היום</Button>
-            <Button variant="outline" size="icon" className="h-7 w-7 shrink-0" onClick={() => view === 'week' ? navWeek(-1) : navDay(-1)}>
-              <ChevronLeft className="h-3.5 w-3.5" />
-            </Button>
-            <span className="text-xs sm:text-sm font-semibold flex-1 text-center truncate min-w-0">{headerDate}</span>
-          </div>
-        </div>
-
-        {/* Row 3: Filters */}
-        <div className="flex items-center gap-2 flex-wrap">
-          <div className="relative flex-1 min-w-[140px]">
-            <Search className="absolute right-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-            <Input
-              placeholder="חיפוש עובד..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="h-7 pr-8 text-xs"
-            />
-          </div>
-          <Select value={filterDept} onValueChange={setFilterDept}>
-            <SelectTrigger className="w-32 sm:w-40 h-7 text-xs">
-              <Filter className="h-3 w-3 ml-1" />
-              <SelectValue placeholder="כל המחלקות" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">כל המחלקות</SelectItem>
-              {departments?.map(d => (
-                <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-
-      {isLoading ? (
-        <div className="space-y-2">
-          {Array.from({ length: 8 }).map((_, i) => (
-            <Skeleton key={i} className="h-14 w-full" />
-          ))}
-        </div>
-      ) : (
-        <>
-          {/* WEEK VIEW */}
-          {view === 'week' && (
-            <div className="space-y-3">
-              {/* Assignment overview */}
-              <div className="flex gap-1.5 overflow-x-auto pb-1">
-                {weekAssignment.map(wa => {
-                  const isToday = isTodayFn(wa.day);
-                  const isSel = wa.date === selectedDate;
-                  const pct = wa.total > 0 ? (wa.assigned / wa.total) * 100 : 0;
-                  return (
-                    <div
-                      key={wa.date}
-                      onClick={() => { setSelectedDate(wa.date); setView('day'); }}
-                      className={cn(
-                        'flex-1 min-w-[100px] p-2.5 rounded-lg cursor-pointer transition-all border-2',
-                        isToday ? 'bg-primary text-primary-foreground border-primary' : 'bg-card border-transparent hover:border-primary/30',
-                        isSel && !isToday && 'border-primary/50'
-                      )}
-                    >
-                      <div className={cn('text-[11px] font-medium mb-1', isToday ? 'text-primary-foreground/70' : 'text-muted-foreground')}>
-                        {HEBREW_DAYS[wa.day.getDay()]} {wa.day.getDate()}
-                      </div>
-                      <div className={cn('h-1 rounded-full mb-1.5 overflow-hidden', isToday ? 'bg-primary-foreground/25' : 'bg-muted')}>
-                        <div
-                          className={cn('h-full rounded-full transition-all', wa.unassigned === 0 ? (isToday ? 'bg-primary-foreground' : 'bg-success') : 'bg-warning')}
-                          style={{ width: `${pct}%` }}
-                        />
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className={cn('text-[11px] font-semibold', isToday ? 'text-primary-foreground' : 'text-foreground')}>
-                          {wa.assigned}/{wa.total}
-                        </span>
-                        {wa.unassigned > 0 && (
-                          <Badge variant="outline" className={cn('text-[9px] px-1 py-0', isToday ? 'border-primary-foreground/30 text-primary-foreground' : 'border-warning/30 text-warning')}>
-                            {wa.unassigned} חסר
-                          </Badge>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-
-              {/* Week table */}
-              <Card>
-                <CardContent className="p-0 overflow-x-auto">
-                  <table className="w-full min-w-[800px]">
-                    <thead>
-                      <tr className="border-b-2 border-border">
-                        <th className="text-right p-2.5 w-[180px] text-xs font-semibold text-muted-foreground">עובד</th>
-                        {weekDays.map(d => {
-                          const ds = formatDateStr(d);
-                          const isToday = isTodayFn(d);
-                          return (
-                            <th
-                              key={ds}
-                              className={cn(
-                                'p-2 text-center cursor-pointer transition-colors',
-                                isToday ? 'bg-primary/10' : 'hover:bg-muted/50'
-                              )}
-                              onClick={() => { setSelectedDate(ds); setView('day'); }}
-                            >
-                              <div className="text-[11px] text-muted-foreground">{HEBREW_DAYS[d.getDay()]}</div>
-                              <div className={cn('text-base font-bold', isToday ? 'text-primary' : 'text-foreground')}>{d.getDate()}</div>
-                            </th>
-                          );
-                        })}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {/* Group by department */}
-                      {departments?.filter(d => filterDept === 'all' || filterDept === d.id).map(dept => {
-                        const emps = filteredEmployees.filter(e => e.department_id === dept.id);
-                        if (!emps.length) return null;
-                        return (
-                          <DepartmentGroup
-                            key={dept.id}
-                            deptName={dept.name}
-                            deptIcon={dept.icon}
-                            employees={emps}
-                            weekDays={weekDays}
-                            getEmployeeShifts={getEmployeeShifts}
-                            isWfh={isWfh}
-                            onAddShift={(empId, empName, date) => setModal({ employeeId: empId, employeeName: empName, date })}
-                            onEditShift={(empId, empName, date, shiftId, start, end) => setModal({ employeeId: empId, employeeName: empName, date, shiftId, start, end })}
-                            onDeleteShift={handleDeleteShift}
-                            onEmployeeClick={(empId, empName) => setEmployeeWeekView({ id: empId, name: empName, deptName: dept.name })}
-                          />
-                        );
-                      })}
-                      {/* Unassigned employees */}
-                      {filteredEmployees.filter(e => !e.department_id).length > 0 && (
-                        <DepartmentGroup
-                          deptName="ללא מחלקה"
-                          deptIcon={null}
-                          employees={filteredEmployees.filter(e => !e.department_id)}
-                          weekDays={weekDays}
-                          getEmployeeShifts={getEmployeeShifts}
-                          isWfh={isWfh}
-                          onAddShift={(empId, empName, date) => setModal({ employeeId: empId, employeeName: empName, date })}
-                          onEditShift={(empId, empName, date, shiftId, start, end) => setModal({ employeeId: empId, employeeName: empName, date, shiftId, start, end })}
-                          onDeleteShift={handleDeleteShift}
-                          onEmployeeClick={(empId, empName) => setEmployeeWeekView({ id: empId, name: empName })}
-                        />
-                      )}
-                    </tbody>
-                  </table>
-                </CardContent>
-              </Card>
-            </div>
-          )}
-
-          {/* DAY VIEW */}
-          {view === 'day' && (
-            <div className="space-y-4">
-              {/* Day chips */}
-              <div className="flex gap-1.5 overflow-x-auto pb-1">
-                {weekDays.map(d => {
-                  const ds = formatDateStr(d);
-                  const isToday = isTodayFn(d);
-                  const isSel = ds === selectedDate;
-                  const unassigned = filteredEmployees.filter(e => getEmployeeShifts(e.id, ds).length === 0).length;
-                  return (
-                    <Button
-                      key={ds}
-                      variant={isSel ? 'default' : isToday ? 'secondary' : 'outline'}
-                      size="sm"
-                      className="relative min-w-[60px] h-auto py-1.5 flex-col gap-0"
-                      onClick={() => setSelectedDate(ds)}
-                    >
-                      <span className="text-[10px]">{HEBREW_DAYS[d.getDay()]}</span>
-                      <span className="text-base font-bold">{d.getDate()}</span>
-                      {unassigned > 0 && (
-                        <Badge className="absolute -top-1.5 -left-1.5 h-4 w-4 p-0 text-[9px] flex items-center justify-center bg-warning text-warning-foreground">
-                          {unassigned}
-                        </Badge>
-                      )}
-                    </Button>
-                  );
-                })}
-              </div>
-
-              {/* Unassigned alert */}
-              <UnassignedPanel
-                employees={filteredEmployees.filter(e => getEmployeeShifts(e.id, selectedDate).length === 0)}
-                departments={departments || []}
-                onAssign={(empId, empName) => setModal({ employeeId: empId, employeeName: empName, date: selectedDate })}
-              />
-
-              {/* Assigned by department */}
-              {departments?.filter(d => filterDept === 'all' || filterDept === d.id).map(dept => {
-                const emps = filteredEmployees.filter(e =>
-                  e.department_id === dept.id &&
-                  getEmployeeShifts(e.id, selectedDate).length > 0
-                );
-                if (!emps.length) return null;
-                return (
-                  <div key={dept.id} className="space-y-2">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-bold text-foreground">{dept.name}</span>
-                      <span className="text-xs text-muted-foreground">({emps.length} משובצים)</span>
-                      <span className="text-xs text-muted-foreground">({emps.length} משובצים)</span>
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-                      {emps.map(emp => {
-                        const empShifts = getEmployeeShifts(emp.id, selectedDate);
-                        const totalH = empShifts.reduce((a, s) => a + (timeToMin(s.end_time) - timeToMin(s.start_time)) / 60, 0);
-                        const wfh = isWfh(emp.id, selectedDate);
-                        return (
-                          <Card key={emp.id} className={cn('transition-colors', wfh ? 'border-info/40 bg-info/5' : 'hover:border-primary/30')}>
-                            <CardContent className="p-3">
-                              <div className="flex items-center justify-between mb-2">
-                                <div className="flex items-center gap-2">
-                                  <Avatar className="h-8 w-8">
-                                    <AvatarFallback className="bg-primary/10 text-primary text-xs font-bold">
-                                      {getInitials(emp.full_name)}
-                                    </AvatarFallback>
-                                  </Avatar>
-                                  <div>
-                                    <div className="text-sm font-semibold">{emp.full_name}</div>
-                                    {wfh && (
-                                      <div className="flex items-center gap-1 text-info text-[10px] font-bold mt-0.5">
-                                        <Home className="h-3 w-3" />
-                                        עבודה מהבית
-                                      </div>
-                                    )}
-                                  </div>
-                                </div>
-                                <Badge variant="secondary" className="text-xs">{totalH.toFixed(1)}h</Badge>
-                              </div>
-                              <div className="space-y-1">
-                                {empShifts.map(s => (
-                                  <div key={s.id} className={cn(
-                                    'flex items-center justify-between rounded px-2 py-1 border-r-[3px]',
-                                    wfh
-                                      ? 'bg-info/10 border border-info/30 border-r-info'
-                                      : 'bg-primary/5 border border-primary/20 border-r-primary'
-                                  )}>
-                                    <span className={cn('text-xs font-semibold', wfh ? 'text-info' : 'text-primary')} dir="ltr">{s.start_time} — {s.end_time}</span>
-                                    <div className="flex gap-1">
-                                      <button
-                                        onClick={() => setModal({ employeeId: emp.id, employeeName: emp.full_name, date: selectedDate, shiftId: s.id, start: s.start_time, end: s.end_time })}
-                                        className="text-[10px] text-muted-foreground hover:text-primary"
-                                      >✏️</button>
-                                      <button
-                                        onClick={() => handleDeleteShift(s.id)}
-                                        className="text-[10px] text-muted-foreground hover:text-destructive"
-                                      >🗑️</button>
-                                    </div>
-                                  </div>
-                                ))}
-                                <button
-                                  onClick={() => setModal({ employeeId: emp.id, employeeName: emp.full_name, date: selectedDate })}
-                                  className="w-full border border-dashed border-border rounded px-2 py-1 text-[10px] text-muted-foreground hover:border-primary hover:text-primary transition-colors"
-                                >
-                                  + הוסף משמרת
-                                </button>
-                              </div>
-                            </CardContent>
-                          </Card>
-                        );
-                      })}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </>
-      )}
-
-      {/* Modal */}
-      {modal && (
-        <ShiftModal
-          open={!!modal}
-          onOpenChange={(open) => !open && setModal(null)}
-          employeeName={modal.employeeName}
-          dateLabel={format(new Date(modal.date), 'EEEE, d בMMMM', { locale: he })}
-          initialStart={modal.start}
-          initialEnd={modal.end}
-          isEdit={!!modal.shiftId}
-          isWfh={isWfh(modal.employeeId, modal.date)}
-          onSave={handleSaveShift}
-        />
-      )}
-
-      {/* Employee weekly summary (shareable) */}
-      {employeeWeekView && (
-        <EmployeeWeekShiftsDialog
-          open={!!employeeWeekView}
-          onOpenChange={(open) => !open && setEmployeeWeekView(null)}
-          employeeName={employeeWeekView.name}
-          departmentName={employeeWeekView.deptName}
-          weekDays={weekDays}
-          getEmployeeShifts={(date) => getEmployeeShifts(employeeWeekView.id, date)}
-          isWfh={(date) => isWfh(employeeWeekView.id, date)}
-        />
-      )}
+  const LangSwitch = (
+    <div className="flex gap-1">
+      {PLANNER_LANG_BUTTONS.map((l) => (
+        <Button
+          key={l.id}
+          size="sm"
+          variant={lang === l.id ? 'default' : 'outline'}
+          onClick={() => setLang(l.id)}
+          title={t.language}
+          className="h-8 px-2.5 text-xs"
+        >
+          {l.label}
+        </Button>
+      ))}
     </div>
   );
-}
 
-// Department group for week table
-function DepartmentGroup({
-  deptName,
-  deptIcon,
-  employees,
-  weekDays,
-  getEmployeeShifts,
-  isWfh,
-  onAddShift,
-  onEditShift,
-  onDeleteShift,
-  onEmployeeClick,
-}: {
-  deptName: string;
-  deptIcon: string | null;
-  employees: EmployeeWithRole[];
-  weekDays: Date[];
-  getEmployeeShifts: (empId: string, date: string) => any[];
-  isWfh: (empId: string, date: string) => boolean;
-  onAddShift: (empId: string, empName: string, date: string) => void;
-  onEditShift: (empId: string, empName: string, date: string, shiftId: string, start: string, end: string) => void;
-  onDeleteShift: (shiftId: string) => void;
-  onEmployeeClick?: (empId: string, empName: string) => void;
-}) {
-  return (
-    <>
-      <tr className="bg-muted/30 border-t border-border">
-        <td colSpan={8} className="px-3 py-1.5">
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-bold text-foreground">{deptName}</span>
-            <span className="text-[10px] text-muted-foreground">({employees.length})</span>
-          </div>
-        </td>
-      </tr>
-      {employees.map(emp => (
-        <tr key={emp.id} className="border-b border-border/50 hover:bg-muted/20 transition-colors">
-          <td className="p-2 border-l border-border/30">
-            <button
-              type="button"
-              onClick={() => onEmployeeClick?.(emp.id, emp.full_name)}
-              className="flex items-center gap-2 text-right w-full rounded-md hover:bg-primary/5 hover:text-primary transition-colors p-1 -m-1 group"
-              title="הצג סיכום משמרות שבועי"
-            >
-              <Avatar className="h-7 w-7">
-                <AvatarFallback className="bg-primary/10 text-primary text-[10px] font-bold">
-                  {getInitials(emp.full_name)}
-                </AvatarFallback>
-              </Avatar>
-              <div className="min-w-0">
-                <div className="text-xs font-semibold truncate group-hover:underline">{emp.full_name}</div>
-              </div>
-            </button>
-          </td>
-          {weekDays.map(d => {
-            const ds = formatDateStr(d);
-            const dayShifts = getEmployeeShifts(emp.id, ds);
-            const isToday = isTodayFn(d);
-            const wfh = isWfh(emp.id, ds);
-            return (
-              <td key={ds} className={cn('p-1 border-l border-border/30', isToday && 'bg-primary/5', wfh && 'bg-info/5')}>
-                {wfh && (
-                  <div className="flex items-center justify-center gap-1 mb-0.5 text-info">
-                    <Home className="h-3 w-3" />
-                    <span className="text-[9px] font-bold">עבודה מהבית</span>
-                  </div>
-                )}
-                {dayShifts.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center h-full min-h-[40px] gap-0.5">
-                    {!wfh && <span className="text-[10px] text-warning font-medium">לא במשמרת</span>}
-                    <button
-                      onClick={() => onAddShift(emp.id, emp.full_name, ds)}
-                      className="border border-dashed border-border rounded text-[9px] px-2 py-0.5 text-muted-foreground hover:border-primary hover:text-primary transition-colors"
-                    >+ שבץ</button>
-                  </div>
-                ) : (
-                  <div className="flex flex-col gap-0.5">
-                    {dayShifts.map(s => (
-                      <div
-                        key={s.id}
-                        onClick={() => onEditShift(emp.id, emp.full_name, ds, s.id, s.start_time, s.end_time)}
-                        className={cn(
-                          'flex items-center justify-between rounded px-1.5 py-0.5 border-r-2 cursor-pointer hover:shadow-sm transition-shadow',
-                          wfh
-                            ? 'bg-info/10 border border-info/30 border-r-info'
-                            : 'bg-primary/5 border border-primary/20 border-r-primary'
-                        )}
-                      >
-                        <span className={cn('text-[10px] font-semibold', wfh ? 'text-info' : 'text-primary')} dir="ltr">{s.start_time}–{s.end_time}</span>
-                        <button
-                          onClick={(e) => { e.stopPropagation(); onDeleteShift(s.id); }}
-                          className="text-[8px] text-muted-foreground/50 hover:text-destructive"
-                        >✕</button>
-                      </div>
-                    ))}
-                    <button
-                      onClick={() => onAddShift(emp.id, emp.full_name, ds)}
-                      className="text-[9px] text-muted-foreground/60 hover:text-primary transition-colors"
-                    >+ הוסף</button>
-                  </div>
-                )}
-              </td>
-            );
-          })}
-        </tr>
-      ))}
-    </>
-  );
-}
+  const cellStyle = (roleId?: string) => {
+    const role = roleId ? roleById.get(roleId) : undefined;
+    if (!role) return { background: 'hsl(var(--muted))', color: 'hsl(var(--muted-foreground))' };
+    return { background: role.color, color: textOn(role.color) };
+  };
 
-// Unassigned panel
-function UnassignedPanel({
-  employees,
-  departments,
-  onAssign,
-}: {
-  employees: EmployeeWithRole[];
-  departments: { id: string; name: string; icon: string | null }[];
-  onAssign: (empId: string, empName: string) => void;
-}) {
-  if (employees.length === 0) {
+  /* ---------------- share view ---------------- */
+
+  if (share) {
+    const dayGrid = grid[currentDate] || {};
+    const active = employees.filter((e) => (stats.byEmpDay[currentDate] || {})[e.id] > 0);
+    const shown = active.length ? active : employees;
     return (
-      <div className="flex items-center gap-2 p-3 bg-success/10 rounded-lg border border-success/20">
-        <span>✅</span>
-        <span className="text-sm font-semibold text-success">כל העובדים משובצים ליום זה</span>
+      <div className="space-y-4" dir={t.rtl ? 'rtl' : 'ltr'}>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button variant="outline" size="sm" onClick={() => setShare(false)}>
+            {t.backToEdit}
+          </Button>
+          <Button size="sm" onClick={copyText} className="gap-1.5">
+            <Copy className="h-4 w-4" />
+            {t.copyAsText}
+          </Button>
+          {LangSwitch}
+        </div>
+
+        <Card className="border-2">
+          <CardHeader className="flex-row flex-wrap items-baseline justify-between gap-2">
+            <CardTitle className="text-xl">
+              {t.days[dayIndex]} {shortDate(parseLocalDate(currentDate), t.locale)}
+            </CardTitle>
+            <span className="text-xs text-muted-foreground">{weekTitle}</span>
+          </CardHeader>
+          <CardContent className="overflow-x-auto">
+            <table className="border-collapse text-xs">
+              <thead>
+                <tr className="bg-muted/60">
+                  <th className="border border-border px-2 py-1.5" />
+                  {shown.map((e) => (
+                    <th key={e.id} className="min-w-[76px] border border-border px-2 py-1.5 font-semibold">
+                      {e.full_name}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {slots.map((slot) => (
+                  <tr key={slot.id}>
+                    <td className="whitespace-nowrap border border-border bg-muted/40 px-2 py-1 text-end text-[11px]">
+                      {slot.start_time} – {slot.end_time}
+                    </td>
+                    {shown.map((e) => {
+                      const roleId = dayGrid[e.id]?.[slot.id];
+                      return (
+                        <td
+                          key={e.id}
+                          className="border border-border px-1 py-1 text-center text-[11px]"
+                          style={cellStyle(roleId)}
+                        >
+                          {roleId ? roleById.get(roleId)?.name : ''}
+                        </td>
+                      );
+                    })}
+                  </tr>
+                ))}
+                <tr>
+                  <td className="border border-border bg-muted/40 px-2 py-1.5 text-end text-[11px] font-bold">
+                    {t.dayTotal}
+                  </td>
+                  {shown.map((e) => (
+                    <td key={e.id} className="border border-border bg-muted/30 px-1 py-1.5 text-center font-bold">
+                      {fmtH((stats.byEmpDay[currentDate] || {})[e.id] || 0)}
+                    </td>
+                  ))}
+                </tr>
+                <tr>
+                  <td className="border border-border bg-muted/40 px-2 py-1.5 text-end text-[11px] font-bold">
+                    {t.weekTotal}
+                  </td>
+                  {shown.map((e) => (
+                    <td
+                      key={e.id}
+                      className="border border-border bg-muted/30 px-1 py-1.5 text-center text-muted-foreground"
+                    >
+                      {fmtH(stats.byEmp[e.id] || 0)}
+                    </td>
+                  ))}
+                </tr>
+              </tbody>
+            </table>
+            <p className="mt-3 text-xs text-muted-foreground">
+              {t.present(shown.length, fmtH(stats.dayTotals[currentDate] || 0))}
+            </p>
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
-  const grouped: Record<string, EmployeeWithRole[]> = {};
-  employees.forEach(e => {
-    const key = e.department_id || 'none';
-    if (!grouped[key]) grouped[key] = [];
-    grouped[key].push(e);
-  });
+  /* ---------------- main view ---------------- */
 
   return (
-    <Card className="border-warning/30 bg-warning/5">
-      <CardContent className="p-3">
-        <div className="flex items-center gap-2 mb-2">
-          <span>⚠️</span>
-          <span className="text-sm font-bold text-warning">לא משובצים</span>
-          <Badge className="bg-warning text-warning-foreground text-xs">{employees.length}</Badge>
+    <div className="space-y-4" dir={t.rtl ? 'rtl' : 'ltr'}>
+      {/* header */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="icon"
+            className="h-9 w-9"
+            title={t.prevWeek}
+            onClick={() => setWeekStart(prevWeekStart)}
+          >
+            {t.rtl ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+          </Button>
+          <div className="min-w-0">
+            <h1 className="truncate text-lg font-bold">{weekTitle}</h1>
+            <p className="text-xs text-muted-foreground">
+              {fmtH(stats.total)} {t.planned} · {stats.headcount} {t.people} ·{' '}
+              {hasPrev ? `${fmtDelta(stats.total - prevStats.total)} ${t.vsPrevWeek}` : t.noCompare}
+            </p>
+          </div>
+          <Button
+            variant="outline"
+            size="icon"
+            className="h-9 w-9"
+            title={t.nextWeek}
+            onClick={() => setWeekStart(isoDate(addDaysTo(parseLocalDate(weekStart), 7)))}
+          >
+            {t.rtl ? <ChevronLeft className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+          </Button>
+          <Button variant="ghost" size="sm" onClick={() => setWeekStart(isoDate(sundayOf(new Date())))}>
+            {t.thisWeek}
+          </Button>
         </div>
-        <div className="space-y-2">
-          {Object.entries(grouped).map(([deptId, emps]) => {
-            const dept = departments.find(d => d.id === deptId);
-            return (
-              <div key={deptId}>
-                {dept && (
-                  <div className="text-[11px] font-semibold text-muted-foreground mb-1">
-                    {dept.name}
+
+        <div className="flex flex-wrap items-center gap-2">
+          <Tabs value={view} onValueChange={(v) => setView(v as 'planning' | 'history')}>
+            <TabsList className="h-9">
+              <TabsTrigger value="planning" className="text-xs">
+                {t.planning}
+              </TabsTrigger>
+              <TabsTrigger value="history" className="text-xs">
+                {t.history}
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
+          <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setShare(true)}>
+            <Share2 className="h-4 w-4" />
+            <span className="hidden sm:inline">{t.shareView}</span>
+          </Button>
+          {LangSwitch}
+        </div>
+      </div>
+
+      {view === 'history' ? (
+        <PlannerHistory
+          t={t}
+          fmtH={fmtH}
+          fmtDelta={fmtDelta}
+          cells={allCells}
+          roles={roles}
+          slots={slots}
+          notes={weekNotes}
+          onOpenWeek={(ws) => {
+            setWeekStart(ws);
+            setView('planning');
+          }}
+        />
+      ) : (
+        <>
+          {/* day picker */}
+          <div className="flex gap-1.5 overflow-x-auto pb-1">
+            {t.days.map((d, i) => {
+              const h = stats.dayTotals[dates[i]] || 0;
+              const isActive = dayIndex === i;
+              return (
+                <button
+                  key={d}
+                  onClick={() => setDayIndex(i)}
+                  className={cn(
+                    'min-w-[92px] rounded-lg border px-3 py-2 text-start transition-colors',
+                    isActive
+                      ? 'border-primary bg-primary text-primary-foreground'
+                      : 'border-border bg-card hover:bg-accent'
+                  )}
+                >
+                  <div className="text-xs font-semibold">
+                    {t.daysShort[i]} {shortDate(parseLocalDate(dates[i]), t.locale)}
                   </div>
-                )}
-                <div className="flex flex-wrap gap-1.5">
-                  {emps.map(emp => (
-                    <button
-                      key={emp.id}
-                      onClick={() => onAssign(emp.id, emp.full_name)}
-                      className="flex items-center gap-2 px-2.5 py-1.5 bg-card border border-dashed border-border rounded-lg hover:border-primary hover:bg-primary/5 transition-all text-right"
+                  <div className={cn('text-[11px]', isActive ? 'opacity-80' : 'text-muted-foreground')}>
+                    {h ? fmtH(h) : t.empty}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* toolbar */}
+          {canManageShifts ? (
+            <Card>
+              <CardContent className="flex flex-wrap items-center gap-2 p-3">
+                <span className="text-xs text-muted-foreground">{t.brush}</span>
+                {roles.map((r) => (
+                  <button
+                    key={r.id}
+                    onClick={() => setBrush(r.id)}
+                    style={{ background: r.color, color: textOn(r.color) }}
+                    className={cn(
+                      'rounded-md border-2 px-2.5 py-1.5 text-xs font-medium transition-transform',
+                      brush === r.id ? 'border-foreground' : 'border-transparent'
+                    )}
+                  >
+                    {r.name}
+                  </button>
+                ))}
+                <button
+                  onClick={() => setBrush(null)}
+                  className={cn(
+                    'flex items-center gap-1 rounded-md border-2 bg-muted px-2.5 py-1.5 text-xs text-muted-foreground',
+                    brush === null ? 'border-foreground' : 'border-transparent'
+                  )}
+                >
+                  <Eraser className="h-3.5 w-3.5" />
+                  {t.erase}
+                </button>
+
+                <span className="flex-1" />
+
+                <Button variant="ghost" size="sm" className="gap-1.5" onClick={copyPreviousDay}>
+                  <Copy className="h-4 w-4" />
+                  <span className="hidden md:inline">{t.copyYesterday}</span>
+                </Button>
+                <Button variant="ghost" size="sm" className="gap-1.5" onClick={duplicatePrevWeek}>
+                  <CopyPlus className="h-4 w-4" />
+                  <span className="hidden md:inline">{t.dupPrevWeek}</span>
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="gap-1.5 text-destructive hover:text-destructive"
+                  onClick={() => actions.clearDay(currentDate)}
+                >
+                  <Trash2 className="h-4 w-4" />
+                  <span className="hidden md:inline">{t.clearDay}</span>
+                </Button>
+                <Button
+                  variant={editingSlots ? 'default' : 'outline'}
+                  size="sm"
+                  className="gap-1.5"
+                  onClick={() => setEditingSlots((v) => !v)}
+                >
+                  <Sliders className="h-4 w-4" />
+                  <span className="hidden md:inline">{editingSlots ? t.doneEditing : t.editStructure}</span>
+                </Button>
+                <Button
+                  variant={managingRoles ? 'default' : 'outline'}
+                  size="sm"
+                  className="gap-1.5"
+                  onClick={() => setManagingRoles((v) => !v)}
+                >
+                  <Palette className="h-4 w-4" />
+                  <span className="hidden md:inline">{t.manageRoles}</span>
+                </Button>
+              </CardContent>
+            </Card>
+          ) : (
+            <p className="text-xs text-muted-foreground">{t.readOnly}</p>
+          )}
+
+          {editingSlots && (
+            <div className="rounded-lg border border-warning/40 bg-warning/10 px-3 py-2 text-xs">{t.editHint}</div>
+          )}
+
+          {managingRoles && (
+            <RoleManager
+              t={t}
+              roles={roles}
+              onAdd={(name, color) => saveRole.mutate({ name, color, sort_order: roles.length + 1 })}
+              onRemove={(role) => deleteRole.mutate(role.id)}
+            />
+          )}
+
+          {/* grid */}
+          {isLoading ? (
+            <Skeleton className="h-96 w-full" />
+          ) : !employees.length ? (
+            <Card>
+              <CardContent className="py-10 text-center text-sm text-muted-foreground">{t.noEmployees}</CardContent>
+            </Card>
+          ) : (
+            <Card className="overflow-x-auto">
+              <table className="w-full border-collapse text-xs" onPointerMove={onPointerMove}>
+                <thead>
+                  <tr className="bg-muted/60">
+                    <th
+                      className={cn(
+                        'sticky start-0 z-20 border border-border bg-muted px-2 py-1.5 text-start font-semibold',
+                        editingSlots ? 'min-w-[196px]' : 'min-w-[112px]'
+                      )}
                     >
-                      <Avatar className="h-6 w-6">
-                        <AvatarFallback className="bg-primary/10 text-primary text-[9px] font-bold">
-                          {getInitials(emp.full_name)}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <div className="text-xs font-semibold">{emp.full_name}</div>
-                        <div className="text-[9px] text-muted-foreground">לחץ לשיבוץ →</div>
-                      </div>
-                    </button>
+                      {t.days[dayIndex]} {shortDate(parseLocalDate(currentDate), t.locale)}
+                    </th>
+                    {employees.map((e) => (
+                      <th
+                        key={e.id}
+                        className="min-w-[72px] border border-border px-2 py-1.5 text-center font-semibold"
+                      >
+                        <button
+                          type="button"
+                          title={canManageShifts ? t.fillCol : undefined}
+                          className={cn('w-full truncate', canManageShifts && 'cursor-pointer hover:text-primary')}
+                          onClick={() =>
+                            canManageShifts &&
+                            !editingSlots &&
+                            actions.fillColumn(
+                              currentDate,
+                              e.id,
+                              slots.map((s) => s.id),
+                              brush
+                            )
+                          }
+                        >
+                          {e.full_name.split(' ')[0]}
+                        </button>
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {slots.map((slot, si) => (
+                    <tr key={slot.id}>
+                      <td className="sticky start-0 z-10 whitespace-nowrap border border-border bg-card px-2 py-1 text-end text-[11px]">
+                        {editingSlots ? (
+                          <div className="flex items-center justify-end gap-1">
+                            <Input
+                              type="time"
+                              value={slot.start_time}
+                              onChange={(ev) =>
+                                saveSlot.mutate({
+                                  id: slot.id,
+                                  start_time: ev.target.value,
+                                  end_time: slot.end_time,
+                                  sort_order: slot.sort_order,
+                                })
+                              }
+                              className="h-7 w-[86px] px-1 text-[11px]"
+                            />
+                            <Input
+                              type="time"
+                              value={slot.end_time}
+                              onChange={(ev) =>
+                                saveSlot.mutate({
+                                  id: slot.id,
+                                  start_time: slot.start_time,
+                                  end_time: ev.target.value,
+                                  sort_order: slot.sort_order,
+                                })
+                              }
+                              className="h-7 w-[86px] px-1 text-[11px]"
+                            />
+                            <button
+                              title={t.insertSlot}
+                              className="text-muted-foreground hover:text-foreground"
+                              onClick={() =>
+                                saveSlot.mutate({
+                                  start_time: slot.end_time,
+                                  end_time: addMinutesStr(slot.end_time, 60),
+                                  sort_order: slot.sort_order + 1,
+                                })
+                              }
+                            >
+                              <Plus className="h-3.5 w-3.5" />
+                            </button>
+                            <button
+                              title={t.removeSlot}
+                              className="text-destructive"
+                              onClick={() => deleteSlot.mutate(slot.id)}
+                            >
+                              <X className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
+                        ) : (
+                          `${slot.start_time} – ${slot.end_time}`
+                        )}
+                      </td>
+                      {employees.map((e) => {
+                        const roleId = grid[currentDate]?.[e.id]?.[slot.id];
+                        return (
+                          <td
+                            key={e.id}
+                            data-emp={e.id}
+                            data-slot={slot.id}
+                            onPointerDown={(ev) => {
+                              if (!canManageShifts || editingSlots) return;
+                              ev.preventDefault();
+                              dragging.current = true;
+                              paint(e.id, slot.id);
+                            }}
+                            className={cn(
+                              'select-none border border-border px-1 py-1.5 text-center text-[11px]',
+                              canManageShifts && !editingSlots ? 'cursor-pointer' : 'cursor-default',
+                              editingSlots && 'opacity-60'
+                            )}
+                            style={{ ...cellStyle(roleId), touchAction: 'none' }}
+                          >
+                            {roleId ? roleById.get(roleId)?.name : ''}
+                          </td>
+                        );
+                      })}
+                      {si === -1 && null}
+                    </tr>
                   ))}
-                </div>
+                  <tr>
+                    <td className="sticky start-0 z-10 border border-border bg-muted/40 px-2 py-1.5 text-end text-[11px] font-bold">
+                      {t.dayTotal}
+                    </td>
+                    {employees.map((e) => (
+                      <td key={e.id} className="border border-border bg-muted/30 px-1 py-1.5 text-center font-bold">
+                        {fmtH((stats.byEmpDay[currentDate] || {})[e.id] || 0)}
+                      </td>
+                    ))}
+                  </tr>
+                  <tr>
+                    <td className="sticky start-0 z-10 border border-border bg-muted/40 px-2 py-1.5 text-end text-[11px] font-bold">
+                      {t.weekTotal}
+                    </td>
+                    {employees.map((e) => {
+                      const cur = stats.byEmp[e.id] || 0;
+                      const prev = prevStats.byEmp[e.id] || 0;
+                      return (
+                        <td key={e.id} className="border border-border bg-muted/50 px-1 py-1.5 text-center font-bold">
+                          {fmtH(cur)}
+                          {hasPrev && (
+                            <div className="text-[10px] font-normal text-muted-foreground">
+                              {fmtDelta(cur - prev)}
+                            </div>
+                          )}
+                        </td>
+                      );
+                    })}
+                  </tr>
+                </tbody>
+              </table>
+            </Card>
+          )}
+
+          {/* week summary */}
+          <Card>
+            <CardHeader className="flex-row flex-wrap items-baseline justify-between gap-2 pb-3">
+              <CardTitle className="text-sm">{t.recap}</CardTitle>
+              <span className="text-xs text-muted-foreground">
+                {t.total} {fmtH(stats.total)} ·{' '}
+                {hasPrev ? `${fmtDelta(stats.total - prevStats.total)} ${t.vsPrevWeek}` : t.noCompare}
+              </span>
+            </CardHeader>
+            <CardContent className="overflow-x-auto">
+              <table className="w-full min-w-[620px] border-collapse text-xs">
+                <thead>
+                  <tr className="bg-muted/60">
+                    <th className="min-w-[110px] border border-border px-2 py-1.5 text-start font-semibold">
+                      {t.person}
+                    </th>
+                    {t.daysShort.map((d) => (
+                      <th key={d} className="border border-border px-2 py-1.5 font-semibold">
+                        {d}
+                      </th>
+                    ))}
+                    <th className="border border-border px-2 py-1.5 font-semibold">{t.week}</th>
+                    <th className="border border-border px-2 py-1.5 font-semibold">{t.lastWeek}</th>
+                    <th className="border border-border px-2 py-1.5 font-semibold">{t.gap}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {employees.map((e) => {
+                    const cur = stats.byEmp[e.id] || 0;
+                    const prev = prevStats.byEmp[e.id] || 0;
+                    const diff = cur - prev;
+                    return (
+                      <tr key={e.id}>
+                        <td className="border border-border px-2 py-1.5 text-start">{e.full_name}</td>
+                        {dates.map((d) => (
+                          <td key={d} className="border border-border px-2 py-1.5 text-center">
+                            {(stats.byEmpDay[d] || {})[e.id] ? fmtH(stats.byEmpDay[d][e.id]) : '—'}
+                          </td>
+                        ))}
+                        <td className="border border-border px-2 py-1.5 text-center font-bold">{fmtH(cur)}</td>
+                        <td className="border border-border px-2 py-1.5 text-center text-muted-foreground">
+                          {hasPrev ? fmtH(prev) : '—'}
+                        </td>
+                        <td
+                          className={cn(
+                            'border border-border px-2 py-1.5 text-center',
+                            diff > 0 ? 'text-success' : diff < 0 ? 'text-destructive' : 'text-muted-foreground'
+                          )}
+                        >
+                          {hasPrev ? fmtDelta(diff) : '—'}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </CardContent>
+          </Card>
+
+          {/* staffing needs + note */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm">{t.needs}</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+                {roles
+                  .filter((r) => !r.is_off)
+                  .map((r) => (
+                    <div key={r.id} className="rounded-lg border border-border p-3">
+                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                        <span className="h-2.5 w-2.5 rounded-sm" style={{ background: r.color }} />
+                        <span className="truncate">{r.name}</span>
+                      </div>
+                      <div className="text-xl font-bold">{fmtH(stats.byRole[r.id] || 0)}</div>
+                      <div className="text-[11px] text-muted-foreground">
+                        {t.upTo(stats.peak[r.id] || 0)}
+                        {hasPrev
+                          ? ` · ${fmtDelta((stats.byRole[r.id] || 0) - (prevStats.byRole[r.id] || 0))}`
+                          : ''}
+                      </div>
+                    </div>
+                  ))}
               </div>
-            );
-          })}
-        </div>
-      </CardContent>
-    </Card>
+              <Textarea
+                value={noteDraft}
+                onChange={(e) => setNoteDraft(e.target.value)}
+                onBlur={() => {
+                  if (noteDraft !== noteForWeek) saveNote.mutate({ weekStart, note: noteDraft });
+                }}
+                disabled={!canManageShifts}
+                placeholder={t.notePlaceholder}
+                className="min-h-[80px]"
+              />
+            </CardContent>
+          </Card>
+        </>
+      )}
+    </div>
   );
 }
