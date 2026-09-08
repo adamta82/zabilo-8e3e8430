@@ -78,7 +78,7 @@ export default function ShiftScheduler() {
   const [share, setShare] = useState(false);
   const [editingSlots, setEditingSlots] = useState(false);
   const [managingRoles, setManagingRoles] = useState(false);
-  const [brush, setBrush] = useState<string | null>(null);
+  const [brush, setBrush] = useState<string | null | undefined>(undefined);
   const [summaryEmp, setSummaryEmp] = useState<{ id: string; name: string } | null>(null);
   const dragging = useRef(false);
 
@@ -117,7 +117,9 @@ export default function ShiftScheduler() {
   );
 
   useEffect(() => {
-    if (!brush && roles.length) setBrush(roles.find((r) => !r.is_off)?.id ?? roles[0].id);
+    if (brush === undefined && roles.length) {
+      setBrush(roles.find((r) => !r.is_off)?.id ?? roles[0].id);
+    }
   }, [roles, brush]);
 
   useEffect(() => {
@@ -169,7 +171,7 @@ export default function ShiftScheduler() {
     (employeeId: string, slotId: string) => {
       if (!canManageShifts || editingSlots) return;
       const existing = grid[currentDate]?.[employeeId]?.[slotId];
-      const next = brush;
+      const next = brush ?? null;
       if (existing === next) return;
       actions.setCell(currentDate, employeeId, slotId, next);
     },
