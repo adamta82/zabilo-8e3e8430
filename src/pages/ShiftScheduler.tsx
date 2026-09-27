@@ -502,27 +502,34 @@ export default function ShiftScheduler() {
             <Card>
               <CardContent className="flex flex-wrap items-center gap-2 p-3">
                 <span className="text-xs text-muted-foreground">{t.brush}</span>
-                {roles.map((r) => (
-                  <button
-                    key={r.id}
-                    onClick={() => setBrush(r.id)}
-                    style={{ background: r.color, color: textOn(r.color) }}
-                    className={cn(
-                      'rounded-md border-2 px-2.5 py-1.5 text-xs font-medium transition-transform',
-                      brush === r.id ? 'border-foreground' : 'border-transparent'
-                    )}
-                  >
-                    {r.is_custom && customLabel.trim() ? customLabel.trim() : r.name}
-                  </button>
-                ))}
-                {roleById.get(brush ?? '')?.is_custom && (
-                  <Input
-                    value={customLabel}
-                    onChange={(ev) => setCustomLabel(ev.target.value)}
-                    placeholder="תווית זמנית (למשל: ספירת מלאי)"
-                    className="h-8 w-48 text-xs"
-                    maxLength={40}
-                  />
+                {roles.map((r) =>
+                  r.is_custom && brush === r.id ? (
+                    <Input
+                      key={r.id}
+                      autoFocus
+                      value={customLabel}
+                      onChange={(ev) => setCustomLabel(ev.target.value)}
+                      onKeyDown={(ev) => {
+                        if (ev.key === 'Enter' || ev.key === 'Escape') (ev.target as HTMLInputElement).blur();
+                      }}
+                      placeholder="תווית זמנית (למשל: ספירת מלאי)"
+                      maxLength={40}
+                      style={{ background: r.color, color: textOn(r.color), borderWidth: 2, borderColor: 'hsl(var(--foreground))' }}
+                      className="h-8 w-44 rounded-md text-xs placeholder:text-muted-foreground/70"
+                    />
+                  ) : (
+                    <button
+                      key={r.id}
+                      onClick={() => setBrush(r.id)}
+                      style={{ background: r.color, color: textOn(r.color) }}
+                      className={cn(
+                        'rounded-md border-2 px-2.5 py-1.5 text-xs font-medium transition-transform',
+                        brush === r.id ? 'border-foreground' : 'border-transparent'
+                      )}
+                    >
+                      {r.is_custom && customLabel.trim() ? customLabel.trim() : r.name}
+                    </button>
+                  )
                 )}
                 <button
                   onClick={() => setBrush(null)}
