@@ -511,7 +511,12 @@ export default function ShiftScheduler() {
                       onClick={(e) => e.stopPropagation()}
                     >
                       <Switch
-                        className="h-4 w-7 [&>span]:h-3 [&>span]:w-3 [&>span]:data-[state=checked]:translate-x-3 rtl:[&>span]:data-[state=checked]:-translate-x-3"
+                        className={cn(
+                          'h-4 w-7 border border-transparent [&>span]:h-3 [&>span]:w-3 [&>span]:shadow-none [&>span]:data-[state=unchecked]:!translate-x-0 [&>span]:data-[state=checked]:!translate-x-3 rtl:[&>span]:data-[state=checked]:!-translate-x-3',
+                          isActive
+                            ? 'data-[state=checked]:bg-primary-foreground data-[state=unchecked]:bg-primary-foreground/30 [&>span]:data-[state=checked]:bg-primary [&>span]:data-[state=unchecked]:bg-primary-foreground'
+                            : 'data-[state=checked]:bg-primary data-[state=unchecked]:bg-input'
+                        )}
                         checked={lockedDays.has(dates[i])}
                         onCheckedChange={(v) => toggleLock.mutate({ day: dates[i], lock: v })}
                       />
