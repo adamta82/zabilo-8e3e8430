@@ -34,15 +34,55 @@ export function useShifts(startDate?: string, endDate?: string) {
       if (startDate) query = query.gte('date', startDate);
       if (endDate) query = query.lte('date', endDate);
 
-      const { data: shifts, error } = await query;
+      const { data: rawShifts, error } = await query;
       if (error) throw error;
-      if (!shifts || shifts.length === 0) return [];
+
+      // Planner shifts from locked days
+      let lq = supabase.from('shift_day_locks').select('day');
+      if (startDate) lq = lq.gte('day', startDate);
+      if (endDate) lq = lq.lte('day', endDate);
+      const { data: locks } = await lq;
+      const lockedDays = (locks || []).map((l) => l.day as string);
+      const plannerShifts: Shift[] = [];
+      if (lockedDays.length) {
+        const [{ data: cells }, { data: slots }, { data: roles }] = await Promise.all([
+          supabase.from('shift_cells').select('date, employee_id, slot_id, role_id').in('date', lockedDays),
+          supabase.from('shift_slots').select('id, start_time, end_time, sort_order').order('sort_order'),
+          supabase.from('shift_roles').select('id, is_off'),
+        ]);
+        const working = new Set((roles || []).filter((r) => !r.is_off).map((r) => r.id));
+        const byKey = new Map<string, Set<string>>();
+        (cells || []).forEach((c) => {
+          if (!working.has(c.role_id)) return;
+          const k = `${c.date}|${c.employee_id}`;
+          if (!byKey.has(k)) byKey.set(k, new Set());
+          byKey.get(k)!.add(c.slot_id);
+        });
+        byKey.forEach((slotIds, k) => {
+          const [date, employee_id] = k.split('|');
+          let cur: Shift | null = null;
+          (slots || []).forEach((sl) => {
+            if (slotIds.has(sl.id)) {
+              if (cur && cur.end_time === sl.start_time) cur.end_time = sl.end_time;
+              else {
+                if (cur) plannerShifts.push(cur);
+                cur = { id: `planner-${k}-${sl.id}`, employee_id, date, start_time: sl.start_time, end_time: sl.end_time, created_at: '', updated_at: '' };
+              }
+            }
+          });
+          if (cur) plannerShifts.push(cur);
+        });
+      }
+      const shifts = [...(rawShifts || []), ...plannerShifts].sort((a, b) =>
+        a.date === b.date ? a.start_time.localeCompare(b.start_time) : a.date.localeCompare(b.date)
+      );
+      if (shifts.length === 0) return [];
 
       // Fetch profiles for employees
       const empIds = [...new Set(shifts.map(s => s.employee_id))];
       const { data: profiles } = await supabase
         .from('profiles')
-        .select('id, full_name, department_id, avatar_url')
+        .select('id, user_id, full_name, department_id, avatar_url')
         .in('id', empIds);
 
       const profileMap = new Map(profiles?.map(p => [p.id, p]) || []);
