@@ -13,6 +13,7 @@ import {
   Sliders,
   Trash2,
   X,
+  Lock,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -248,6 +249,10 @@ export default function ShiftScheduler() {
   };
 
   const duplicatePrevWeek = async () => {
+    if (dates.some((d) => lockedDays.has(d))) {
+      toast({ title: 'יש בשבוע ימים נעולים', description: 'בטלו את הנעילה לפני שכפול השבוע', variant: 'destructive' });
+      return;
+    }
     const ok = await actions.duplicateWeek(prevDates, dates);
     toast({ title: ok ? t.duplicated : t.noPrevWeek });
   };
