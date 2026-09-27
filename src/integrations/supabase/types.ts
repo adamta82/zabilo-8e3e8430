@@ -881,6 +881,7 @@ export type Database = {
           date: string
           id: string
           note: string | null
+          slots: Json
           status: string
           updated_at: string
           user_id: string
@@ -890,6 +891,7 @@ export type Database = {
           date: string
           id?: string
           note?: string | null
+          slots?: Json
           status: string
           updated_at?: string
           user_id: string
@@ -899,6 +901,7 @@ export type Database = {
           date?: string
           id?: string
           note?: string | null
+          slots?: Json
           status?: string
           updated_at?: string
           user_id?: string
