@@ -1,23 +1,54 @@
 import { useState } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { useShiftSlots, useShiftAvailability } from '@/hooks/useShiftPlanner';
+import { useShiftSlots } from '@/hooks/useShiftPlanner';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
-import { parseLocalDate, nextSunday, shortDate } from '@/lib/shift-planner';
+import { parseLocalDate, shortDate } from '@/lib/shift-planner';
+
+export interface AvailabilityRow {
+  user_id: string;
+  date: string;
+  status: string;
+  note: string | null;
+  slots: string[];
+}
+
+export function useAvailability(start: string, end: string) {
+  return useQuery({
+    queryKey: ['shift_availability', start, end],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('shift_availability')
+        .select('user_id, date, status, note, slots')
+        .gte('date', start)
+        .lte('date', end);
+      if (error) throw error;
+      return (data ?? []).map((r) => ({ ...(r as AvailabilityRow), slots: (r.slots as string[]) ?? [] }));
+    },
+  });
+}
+
+const isoDate = (d: Date) =>
+  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 
 export function AvailabilityCard() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const { data: slots = [] } = useShiftSlots();
-  const { data: availability = [] } = useShiftAvailability();
+
+  const weekStart = new Date();
+  weekStart.setDate(weekStart.getDate() + ((7 - weekStart.getDay()) % 7 || 7));
+  const start = isoDate(weekStart);
+  const endDate = new Date(weekStart);
+  endDate.setDate(endDate.getDate() + 6);
+  const { data: availability = [] } = useAvailability(start, isoDate(endDate));
+
   const [noteDrafts, setNoteDrafts] = useState<Record<string, string>>({});
   const [savingDay, setSavingDay] = useState<string | null>(null);
 
-  const today = new Date();
-  const weekStart = nextSunday(today);
   const days = Array.from({ length: 7 }, (_, i) => {
     const d = new Date(weekStart);
     d.setDate(d.getDate() + i);
@@ -30,7 +61,7 @@ export function AvailabilityCard() {
     if (!user) return;
     setSavingDay(iso);
     const existing = rowFor(iso);
-    const nextSlots = patch.slots ?? (existing?.slots as string[] | undefined) ?? [];
+    const nextSlots = patch.slots ?? existing?.slots ?? [];
     const status = patch.status ?? (existing?.status as 'available' | 'unavailable' | undefined) ?? 'available';
     const note = patch.note !== undefined ? patch.note : (existing?.note ?? null);
 
@@ -52,34 +83,34 @@ export function AvailabilityCard() {
 
   const toggleSlot = (iso: string, slotId: string) => {
     const row = rowFor(iso);
-    const current = ((row?.slots as string[] | undefined) ?? []);
-    const rowUnavailable = (row?.status as string | undefined) === 'unavailable';
-    let next: string[];
-    if (rowUnavailable) {
-      next = [slotId];
-    } else {
-      next = current.includes(slotId) ? current.filter((s) => s !== slotId) : [...current, slotId];
-    }
+    const current = row?.slots ?? [];
+    const rowUnavailable = row?.status === 'unavailable';
+    const next = rowUnavailable
+      ? [slotId]
+      : current.includes(slotId)
+        ? current.filter((s) => s !== slotId)
+        : [...current, slotId];
     save(iso, { slots: next, status: next.length ? 'available' : undefined });
   };
 
   const dayNames = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];
   const dayName = (d: Date) => dayNames[d.getDay()];
+  const timers: Record<string, ReturnType<typeof setTimeout>> = {};
 
   return (
     <Card>
       <CardHeader className="pb-2">
         <CardTitle className="text-base">הזמינות שלי לשבוע הקרוב</CardTitle>
         <p className="text-xs text-muted-foreground">
-          סמנו את שעות העבודה שבהן תוכלו. ניתן לסמן מספר שעות בכל יום.
+          סמנו את השעות שבהן תוכלו לעבוד. אפשר לסמן כמה שעות בכל יום.
         </p>
       </CardHeader>
       <CardContent className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
         {days.map((d) => {
-          const iso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+          const iso = isoDate(d);
           const row = rowFor(iso);
-          const marked = (row?.slots as string[] | undefined) ?? [];
-          const unavailable = (row?.status as string | undefined) === 'unavailable';
+          const marked = row?.slots ?? [];
+          const unavailable = row?.status === 'unavailable';
           const note = noteDrafts[iso] ?? row?.note ?? '';
           return (
             <div
@@ -87,21 +118,29 @@ export function AvailabilityCard() {
               className={cn(
                 'rounded-lg border p-2 transition-colors',
                 unavailable && 'bg-destructive/5',
-                marked.length > 0 && 'bg-success/5'
+                marked.length > 0 && !unavailable && 'bg-success/5'
               )}
             >
               <div className="mb-1.5 flex items-center justify-between gap-1">
                 <div className="text-sm font-medium">
                   יום {dayName(d)}
-                  <span className="ms-1 text-[10px] text-muted-foreground">{shortDate(parseLocalDate(iso), 'he-IL')}</span>
+                  <span className="ms-1 text-[10px] font-normal text-muted-foreground">
+                    {shortDate(parseLocalDate(iso), 'he-IL')}
+                  </span>
                 </div>
                 <button
                   type="button"
                   className={cn(
                     'rounded px-1.5 py-0.5 text-[10px] font-medium transition-colors',
-                    unavailable ? 'bg-destructive text-destructive-foreground' : 'bg-destructive/10 text-destructive hover:bg-destructive/20'
+                    unavailable
+                      ? 'bg-destructive text-destructive-foreground'
+                      : 'bg-destructive/10 text-destructive hover:bg-destructive/20'
                   )}
-                  onClick={() => save(iso, unavailable ? { status: undefined as never, slots: [] } : { status: 'unavailable', slots: [] })}
+                  onClick={() =>
+                    unavailable
+                      ? save(iso, { slots: [], note: null }) // clearing an "unavailable" day resets it
+                      : save(iso, { status: 'unavailable', slots: [] })
+                  }
                 >
                   {unavailable ? 'לא יכול/ה ✓' : 'לא יכול/ה'}
                 </button>
@@ -119,7 +158,7 @@ export function AvailabilityCard() {
                         'rounded border px-1.5 py-0.5 text-[10px] transition-colors',
                         on
                           ? 'border-success bg-success text-success-foreground'
-                          : 'border-border bg-background text-muted-foreground hover:border-success/50'
+                          : 'border-border bg-background text-muted-foreground hover:border-success/60 hover:text-foreground'
                       )}
                     >
                       {s.start_time.slice(0, 5)}
@@ -130,9 +169,10 @@ export function AvailabilityCard() {
               <Input
                 value={note}
                 onChange={(e) => {
-                  setNoteDrafts((p) => ({ ...p, [iso]: e.target.value }));
-                  clearTimeout((window as unknown as Record<string, ReturnType<typeof setTimeout>>)[`availNote_${iso}`]);
-                  (window as unknown as Record<string, ReturnType<typeof setTimeout>>)[`availNote_${iso}`] = setTimeout(() => save(iso, { note: e.target.value || null }), 600);
+                  const val = e.target.value;
+                  setNoteDrafts((p) => ({ ...p, [iso]: val }));
+                  clearTimeout(timers[iso]);
+                  timers[iso] = setTimeout(() => save(iso, { note: val || null }), 600);
                 }}
                 placeholder="הערה (לא חובה)…"
                 className="mt-1.5 h-7 border-dashed text-[11px]"
