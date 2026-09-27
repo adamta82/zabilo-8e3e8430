@@ -169,9 +169,25 @@ export default function ShiftScheduler() {
   }, [cells]);
   const cellLabel = (date: string, empId: string, slotId: string, roleId: string) =>
     labels.get(`${date}|${empId}|${slotId}`) || roleById.get(roleId)?.name || '';
-  const noteForWeek = weekNotes.find((n) => n.week_start === weekStart)?.note ?? '';
-  const [noteDraft, setNoteDraft] = useState(noteForWeek);
-  useEffect(() => setNoteDraft(noteForWeek), [noteForWeek, weekStart]);
+  // notes are stored per day (keyed by the day's date)
+  const noteForDay = weekNotes.find((n) => n.week_start === currentDate)?.note ?? '';
+  const [noteDraft, setNoteDraft] = useState(noteForDay);
+  const noteTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    if (noteTimer.current) return; // don't clobber while typing
+    setNoteDraft(noteForDay);
+  }, [noteForDay]);
+  useEffect(() => {
+    if (noteTimer.current) {
+      clearTimeout(noteTimer.current);
+      noteTimer.current = null;
+    }
+    setNoteDraft(weekNotes.find((n) => n.week_start === currentDate)?.note ?? '');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentDate]);
+  const { data: availability = [] } = useAvailability(dates[0], dates[6]);
+  const availFor = (userId: string | undefined, date: string) =>
+    availability.find((a) => a.user_id === userId && a.date === date);
 
   /* ---------------- painting ---------------- */
 
@@ -810,11 +826,17 @@ export default function ShiftScheduler() {
                     </div>
                   ))}
               </div>
+              <div className="text-xs font-semibold text-muted-foreground">
+                הערות ל{t.days[dayIndex]} {shortDate(parseLocalDate(currentDate), t.locale)}
+              </div>
               <Textarea
                 value={noteDraft}
-                onChange={(e) => setNoteDraft(e.target.value)}
-                onBlur={() => {
-                  if (noteDraft !== noteForWeek) saveNote.mutate({ weekStart, note: noteDraft });
+                onChange={(e) => {
+                  const v = e.target.value;
+                  setNoteDraft(v);
+                  if (noteTimer.current) clearTimeout(noteTimer.current);
+                  const day = currentDate;
+                  noteTimer.current = setTimeout(() => saveNote.mutate({ weekStart: day, note: v }), 600);
                 }}
                 disabled={!canManageShifts}
                 placeholder={t.notePlaceholder}
