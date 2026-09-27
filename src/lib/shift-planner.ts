@@ -15,6 +15,7 @@ export interface PlannerRole {
   color: string;
   sort_order: number;
   is_off: boolean;
+  is_custom?: boolean;
 }
 
 export interface PlannerCell {
@@ -22,6 +23,7 @@ export interface PlannerCell {
   employee_id: string;
   slot_id: string;
   role_id: string;
+  custom_label?: string | null;
 }
 
 /** grid[date][employeeId][slotId] = roleId */

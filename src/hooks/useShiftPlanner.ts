@@ -11,7 +11,7 @@ export function useShiftRoles() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('shift_roles')
-        .select('id, name, color, sort_order, is_off')
+        .select('id, name, color, sort_order, is_off, is_custom')
         .order('sort_order');
       if (error) throw error;
       return (data || []) as PlannerRole[];
@@ -123,7 +123,7 @@ export function useShiftCells(startDate: string, endDate: string) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('shift_cells')
-        .select('date, employee_id, slot_id, role_id')
+        .select('date, employee_id, slot_id, role_id, custom_label')
         .gte('date', startDate)
         .lte('date', endDate);
       if (error) throw error;
@@ -139,7 +139,7 @@ export function useAllShiftCells(enabled: boolean) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('shift_cells')
-        .select('date, employee_id, slot_id, role_id');
+        .select('date, employee_id, slot_id, role_id, custom_label');
       if (error) throw error;
       return (data || []) as PlannerCell[];
     },
@@ -172,19 +172,19 @@ export function useShiftCellActions(startDate: string, endDate: string) {
   };
 
   /** paint / erase a single cell */
-  const setCell = async (date: string, employeeId: string, slotId: string, roleId: string | null) => {
+  const setCell = async (date: string, employeeId: string, slotId: string, roleId: string | null, customLabel: string | null = null) => {
     patch((cells) => {
       const rest = cells.filter(
         (c) => !(c.date === date && c.employee_id === employeeId && c.slot_id === slotId)
       );
-      return roleId ? [...rest, { date, employee_id: employeeId, slot_id: slotId, role_id: roleId }] : rest;
+      return roleId ? [...rest, { date, employee_id: employeeId, slot_id: slotId, role_id: roleId, custom_label: customLabel }] : rest;
     });
     try {
       if (roleId) {
         const { error } = await supabase
           .from('shift_cells')
           .upsert(
-            { date, employee_id: employeeId, slot_id: slotId, role_id: roleId },
+            { date, employee_id: employeeId, slot_id: slotId, role_id: roleId, custom_label: customLabel },
             { onConflict: 'date,employee_id,slot_id' }
           );
         if (error) throw error;
@@ -260,7 +260,7 @@ export function useShiftCellActions(startDate: string, endDate: string) {
   const duplicateWeek = async (prevDates: string[], dates: string[]) => {
     const { data, error: readError } = await supabase
       .from('shift_cells')
-      .select('date, employee_id, slot_id, role_id')
+      .select('date, employee_id, slot_id, role_id, custom_label')
       .gte('date', prevDates[0])
       .lte('date', prevDates[6]);
     if (readError) {
