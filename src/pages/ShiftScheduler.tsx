@@ -27,6 +27,7 @@ import { PlannerHistory } from '@/components/shifts/planner/PlannerHistory';
 import { EmployeeWeekShiftsDialog } from '@/components/shifts/EmployeeWeekShiftsDialog';
 import { useWfhDates } from '@/hooks/useWfhDates';
 import { AvailabilityCard, useAvailability } from '@/components/shifts/planner/AvailabilityCard';
+import { availabilityRanges } from '@/lib/shift-planner';
 
 import {
   useShiftRoles,
@@ -635,6 +636,9 @@ export default function ShiftScheduler() {
                         {(() => {
                           const a = availFor((e as { user_id?: string }).user_id, currentDate);
                           if (!a) return null;
+                          const rangeText = a.status === 'available'
+                            ? availabilityRanges(a.slots, slots)
+                            : '';
                           return (
                             <div
                               title={a.note ?? undefined}
@@ -643,7 +647,9 @@ export default function ShiftScheduler() {
                                 a.status === "available" ? "bg-success/15 text-success" : "bg-destructive/15 text-destructive"
                               )}
                             >
-                              {a.status === "available" ? "רוצה" : "לא יכול"}{a.note ? " *" : ""}
+                              {a.status === "available"
+                                ? `רוצה${rangeText ? ` ${rangeText}` : ''}`
+                                : "לא יכול"}{a.note ? " *" : ""}
                             </div>
                           );
                         })()}
