@@ -4,3 +4,5 @@
 - [x] Custom temporary role in shift planner
 - [x] Employee weekly availability (want to work / cannot) for next week
 - [x] Planner notes per day (persist when switching days)
+
+- [ ] Shifts: hide assignment controls from employees without can_manage_shifts (Adam Tuyailee sees scheduler tools)
