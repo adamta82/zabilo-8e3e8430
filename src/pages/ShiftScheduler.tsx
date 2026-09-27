@@ -1,3 +1,5 @@
+import { Switch } from '@/components/ui/switch';
+import { useShiftDayLocks, useToggleShiftDayLock } from '@/hooks/useShiftPlanner';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ChevronLeft,
@@ -97,6 +99,10 @@ export default function ShiftScheduler() {
     [prevWeekStart]
   );
   const currentDate = dates[dayIndex];
+  const { data: lockedDays = new Set<string>() } = useShiftDayLocks();
+  const toggleLock = useToggleShiftDayLock();
+  const dayLocked = lockedDays.has(currentDate);
+  const canEdit = canManageShifts && !dayLocked;
 
   const { data: roles = [], isLoading: rolesLoading } = useShiftRoles();
   const { data: slots = [], isLoading: slotsLoading } = useShiftSlots();
@@ -214,7 +220,7 @@ export default function ShiftScheduler() {
 
   const paint = useCallback(
     (employeeId: string, slotId: string) => {
-      if (!canManageShifts || editingSlots) return;
+      if (!canEdit || editingSlots) return;
       const existing = grid[currentDate]?.[employeeId]?.[slotId];
       const next = brush ?? null;
       const label = next && roleById.get(next)?.is_custom ? customLabel.trim() || null : null;
@@ -222,11 +228,11 @@ export default function ShiftScheduler() {
       if (existing === next && existingLabel === label) return;
       actions.setCell(currentDate, employeeId, slotId, next, label);
     },
-    [actions, brush, canManageShifts, currentDate, editingSlots, grid, roleById, customLabel, labels]
+    [actions, brush, canEdit, currentDate, editingSlots, grid, roleById, customLabel, labels]
   );
 
   const onPointerMove = (e: React.PointerEvent) => {
-    if (!dragging.current || editingSlots || !canManageShifts) return;
+    if (!dragging.current || editingSlots || !canEdit) return;
     const el = document.elementFromPoint(e.clientX, e.clientY) as HTMLElement | null;
     const emp = el?.dataset?.emp;
     const slot = el?.dataset?.slot;
@@ -475,11 +481,14 @@ export default function ShiftScheduler() {
               const h = stats.dayTotals[dates[i]] || 0;
               const isActive = dayIndex === i;
               return (
-                <button
+                <div
                   key={d}
+                  role="button"
+                  tabIndex={0}
                   onClick={() => setDayIndex(i)}
+                  onKeyDown={(e) => e.key === 'Enter' && setDayIndex(i)}
                   className={cn(
-                    'min-w-[92px] rounded-lg border px-3 py-2 text-start transition-colors',
+                    'min-w-[104px] cursor-pointer rounded-lg border px-3 py-2 text-start transition-colors',
                     isActive
                       ? 'border-primary bg-primary text-primary-foreground'
                       : 'border-border bg-card hover:bg-accent'
@@ -491,13 +500,34 @@ export default function ShiftScheduler() {
                   <div className={cn('text-[11px]', isActive ? 'opacity-80' : 'text-muted-foreground')}>
                     {h ? fmtH(h) : t.empty}
                   </div>
-                </button>
+                  {canManageShifts ? (
+                    <div
+                      className="mt-1 flex items-center gap-1 text-[10px]"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <Switch
+                        className="h-4 w-7 [&>span]:h-3 [&>span]:w-3 [&>span]:data-[state=checked]:translate-x-3 rtl:[&>span]:data-[state=checked]:-translate-x-3"
+                        checked={lockedDays.has(dates[i])}
+                        onCheckedChange={(v) => toggleLock.mutate({ day: dates[i], lock: v })}
+                      />
+                      {lockedDays.has(dates[i]) ? <><Lock className="h-3 w-3" /> נעול</> : 'פתוח'}
+                    </div>
+                  ) : lockedDays.has(dates[i]) ? (
+                    <div className="mt-1 flex items-center gap-1 text-[10px]"><Lock className="h-3 w-3" /> נעול</div>
+                  ) : null}
+                </div>
               );
             })}
           </div>
 
+          {canManageShifts && dayLocked && (
+            <div className="flex items-center gap-2 rounded-lg border border-warning/40 bg-warning/10 px-3 py-2 text-sm">
+              <Lock className="h-4 w-4" />
+              היום נעול לעריכה — כדי לשנות, בטלו את הנעילה בכרטיס היום.
+            </div>
+          )}
           {/* toolbar */}
-          {canManageShifts ? (
+          {canEdit ? (
             <Card>
               <CardContent className="flex flex-wrap items-center gap-2 p-3">
                 <span className="text-xs text-muted-foreground">{t.brush}</span>
@@ -624,10 +654,10 @@ export default function ShiftScheduler() {
                       >
                         <button
                           type="button"
-                          title={canManageShifts ? t.fillCol : undefined}
-                          className={cn('w-full truncate', canManageShifts && 'cursor-pointer hover:text-primary')}
+                          title={canEdit ? t.fillCol : undefined}
+                          className={cn('w-full truncate', canEdit && 'cursor-pointer hover:text-primary')}
                           onClick={() =>
-                            canManageShifts &&
+                            canEdit &&
                             !editingSlots &&
                             actions.fillColumn(
                               currentDate,
@@ -728,14 +758,14 @@ export default function ShiftScheduler() {
                             data-emp={e.id}
                             data-slot={slot.id}
                             onPointerDown={(ev) => {
-                              if (!canManageShifts || editingSlots) return;
+                              if (!canEdit || editingSlots) return;
                               ev.preventDefault();
                               dragging.current = true;
                               paint(e.id, slot.id);
                             }}
                             className={cn(
                               'select-none border border-border px-1 py-1.5 text-center text-[11px]',
-                              canManageShifts && !editingSlots ? 'cursor-pointer' : 'cursor-default',
+                              canEdit && !editingSlots ? 'cursor-pointer' : 'cursor-default',
                               editingSlots && 'opacity-60'
                             )}
                             style={{ ...cellStyle(roleId), touchAction: 'none' }}
@@ -799,7 +829,7 @@ export default function ShiftScheduler() {
                     saveDayNote.mutate({ day, note: v });
                   }, 600);
                 }}
-                disabled={!canManageShifts}
+                disabled={!canEdit}
                 placeholder={t.dayNotePlaceholder}
                 className="min-h-[60px]"
               />
