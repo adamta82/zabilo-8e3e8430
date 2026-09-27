@@ -256,6 +256,9 @@ export interface PlannerStrings {
   needs: string;
   upTo: (n: number) => string;
   notePlaceholder: string;
+  weekNotes: string;
+  dayNotesLabel: (d: string, date: string) => string;
+  dayNotePlaceholder: string;
   hoursPerWeek: string;
   weeksSaved: (n: number) => string;
   perMonth: string;

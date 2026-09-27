@@ -323,3 +323,34 @@ export function useSaveShiftWeekNote() {
     onError: (e: Error) => toast({ title: 'שגיאה בשמירת ההערה', description: e.message, variant: 'destructive' }),
   });
 }
+
+/* ---------------- daily notes ---------------- */
+
+export function useShiftDayNotes() {
+  return useQuery({
+    queryKey: ['shift_day_notes'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('shift_day_notes')
+        .select('day, note')
+        .order('day');
+      if (error) throw error;
+      return (data || []) as { day: string; note: string }[];
+    },
+  });
+}
+
+export function useSaveShiftDayNote() {
+  const qc = useQueryClient();
+  const { toast } = useToast();
+  return useMutation({
+    mutationFn: async ({ day, note }: { day: string; note: string }) => {
+      const { error } = await supabase
+        .from('shift_day_notes')
+        .upsert({ day, note }, { onConflict: 'day' });
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['shift_day_notes'] }),
+    onError: (e: Error) => toast({ title: 'שגיאה בשמירת ההערה', description: e.message, variant: 'destructive' }),
+  });
+}
