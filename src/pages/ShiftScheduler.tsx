@@ -26,6 +26,7 @@ import { RoleManager } from '@/components/shifts/planner/RoleManager';
 import { PlannerHistory } from '@/components/shifts/planner/PlannerHistory';
 import { EmployeeWeekShiftsDialog } from '@/components/shifts/EmployeeWeekShiftsDialog';
 import { useWfhDates } from '@/hooks/useWfhDates';
+import { AvailabilityCard, useAvailability } from '@/components/shifts/planner/AvailabilityCard';
 
 import {
   useShiftRoles,
@@ -292,6 +293,7 @@ export default function ShiftScheduler() {
     const shown = active.length ? active : employees;
     return (
       <div className="space-y-4" dir={t.rtl ? 'rtl' : 'ltr'}>
+      <AvailabilityCard />
         <div className="flex flex-wrap items-center gap-2">
           <Button variant="outline" size="sm" onClick={() => setShare(false)}>
             {t.backToEdit}
@@ -611,6 +613,21 @@ export default function ShiftScheduler() {
                         >
                           {e.full_name.split(' ')[0]}
                         </button>
+                        {(() => {
+                          const a = availFor((e as { user_id?: string }).user_id, currentDate);
+                          if (!a) return null;
+                          return (
+                            <div
+                              title={a.note ?? undefined}
+                              className={cn(
+                                "mt-0.5 rounded px-1 text-[10px] font-normal",
+                                a.status === "available" ? "bg-success/15 text-success" : "bg-destructive/15 text-destructive"
+                              )}
+                            >
+                              {a.status === "available" ? "רוצה" : "לא יכול"}{a.note ? " *" : ""}
+                            </div>
+                          );
+                        })()}
                       </th>
                     ))}
                   </tr>
@@ -836,7 +853,10 @@ export default function ShiftScheduler() {
                   setNoteDraft(v);
                   if (noteTimer.current) clearTimeout(noteTimer.current);
                   const day = currentDate;
-                  noteTimer.current = setTimeout(() => saveNote.mutate({ weekStart: day, note: v }), 600);
+                  noteTimer.current = setTimeout(() => {
+                    noteTimer.current = null;
+                    saveNote.mutate({ weekStart: day, note: v });
+                  }, 600);
                 }}
                 disabled={!canManageShifts}
                 placeholder={t.notePlaceholder}
