@@ -878,6 +878,7 @@ export type Database = {
       shift_cells: {
         Row: {
           created_at: string
+          custom_label: string | null
           date: string
           employee_id: string
           id: string
@@ -887,6 +888,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          custom_label?: string | null
           date: string
           employee_id: string
           id?: string
@@ -896,6 +898,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          custom_label?: string | null
           date?: string
           employee_id?: string
           id?: string
@@ -932,6 +935,7 @@ export type Database = {
           color: string
           created_at: string
           id: string
+          is_custom: boolean
           is_off: boolean
           name: string
           sort_order: number
@@ -941,6 +945,7 @@ export type Database = {
           color?: string
           created_at?: string
           id?: string
+          is_custom?: boolean
           is_off?: boolean
           name: string
           sort_order?: number
@@ -950,6 +955,7 @@ export type Database = {
           color?: string
           created_at?: string
           id?: string
+          is_custom?: boolean
           is_off?: boolean
           name?: string
           sort_order?: number
