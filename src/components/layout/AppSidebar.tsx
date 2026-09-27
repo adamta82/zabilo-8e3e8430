@@ -1,9 +1,6 @@
+import { Link, useLocation } from 'react-router-dom';
 import {
   CalendarCheck,
-  Link,
-  useLocation,
-} from 'react-router-dom';
-import {
   CalendarDays,
   FileText,
   Users,
