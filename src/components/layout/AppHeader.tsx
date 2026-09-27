@@ -13,6 +13,7 @@ const pageTitles: Record<string, string> = {
   '/settings': 'הגדרות',
   '/automations': 'אוטומציות',
   '/shifts': 'שיבוץ משמרות',
+  '/availability': 'הזמינות שלי',
   '/org-chart': 'מבנה ארגוני',
   '/my-area': 'האזור שלי',
 };

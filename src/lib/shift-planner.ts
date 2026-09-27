@@ -90,6 +90,30 @@ export function shortDate(d: Date, locale: string): string {
   return d.toLocaleDateString(locale, { day: '2-digit', month: '2-digit' });
 }
 
+export function availabilityRanges(
+  slotIds: string[] | null | undefined,
+  slots: { id: string; start_time: string; end_time: string }[]
+): string {
+  if (!slotIds?.length) return '';
+  const marked = slots
+    .filter((s) => slotIds.includes(s.id))
+    .sort((a, b) => a.start_time.localeCompare(b.start_time));
+  const ranges: string[] = [];
+  let rangeStart = '';
+  let rangeEnd = '';
+  for (const s of marked) {
+    if (rangeStart && rangeEnd === s.start_time) {
+      rangeEnd = s.end_time;
+      ranges[ranges.length - 1] = `${rangeStart.slice(0, 5)}–${rangeEnd.slice(0, 5)}`;
+    } else {
+      rangeStart = s.start_time;
+      rangeEnd = s.end_time;
+      ranges.push(`${rangeStart.slice(0, 5)}–${rangeEnd.slice(0, 5)}`);
+    }
+  }
+  return ranges.join(', ');
+}
+
 export function monthKeyOf(iso: string): string {
   return iso.slice(0, 7);
 }

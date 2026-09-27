@@ -15,6 +15,7 @@ import Employees from "./pages/Employees";
 import Departments from "./pages/Departments";
 import Settings from "./pages/Settings";
 import ShiftScheduler from "./pages/ShiftScheduler";
+import MyAvailability from "./pages/MyAvailability";
 import OrgChart from "./pages/OrgChart";
 import MyArea from "./pages/MyArea";
 import KnowledgeHub from "./pages/KnowledgeHub";
@@ -179,6 +180,16 @@ function AppRoutes() {
           <ProtectedRoute requireShiftManager>
             <AppLayout>
               <ShiftScheduler />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/availability"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <MyAvailability />
             </AppLayout>
           </ProtectedRoute>
         }
