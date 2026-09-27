@@ -40,6 +40,8 @@ import {
   useDeleteShiftSlot,
   useShiftWeekNotes,
   useSaveShiftWeekNote,
+  useShiftDayNotes,
+  useSaveShiftDayNote,
 } from '@/hooks/useShiftPlanner';
 import {
   PLANNER_LANG_BUTTONS,
@@ -102,6 +104,7 @@ export default function ShiftScheduler() {
   const { data: allCells = [] } = useAllShiftCells(view === 'history');
   const { data: employeesData, isLoading: employeesLoading } = useEmployees();
   const { data: weekNotes = [] } = useShiftWeekNotes();
+  const { data: dayNotes = [] } = useShiftDayNotes();
   const { data: wfhDates } = useWfhDates(dates[0], dates[6]);
 
 
@@ -111,6 +114,7 @@ export default function ShiftScheduler() {
   const saveSlot = useSaveShiftSlot();
   const deleteSlot = useDeleteShiftSlot();
   const saveNote = useSaveShiftWeekNote();
+  const saveDayNote = useSaveShiftDayNote();
 
   const employees = useMemo(
     () => (employeesData || []).filter((e) => e.show_in_shifts !== false),
@@ -170,20 +174,35 @@ export default function ShiftScheduler() {
   }, [cells]);
   const cellLabel = (date: string, empId: string, slotId: string, roleId: string) =>
     labels.get(`${date}|${empId}|${slotId}`) || roleById.get(roleId)?.name || '';
-  // notes are stored per day (keyed by the day's date)
-  const noteForDay = weekNotes.find((n) => n.week_start === currentDate)?.note ?? '';
-  const [noteDraft, setNoteDraft] = useState(noteForDay);
-  const noteTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // weekly notes keyed by week start; daily notes keyed by date
+  const weekNoteFor = weekNotes.find((n) => n.week_start === dates[0])?.note ?? '';
+  const dayNoteFor = dayNotes.find((n) => n.day === currentDate)?.note ?? '';
+  const [weekNoteDraft, setWeekNoteDraft] = useState(weekNoteFor);
+  const [dayNoteDraft, setDayNoteDraft] = useState(dayNoteFor);
+  const weekNoteTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const dayNoteTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
-    if (noteTimer.current) return; // don't clobber while typing
-    setNoteDraft(noteForDay);
-  }, [noteForDay]);
+    if (weekNoteTimer.current) return; // don't clobber while typing
+    setWeekNoteDraft(weekNoteFor);
+  }, [weekNoteFor]);
   useEffect(() => {
-    if (noteTimer.current) {
-      clearTimeout(noteTimer.current);
-      noteTimer.current = null;
+    if (weekNoteTimer.current) {
+      clearTimeout(weekNoteTimer.current);
+      weekNoteTimer.current = null;
     }
-    setNoteDraft(weekNotes.find((n) => n.week_start === currentDate)?.note ?? '');
+    setWeekNoteDraft(weekNotes.find((n) => n.week_start === dates[0])?.note ?? '');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dates[0]]);
+  useEffect(() => {
+    if (dayNoteTimer.current) return; // don't clobber while typing
+    setDayNoteDraft(dayNoteFor);
+  }, [dayNoteFor]);
+  useEffect(() => {
+    if (dayNoteTimer.current) {
+      clearTimeout(dayNoteTimer.current);
+      dayNoteTimer.current = null;
+    }
+    setDayNoteDraft(dayNotes.find((n) => n.day === currentDate)?.note ?? '');
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentDate]);
   const { data: availability = [] } = useAvailability(dates[0], dates[6]);
@@ -750,6 +769,31 @@ export default function ShiftScheduler() {
             </Card>
           )}
 
+          {/* daily notes */}
+          <Card>
+            <CardContent className="space-y-2 pt-5">
+              <div className="text-xs font-semibold text-muted-foreground">
+                {t.dayNotesLabel(t.days[dayIndex], shortDate(parseLocalDate(currentDate), t.locale))}
+              </div>
+              <Textarea
+                value={dayNoteDraft}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  setDayNoteDraft(v);
+                  if (dayNoteTimer.current) clearTimeout(dayNoteTimer.current);
+                  const day = currentDate;
+                  dayNoteTimer.current = setTimeout(() => {
+                    dayNoteTimer.current = null;
+                    saveDayNote.mutate({ day, note: v });
+                  }, 600);
+                }}
+                disabled={!canManageShifts}
+                placeholder={t.dayNotePlaceholder}
+                className="min-h-[60px]"
+              />
+            </CardContent>
+          </Card>
+
           {/* week summary */}
           <Card>
             <CardHeader className="flex-row flex-wrap items-baseline justify-between gap-2 pb-3">
@@ -843,19 +887,16 @@ export default function ShiftScheduler() {
                     </div>
                   ))}
               </div>
-              <div className="text-xs font-semibold text-muted-foreground">
-                הערות ל{t.days[dayIndex]} {shortDate(parseLocalDate(currentDate), t.locale)}
-              </div>
+              <div className="text-xs font-semibold text-muted-foreground">{t.weekNotes}</div>
               <Textarea
-                value={noteDraft}
+                value={weekNoteDraft}
                 onChange={(e) => {
                   const v = e.target.value;
-                  setNoteDraft(v);
-                  if (noteTimer.current) clearTimeout(noteTimer.current);
-                  const day = currentDate;
-                  noteTimer.current = setTimeout(() => {
-                    noteTimer.current = null;
-                    saveNote.mutate({ weekStart: day, note: v });
+                  setWeekNoteDraft(v);
+                  if (weekNoteTimer.current) clearTimeout(weekNoteTimer.current);
+                  weekNoteTimer.current = setTimeout(() => {
+                    weekNoteTimer.current = null;
+                    saveNote.mutate({ weekStart: dates[0], note: v });
                   }, 600);
                 }}
                 disabled={!canManageShifts}
