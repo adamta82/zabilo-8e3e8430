@@ -1,4 +1,8 @@
-import { Link, useLocation } from 'react-router-dom';
+import {
+  CalendarCheck,
+  Link,
+  useLocation,
+} from 'react-router-dom';
 import {
   CalendarDays,
   FileText,
@@ -40,6 +44,7 @@ const mainMenuItems = [
   { title: 'לוח שנה', url: '/dashboard', icon: CalendarDays },
   ...(ATTENDANCE_ENABLED ? [{ title: 'נוכחות ושעות', url: '/attendance', icon: Timer }] : []),
   { title: 'הבקשות שלי', url: '/requests', icon: FileText },
+  { title: 'הזמינות שלי', url: '/availability', icon: CalendarCheck },
   { title: 'מבנה ארגוני', url: '/org-chart', icon: Network },
   { title: 'האזור שלי', url: '/my-area', icon: UserCircle },
 ];
@@ -112,7 +117,7 @@ export function AppSidebar() {
             <SidebarGroupLabel>ניהול</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
-                {adminMenuItems.map((item) => (
+                {adminMenuItems.filter((i) => i.url !== '/shifts' || canManageShifts).map((item) => (
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton asChild isActive={location.pathname === item.url}>
                       <Link to={item.url} onClick={handleNavClick}>

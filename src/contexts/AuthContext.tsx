@@ -148,7 +148,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     profile,
     role,
     isAdmin: role === 'admin',
-    canManageShifts: role === 'admin' || (profile as any)?.can_manage_shifts === true,
+    canManageShifts: (profile as any)?.can_manage_shifts === true,
     isLoading,
     signIn,
     signUp,
