@@ -26,7 +26,7 @@ import { RoleManager } from '@/components/shifts/planner/RoleManager';
 import { PlannerHistory } from '@/components/shifts/planner/PlannerHistory';
 import { EmployeeWeekShiftsDialog } from '@/components/shifts/EmployeeWeekShiftsDialog';
 import { useWfhDates } from '@/hooks/useWfhDates';
-import { AvailabilityCard, useAvailability } from '@/components/shifts/planner/AvailabilityCard';
+import { useAvailability } from '@/components/shifts/planner/AvailabilityCard';
 import { availabilityRanges } from '@/lib/shift-planner';
 
 import {
