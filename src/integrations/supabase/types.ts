@@ -963,6 +963,24 @@ export type Database = {
           },
         ]
       }
+      shift_day_locks: {
+        Row: {
+          created_at: string
+          day: string
+          locked_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          day: string
+          locked_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          day?: string
+          locked_by?: string | null
+        }
+        Relationships: []
+      }
       shift_day_notes: {
         Row: {
           created_at: string

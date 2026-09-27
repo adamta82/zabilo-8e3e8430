@@ -354,3 +354,38 @@ export function useSaveShiftDayNote() {
     onError: (e: Error) => toast({ title: 'שגיאה בשמירת ההערה', description: e.message, variant: 'destructive' }),
   });
 }
+
+/* ---------------- day locks ---------------- */
+
+export function useShiftDayLocks() {
+  return useQuery({
+    queryKey: ['shift_day_locks'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('shift_day_locks').select('day');
+      if (error) throw error;
+      return new Set((data || []).map((r) => r.day as string));
+    },
+  });
+}
+
+export function useToggleShiftDayLock() {
+  const qc = useQueryClient();
+  const { toast } = useToast();
+  return useMutation({
+    mutationFn: async ({ day, lock }: { day: string; lock: boolean }) => {
+      if (lock) {
+        const { data: u } = await supabase.auth.getUser();
+        const { error } = await supabase.from('shift_day_locks').upsert({ day, locked_by: u.user?.id ?? null });
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from('shift_day_locks').delete().eq('day', day);
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['shift_day_locks'] });
+      qc.invalidateQueries({ queryKey: ['shifts'] });
+    },
+    onError: (e: Error) => toast({ title: 'שגיאה בנעילת היום', description: e.message, variant: 'destructive' }),
+  });
+}
