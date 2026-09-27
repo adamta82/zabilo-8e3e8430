@@ -161,6 +161,14 @@ export default function ShiftScheduler() {
   const hasPrev = prevCells.length > 0;
 
   const roleById = useMemo(() => new Map(roles.map((r) => [r.id, r])), [roles]);
+  const [customLabel, setCustomLabel] = useState('');
+  const labels = useMemo(() => {
+    const m = new Map<string, string>();
+    cells.forEach((c) => c.custom_label && m.set(`${c.date}|${c.employee_id}|${c.slot_id}`, c.custom_label));
+    return m;
+  }, [cells]);
+  const cellLabel = (date: string, empId: string, slotId: string, roleId: string) =>
+    labels.get(`${date}|${empId}|${slotId}`) || roleById.get(roleId)?.name || '';
   const noteForWeek = weekNotes.find((n) => n.week_start === weekStart)?.note ?? '';
   const [noteDraft, setNoteDraft] = useState(noteForWeek);
   useEffect(() => setNoteDraft(noteForWeek), [noteForWeek, weekStart]);
@@ -172,10 +180,12 @@ export default function ShiftScheduler() {
       if (!canManageShifts || editingSlots) return;
       const existing = grid[currentDate]?.[employeeId]?.[slotId];
       const next = brush ?? null;
-      if (existing === next) return;
-      actions.setCell(currentDate, employeeId, slotId, next);
+      const label = next && roleById.get(next)?.is_custom ? customLabel.trim() || null : null;
+      const existingLabel = labels.get(`${currentDate}|${employeeId}|${slotId}`) ?? null;
+      if (existing === next && existingLabel === label) return;
+      actions.setCell(currentDate, employeeId, slotId, next, label);
     },
-    [actions, brush, canManageShifts, currentDate, editingSlots, grid]
+    [actions, brush, canManageShifts, currentDate, editingSlots, grid, roleById, customLabel, labels]
   );
 
   const onPointerMove = (e: React.PointerEvent) => {
@@ -208,7 +218,10 @@ export default function ShiftScheduler() {
       const h = bl.reduce((a, b) => a + b.hours, 0);
       lines.push(
         `${emp.full_name} · ` +
-          bl.map((b) => `${b.start}–${b.end} ${roleById.get(b.roleId)?.name ?? ''}`).join(' + ') +
+          bl.map((b) => {
+            const s = slots.find((x) => x.start_time === b.start);
+            return `${b.start}–${b.end} ${s ? cellLabel(currentDate, emp.id, s.id, b.roleId) : roleById.get(b.roleId)?.name ?? ''}`;
+          }).join(' + ') +
           ` · ${fmtH(h)}`
       );
     });
@@ -461,9 +474,18 @@ export default function ShiftScheduler() {
                       brush === r.id ? 'border-foreground' : 'border-transparent'
                     )}
                   >
-                    {r.name}
+                    {r.is_custom && customLabel.trim() ? customLabel.trim() : r.name}
                   </button>
                 ))}
+                {roleById.get(brush ?? '')?.is_custom && (
+                  <Input
+                    value={customLabel}
+                    onChange={(ev) => setCustomLabel(ev.target.value)}
+                    placeholder="תווית זמנית (למשל: ספירת מלאי)"
+                    className="h-8 w-48 text-xs"
+                    maxLength={40}
+                  />
+                )}
                 <button
                   onClick={() => setBrush(null)}
                   className={cn(
@@ -654,7 +676,7 @@ export default function ShiftScheduler() {
                             )}
                             style={{ ...cellStyle(roleId), touchAction: 'none' }}
                           >
-                            {roleId ? roleById.get(roleId)?.name : ''}
+                            {roleId ? cellLabel(currentDate, e.id, slot.id, roleId) : ''}
                           </td>
                         );
                       })}
