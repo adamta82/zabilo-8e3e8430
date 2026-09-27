@@ -293,7 +293,6 @@ export default function ShiftScheduler() {
     const shown = active.length ? active : employees;
     return (
       <div className="space-y-4" dir={t.rtl ? 'rtl' : 'ltr'}>
-      <AvailabilityCard />
         <div className="flex flex-wrap items-center gap-2">
           <Button variant="outline" size="sm" onClick={() => setShare(false)}>
             {t.backToEdit}
@@ -382,6 +381,7 @@ export default function ShiftScheduler() {
 
   return (
     <div className="space-y-4" dir={t.rtl ? 'rtl' : 'ltr'}>
+      {!canManageShifts && <AvailabilityCard />}
       {/* header */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2">
