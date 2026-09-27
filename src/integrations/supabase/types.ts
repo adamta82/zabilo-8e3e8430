@@ -875,9 +875,40 @@ export type Database = {
         }
         Relationships: []
       }
+      shift_availability: {
+        Row: {
+          created_at: string
+          date: string
+          id: string
+          note: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          date: string
+          id?: string
+          note?: string | null
+          status: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          id?: string
+          note?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       shift_cells: {
         Row: {
           created_at: string
+          custom_label: string | null
           date: string
           employee_id: string
           id: string
@@ -887,6 +918,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          custom_label?: string | null
           date: string
           employee_id: string
           id?: string
@@ -896,6 +928,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          custom_label?: string | null
           date?: string
           employee_id?: string
           id?: string
@@ -932,6 +965,7 @@ export type Database = {
           color: string
           created_at: string
           id: string
+          is_custom: boolean
           is_off: boolean
           name: string
           sort_order: number
@@ -941,6 +975,7 @@ export type Database = {
           color?: string
           created_at?: string
           id?: string
+          is_custom?: boolean
           is_off?: boolean
           name: string
           sort_order?: number
@@ -950,6 +985,7 @@ export type Database = {
           color?: string
           created_at?: string
           id?: string
+          is_custom?: boolean
           is_off?: boolean
           name?: string
           sort_order?: number

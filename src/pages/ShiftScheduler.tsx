@@ -26,6 +26,7 @@ import { RoleManager } from '@/components/shifts/planner/RoleManager';
 import { PlannerHistory } from '@/components/shifts/planner/PlannerHistory';
 import { EmployeeWeekShiftsDialog } from '@/components/shifts/EmployeeWeekShiftsDialog';
 import { useWfhDates } from '@/hooks/useWfhDates';
+import { AvailabilityCard, useAvailability } from '@/components/shifts/planner/AvailabilityCard';
 
 import {
   useShiftRoles,
@@ -161,9 +162,33 @@ export default function ShiftScheduler() {
   const hasPrev = prevCells.length > 0;
 
   const roleById = useMemo(() => new Map(roles.map((r) => [r.id, r])), [roles]);
-  const noteForWeek = weekNotes.find((n) => n.week_start === weekStart)?.note ?? '';
-  const [noteDraft, setNoteDraft] = useState(noteForWeek);
-  useEffect(() => setNoteDraft(noteForWeek), [noteForWeek, weekStart]);
+  const [customLabel, setCustomLabel] = useState('');
+  const labels = useMemo(() => {
+    const m = new Map<string, string>();
+    cells.forEach((c) => c.custom_label && m.set(`${c.date}|${c.employee_id}|${c.slot_id}`, c.custom_label));
+    return m;
+  }, [cells]);
+  const cellLabel = (date: string, empId: string, slotId: string, roleId: string) =>
+    labels.get(`${date}|${empId}|${slotId}`) || roleById.get(roleId)?.name || '';
+  // notes are stored per day (keyed by the day's date)
+  const noteForDay = weekNotes.find((n) => n.week_start === currentDate)?.note ?? '';
+  const [noteDraft, setNoteDraft] = useState(noteForDay);
+  const noteTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    if (noteTimer.current) return; // don't clobber while typing
+    setNoteDraft(noteForDay);
+  }, [noteForDay]);
+  useEffect(() => {
+    if (noteTimer.current) {
+      clearTimeout(noteTimer.current);
+      noteTimer.current = null;
+    }
+    setNoteDraft(weekNotes.find((n) => n.week_start === currentDate)?.note ?? '');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentDate]);
+  const { data: availability = [] } = useAvailability(dates[0], dates[6]);
+  const availFor = (userId: string | undefined, date: string) =>
+    availability.find((a) => a.user_id === userId && a.date === date);
 
   /* ---------------- painting ---------------- */
 
@@ -172,10 +197,12 @@ export default function ShiftScheduler() {
       if (!canManageShifts || editingSlots) return;
       const existing = grid[currentDate]?.[employeeId]?.[slotId];
       const next = brush ?? null;
-      if (existing === next) return;
-      actions.setCell(currentDate, employeeId, slotId, next);
+      const label = next && roleById.get(next)?.is_custom ? customLabel.trim() || null : null;
+      const existingLabel = labels.get(`${currentDate}|${employeeId}|${slotId}`) ?? null;
+      if (existing === next && existingLabel === label) return;
+      actions.setCell(currentDate, employeeId, slotId, next, label);
     },
-    [actions, brush, canManageShifts, currentDate, editingSlots, grid]
+    [actions, brush, canManageShifts, currentDate, editingSlots, grid, roleById, customLabel, labels]
   );
 
   const onPointerMove = (e: React.PointerEvent) => {
@@ -208,7 +235,10 @@ export default function ShiftScheduler() {
       const h = bl.reduce((a, b) => a + b.hours, 0);
       lines.push(
         `${emp.full_name} · ` +
-          bl.map((b) => `${b.start}–${b.end} ${roleById.get(b.roleId)?.name ?? ''}`).join(' + ') +
+          bl.map((b) => {
+            const s = slots.find((x) => x.start_time === b.start);
+            return `${b.start}–${b.end} ${s ? cellLabel(currentDate, emp.id, s.id, b.roleId) : roleById.get(b.roleId)?.name ?? ''}`;
+          }).join(' + ') +
           ` · ${fmtH(h)}`
       );
     });
@@ -351,6 +381,7 @@ export default function ShiftScheduler() {
 
   return (
     <div className="space-y-4" dir={t.rtl ? 'rtl' : 'ltr'}>
+      <AvailabilityCard />
       {/* header */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2">
@@ -461,9 +492,18 @@ export default function ShiftScheduler() {
                       brush === r.id ? 'border-foreground' : 'border-transparent'
                     )}
                   >
-                    {r.name}
+                    {r.is_custom && customLabel.trim() ? customLabel.trim() : r.name}
                   </button>
                 ))}
+                {roleById.get(brush ?? '')?.is_custom && (
+                  <Input
+                    value={customLabel}
+                    onChange={(ev) => setCustomLabel(ev.target.value)}
+                    placeholder="תווית זמנית (למשל: ספירת מלאי)"
+                    className="h-8 w-48 text-xs"
+                    maxLength={40}
+                  />
+                )}
                 <button
                   onClick={() => setBrush(null)}
                   className={cn(
@@ -573,6 +613,21 @@ export default function ShiftScheduler() {
                         >
                           {e.full_name.split(' ')[0]}
                         </button>
+                        {(() => {
+                          const a = availFor((e as { user_id?: string }).user_id, currentDate);
+                          if (!a) return null;
+                          return (
+                            <div
+                              title={a.note ?? undefined}
+                              className={cn(
+                                "mt-0.5 rounded px-1 text-[10px] font-normal",
+                                a.status === "available" ? "bg-success/15 text-success" : "bg-destructive/15 text-destructive"
+                              )}
+                            >
+                              {a.status === "available" ? "רוצה" : "לא יכול"}{a.note ? " *" : ""}
+                            </div>
+                          );
+                        })()}
                       </th>
                     ))}
                   </tr>
@@ -654,7 +709,7 @@ export default function ShiftScheduler() {
                             )}
                             style={{ ...cellStyle(roleId), touchAction: 'none' }}
                           >
-                            {roleId ? roleById.get(roleId)?.name : ''}
+                            {roleId ? cellLabel(currentDate, e.id, slot.id, roleId) : ''}
                           </td>
                         );
                       })}
@@ -788,11 +843,20 @@ export default function ShiftScheduler() {
                     </div>
                   ))}
               </div>
+              <div className="text-xs font-semibold text-muted-foreground">
+                הערות ל{t.days[dayIndex]} {shortDate(parseLocalDate(currentDate), t.locale)}
+              </div>
               <Textarea
                 value={noteDraft}
-                onChange={(e) => setNoteDraft(e.target.value)}
-                onBlur={() => {
-                  if (noteDraft !== noteForWeek) saveNote.mutate({ weekStart, note: noteDraft });
+                onChange={(e) => {
+                  const v = e.target.value;
+                  setNoteDraft(v);
+                  if (noteTimer.current) clearTimeout(noteTimer.current);
+                  const day = currentDate;
+                  noteTimer.current = setTimeout(() => {
+                    noteTimer.current = null;
+                    saveNote.mutate({ weekStart: day, note: v });
+                  }, 600);
                 }}
                 disabled={!canManageShifts}
                 placeholder={t.notePlaceholder}
