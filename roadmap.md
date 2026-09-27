@@ -9,4 +9,4 @@
 - [ ] Availability: redesign employee shift availability to marking-based UI (less free text, more intent marking)
 - [ ] Permissions: Adam Tuyailee (admin) sees shift scheduler despite can_manage_shifts=false — decide whether admins must also have the toggle
 - [ ] Custom role: clicking only the custom role opens label editing; other roles unchanged
-- [ ] Availability card: hide from /shifts for managers, show only on /availability
+- [x] Availability card: hide from /shifts for managers, show only on /availability
