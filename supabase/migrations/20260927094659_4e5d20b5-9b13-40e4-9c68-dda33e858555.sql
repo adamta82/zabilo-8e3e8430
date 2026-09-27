@@ -1,0 +1,1 @@
+DELETE FROM public.shift_day_notes WHERE note = 'בדיקת הערה יומית' AND day = DATE '2026-09-27';
