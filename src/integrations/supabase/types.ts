@@ -960,6 +960,30 @@ export type Database = {
           },
         ]
       }
+      shift_day_notes: {
+        Row: {
+          created_at: string
+          day: string
+          id: string
+          note: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          day: string
+          id?: string
+          note?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          day?: string
+          id?: string
+          note?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       shift_roles: {
         Row: {
           color: string
