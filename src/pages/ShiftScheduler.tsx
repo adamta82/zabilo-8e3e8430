@@ -66,6 +66,7 @@ import {
 } from '@/lib/shift-planner';
 
 const LANG_KEY = 'shift-planner-lang';
+const DEPT_FILTER_KEY = 'shift-planner-dept-filter';
 
 export default function ShiftScheduler() {
   const { toast } = useToast();
@@ -124,9 +125,34 @@ export default function ShiftScheduler() {
   const saveNote = useSaveShiftWeekNote();
   const saveDayNote = useSaveShiftDayNote();
 
+  const [deptFilter, setDeptFilter] = useState<string[]>(() => {
+    try {
+      return JSON.parse(window.localStorage.getItem(DEPT_FILTER_KEY) || '[]');
+    } catch {
+      return [];
+    }
+  });
+
+  useEffect(() => {
+    window.localStorage.setItem(DEPT_FILTER_KEY, JSON.stringify(deptFilter));
+  }, [deptFilter]);
+
+  const departments = useMemo(() => {
+    const map = new Map<string, string>();
+    (employeesData || []).forEach((e) => {
+      if (e.departments?.id) map.set(e.departments.id, e.departments.name);
+    });
+    return [...map.entries()].map(([id, name]) => ({ id, name })).sort((a, b) => a.name.localeCompare(b.name, 'he'));
+  }, [employeesData]);
+
   const employees = useMemo(
-    () => (employeesData || []).filter((e) => e.show_in_shifts !== false),
-    [employeesData]
+    () =>
+      (employeesData || []).filter(
+        (e) =>
+          e.show_in_shifts !== false &&
+          (deptFilter.length === 0 || (e.department_id != null && deptFilter.includes(e.department_id)))
+      ),
+    [employeesData, deptFilter]
   );
 
   useEffect(() => {
@@ -529,6 +555,47 @@ export default function ShiftScheduler() {
               );
             })}
           </div>
+
+          {/* department filter */}
+          {departments.length > 1 && (
+            <div className="flex flex-wrap items-center gap-1.5">
+              <span className="text-xs text-muted-foreground">{t.departments}:</span>
+              <button
+                type="button"
+                onClick={() => setDeptFilter([])}
+                className={cn(
+                  'rounded-full border px-3 py-1 text-xs transition-colors',
+                  deptFilter.length === 0
+                    ? 'border-primary bg-primary text-primary-foreground'
+                    : 'border-border bg-card hover:bg-accent'
+                )}
+              >
+                {t.allDepartments}
+              </button>
+              {departments.map((d) => {
+                const active = deptFilter.includes(d.id);
+                return (
+                  <button
+                    key={d.id}
+                    type="button"
+                    onClick={() =>
+                      setDeptFilter((prev) =>
+                        active ? prev.filter((id) => id !== d.id) : [...prev, d.id]
+                      )
+                    }
+                    className={cn(
+                      'rounded-full border px-3 py-1 text-xs transition-colors',
+                      active
+                        ? 'border-primary bg-primary text-primary-foreground'
+                        : 'border-border bg-card hover:bg-accent'
+                    )}
+                  >
+                    {d.name}
+                  </button>
+                );
+              })}
+            </div>
+          )}
 
           {canManageShifts && dayLocked && (
             <div className="flex items-center gap-2 rounded-lg border border-warning/40 bg-warning/10 px-3 py-2 text-sm">

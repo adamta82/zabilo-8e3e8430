@@ -257,6 +257,8 @@ export interface PlannerStrings {
   history: string;
   shareView: string;
   empty: string;
+  departments: string;
+  allDepartments: string;
   brush: string;
   erase: string;
   copyYesterday: string;
@@ -333,6 +335,8 @@ export const PLANNER_STRINGS: Record<PlannerLang, PlannerStrings> = {
     history: 'היסטוריה',
     shareView: 'תצוגה לשיתוף',
     empty: 'ריק',
+    departments: 'מחלקות',
+    allDepartments: 'כל המחלקות',
     brush: 'תפקיד לשיבוץ',
     erase: 'מחיקה',
     copyYesterday: 'העתקה מהיום הקודם',
@@ -407,6 +411,8 @@ export const PLANNER_STRINGS: Record<PlannerLang, PlannerStrings> = {
     history: 'History',
     shareView: 'Share view',
     empty: 'empty',
+    departments: 'Departments',
+    allDepartments: 'All departments',
     brush: 'Role to apply',
     erase: 'Erase',
     copyYesterday: 'Copy previous day',
@@ -481,6 +487,8 @@ export const PLANNER_STRINGS: Record<PlannerLang, PlannerStrings> = {
     history: 'Historique',
     shareView: 'Vue à partager',
     empty: 'vide',
+    departments: 'Départements',
+    allDepartments: 'Tous les départements',
     brush: 'Poste à appliquer',
     erase: 'Effacer',
     copyYesterday: 'Copier la veille',
