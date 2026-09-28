@@ -66,6 +66,7 @@ import {
 } from '@/lib/shift-planner';
 
 const LANG_KEY = 'shift-planner-lang';
+const DEPT_FILTER_KEY = 'shift-planner-dept-filter';
 
 export default function ShiftScheduler() {
   const { toast } = useToast();
