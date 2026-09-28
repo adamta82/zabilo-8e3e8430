@@ -556,6 +556,47 @@ export default function ShiftScheduler() {
             })}
           </div>
 
+          {/* department filter */}
+          {departments.length > 1 && (
+            <div className="flex flex-wrap items-center gap-1.5">
+              <span className="text-xs text-muted-foreground">{t.departments}:</span>
+              <button
+                type="button"
+                onClick={() => setDeptFilter([])}
+                className={cn(
+                  'rounded-full border px-3 py-1 text-xs transition-colors',
+                  deptFilter.length === 0
+                    ? 'border-primary bg-primary text-primary-foreground'
+                    : 'border-border bg-card hover:bg-accent'
+                )}
+              >
+                {t.allDepartments}
+              </button>
+              {departments.map((d) => {
+                const active = deptFilter.includes(d.id);
+                return (
+                  <button
+                    key={d.id}
+                    type="button"
+                    onClick={() =>
+                      setDeptFilter((prev) =>
+                        active ? prev.filter((id) => id !== d.id) : [...prev, d.id]
+                      )
+                    }
+                    className={cn(
+                      'rounded-full border px-3 py-1 text-xs transition-colors',
+                      active
+                        ? 'border-primary bg-primary text-primary-foreground'
+                        : 'border-border bg-card hover:bg-accent'
+                    )}
+                  >
+                    {d.name}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
           {canManageShifts && dayLocked && (
             <div className="flex items-center gap-2 rounded-lg border border-warning/40 bg-warning/10 px-3 py-2 text-sm">
               <Lock className="h-4 w-4" />
