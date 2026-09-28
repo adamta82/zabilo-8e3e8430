@@ -124,9 +124,34 @@ export default function ShiftScheduler() {
   const saveNote = useSaveShiftWeekNote();
   const saveDayNote = useSaveShiftDayNote();
 
+  const [deptFilter, setDeptFilter] = useState<string[]>(() => {
+    try {
+      return JSON.parse(window.localStorage.getItem(DEPT_FILTER_KEY) || '[]');
+    } catch {
+      return [];
+    }
+  });
+
+  useEffect(() => {
+    window.localStorage.setItem(DEPT_FILTER_KEY, JSON.stringify(deptFilter));
+  }, [deptFilter]);
+
+  const departments = useMemo(() => {
+    const map = new Map<string, string>();
+    (employeesData || []).forEach((e) => {
+      if (e.departments?.id) map.set(e.departments.id, e.departments.name);
+    });
+    return [...map.entries()].map(([id, name]) => ({ id, name })).sort((a, b) => a.name.localeCompare(b.name, 'he'));
+  }, [employeesData]);
+
   const employees = useMemo(
-    () => (employeesData || []).filter((e) => e.show_in_shifts !== false),
-    [employeesData]
+    () =>
+      (employeesData || []).filter(
+        (e) =>
+          e.show_in_shifts !== false &&
+          (deptFilter.length === 0 || (e.department_id != null && deptFilter.includes(e.department_id)))
+      ),
+    [employeesData, deptFilter]
   );
 
   useEffect(() => {
