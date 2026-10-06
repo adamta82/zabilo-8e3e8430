@@ -75,14 +75,26 @@ export default function Requests() {
   const [searchQuery, setSearchQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState<string[]>(() => {
     const param = searchParams.get('type');
-    if (!param) return [];
-    return param.split(',');
+    if (param) return param.split(',');
+    try {
+      const saved = localStorage.getItem('requests_type_filter');
+      return saved ? JSON.parse(saved) : [];
+    } catch { return []; }
   });
   const [statusFilter, setStatusFilter] = useState<string[]>(() => {
     const param = searchParams.get('status');
-    if (!param) return [];
-    return param.split(',');
+    if (param) return param.split(',');
+    try {
+      const saved = localStorage.getItem('requests_status_filter');
+      return saved ? JSON.parse(saved) : [];
+    } catch { return []; }
   });
+  useEffect(() => {
+    localStorage.setItem('requests_type_filter', JSON.stringify(typeFilter));
+  }, [typeFilter]);
+  useEffect(() => {
+    localStorage.setItem('requests_status_filter', JSON.stringify(statusFilter));
+  }, [statusFilter]);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState<RequestWithProfile | null>(null);
   const [deletingRequest, setDeletingRequest] = useState<RequestWithProfile | null>(null);
