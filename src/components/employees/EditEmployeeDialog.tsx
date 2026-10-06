@@ -44,6 +44,7 @@ export function EditEmployeeDialog({ employee, open, onOpenChange }: EditEmploye
   const [isPartner, setIsPartner] = useState(false);
   const [jobTitle, setJobTitle] = useState('');
   const [canManageShifts, setCanManageShifts] = useState(false);
+  const [canPublishArticles, setCanPublishArticles] = useState(false);
   const [birthDay, setBirthDay] = useState<string>('');
   const [birthMonth, setBirthMonth] = useState<string>('');
   const [autoApproveWfh, setAutoApproveWfh] = useState(false);
@@ -60,6 +61,7 @@ export function EditEmployeeDialog({ employee, open, onOpenChange }: EditEmploye
       setIsPartner((employee as any).is_partner || false);
       setJobTitle((employee as any).job_title || '');
       setCanManageShifts((employee as any).can_manage_shifts === true);
+      setCanPublishArticles((employee as any).can_publish_articles === true);
       setAutoApproveWfh((employee as any).auto_approve_wfh === true);
       setAutoApproveVacation((employee as any).auto_approve_vacation === true);
       const bd = (employee as any).birth_date as string | null;
@@ -95,6 +97,7 @@ export function EditEmployeeDialog({ employee, open, onOpenChange }: EditEmploye
         is_partner: isPartner,
         job_title: jobTitle || null,
         can_manage_shifts: canManageShifts,
+        can_publish_articles: canPublishArticles,
         auto_approve_wfh: autoApproveWfh,
         auto_approve_vacation: autoApproveVacation,
         birth_date,
@@ -265,6 +268,20 @@ export function EditEmployeeDialog({ employee, open, onOpenChange }: EditEmploye
               id="can-manage-shifts"
               checked={canManageShifts}
               onCheckedChange={setCanManageShifts}
+            />
+          </div>
+
+          <div className="flex items-center justify-between py-2 sm:col-span-2">
+            <div className="space-y-0.5">
+              <Label htmlFor="can-publish-articles">הרשאה להוספת מאמרים</Label>
+              <p className="text-xs text-muted-foreground">
+                יאפשר לעובד להוסיף מאמרים במרכז הידע ולערוך את המאמרים שכתב (למנהלים יש הרשאה אוטומטית)
+              </p>
+            </div>
+            <Switch
+              id="can-publish-articles"
+              checked={canPublishArticles}
+              onCheckedChange={setCanPublishArticles}
             />
           </div>
 

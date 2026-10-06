@@ -16,7 +16,7 @@ import { CreateBriefingDialog } from '@/components/briefings/CreateBriefingDialo
 import { cn } from '@/lib/utils';
 
 export default function KnowledgeHub() {
-  const { isAdmin, canManageShifts } = useAuth();
+  const { isAdmin, canManageShifts, canPublishArticles } = useAuth();
   const { data: articles, isLoading } = useArticles();
   const { data: departments } = useDepartments();
   const { data: deptCounts } = useDepartmentArticleCounts();
