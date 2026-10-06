@@ -723,6 +723,7 @@ export type Database = {
           birth_date: string | null
           calendar_emails: string[] | null
           can_manage_shifts: boolean
+          can_publish_articles: boolean
           created_at: string
           deactivated_at: string | null
           department_id: string | null
@@ -750,6 +751,7 @@ export type Database = {
           birth_date?: string | null
           calendar_emails?: string[] | null
           can_manage_shifts?: boolean
+          can_publish_articles?: boolean
           created_at?: string
           deactivated_at?: string | null
           department_id?: string | null
@@ -777,6 +779,7 @@ export type Database = {
           birth_date?: string | null
           calendar_emails?: string[] | null
           can_manage_shifts?: boolean
+          can_publish_articles?: boolean
           created_at?: string
           deactivated_at?: string | null
           department_id?: string | null
@@ -1193,6 +1196,7 @@ export type Database = {
     }
     Functions: {
       can_manage_shifts: { Args: { _user_id: string }; Returns: boolean }
+      can_publish_articles: { Args: { _user_id: string }; Returns: boolean }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

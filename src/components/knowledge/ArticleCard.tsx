@@ -28,7 +28,8 @@ interface Props {
 }
 
 export function ArticleCard({ article, onEdit, fullWidth }: Props) {
-  const { isAdmin } = useAuth();
+  const { isAdmin, canPublishArticles, profile } = useAuth();
+  const canEditThis = isAdmin || (canPublishArticles && article.author_id === profile?.id);
   const deleteArticle = useDeleteArticle();
   const navigate = useNavigate();
   const isBriefing = article.article_type === 'briefing';
@@ -79,7 +80,7 @@ export function ArticleCard({ article, onEdit, fullWidth }: Props) {
               </Badge>
             )}
           </div>
-          {isAdmin && (
+          {canEditThis && (
             <div data-no-nav onClick={(e) => e.stopPropagation()}>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>

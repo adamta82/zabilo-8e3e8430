@@ -16,7 +16,7 @@ import { CreateBriefingDialog } from '@/components/briefings/CreateBriefingDialo
 import { cn } from '@/lib/utils';
 
 export default function KnowledgeHub() {
-  const { isAdmin, canManageShifts } = useAuth();
+  const { isAdmin, canManageShifts, canPublishArticles } = useAuth();
   const { data: articles, isLoading } = useArticles();
   const { data: departments } = useDepartments();
   const { data: deptCounts } = useDepartmentArticleCounts();
@@ -69,19 +69,19 @@ export default function KnowledgeHub() {
         <div className="flex gap-2 flex-wrap">
           {canManageShifts && <CreateBriefingDialog />}
           {isAdmin && (
-            <>
-              <Button variant="outline" size="sm" asChild>
-                <Link to="/knowledge/tracking">
-                  <BarChart2 className="ms-1 sm:ms-2 h-4 w-4" />
-                  <span className="hidden sm:inline">מעקב קריאה</span>
-                </Link>
-              </Button>
-              <Button size="sm" onClick={openNew}>
-                <Plus className="ms-1 sm:ms-2 h-4 w-4" />
-                <span className="hidden sm:inline">מאמר חדש</span>
-                <span className="sm:hidden">חדש</span>
-              </Button>
-            </>
+            <Button variant="outline" size="sm" asChild>
+              <Link to="/knowledge/tracking">
+                <BarChart2 className="ms-1 sm:ms-2 h-4 w-4" />
+                <span className="hidden sm:inline">מעקב קריאה</span>
+              </Link>
+            </Button>
+          )}
+          {canPublishArticles && (
+            <Button size="sm" onClick={openNew}>
+              <Plus className="ms-1 sm:ms-2 h-4 w-4" />
+              <span className="hidden sm:inline">מאמר חדש</span>
+              <span className="sm:hidden">חדש</span>
+            </Button>
           )}
         </div>
       </div>

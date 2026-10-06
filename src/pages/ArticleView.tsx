@@ -37,7 +37,7 @@ import { CommentsSection } from '@/components/knowledge/CommentsSection';
 export default function ArticleView() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { isAdmin } = useAuth();
+  const { isAdmin, canPublishArticles, profile } = useAuth();
   const { data: article, isLoading } = useArticle(id);
   const { data: allArticles } = useArticles();
   const markAsRead = useMarkAsRead();
@@ -95,7 +95,7 @@ export default function ArticleView() {
       <header className="space-y-3 sm:space-y-4">
         <div className="flex items-start justify-between gap-3">
           <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold leading-tight flex-1 min-w-0">{article.title}</h1>
-          {isAdmin && (
+          {(isAdmin || (canPublishArticles && (article as any).author_id === profile?.id)) && (
             <Button variant="outline" size="sm" className="shrink-0" onClick={() => setEditOpen(true)}>
               <Pencil className="sm:ms-2 h-4 w-4" />
               <span className="hidden sm:inline">ערוך</span>
@@ -208,7 +208,7 @@ export default function ArticleView() {
         </Button>
       </div>
 
-      {isAdmin && (
+      {(isAdmin || (canPublishArticles && (article as any).author_id === profile?.id)) && (
         <ArticleDialog open={editOpen} onOpenChange={setEditOpen} article={article as any} />
       )}
     </div>

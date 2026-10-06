@@ -10,6 +10,7 @@ interface AuthContextType {
   role: AppRole | null;
   isAdmin: boolean;
   canManageShifts: boolean;
+  canPublishArticles: boolean;
   isLoading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signUp: (email: string, password: string, metadata?: { username?: string; full_name?: string }) => Promise<{ error: Error | null }>;
@@ -149,6 +150,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     role,
     isAdmin: role === 'admin',
     canManageShifts: (profile as any)?.can_manage_shifts === true,
+    canPublishArticles: role === 'admin' || (profile as any)?.can_publish_articles === true,
     isLoading,
     signIn,
     signUp,
