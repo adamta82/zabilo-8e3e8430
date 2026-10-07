@@ -11,3 +11,4 @@
 - [x] Custom role: clicking only the custom role opens label editing; other roles unchanged
 - [x] Availability card: hide from /shifts for managers, show only on /availability
 - [x] Day lock toggle in shift planner; locked days' shifts appear in calendar
+- [ ] Export full project package (code, design, DB schema, relations, permissions) as ZIP for Claude to replicate in ERP
