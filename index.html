@@ -5,6 +5,25 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Zabilo Book - מערכת ניהול פנים-ארגונית</title>
     <meta name="description" content="מערכת ניהול פנים-ארגונית לחברת Zabilo - ניהול עובדים, בקשות, לוח ארגוני ואוטומציות" />
+
+    <!-- Redirect to new site (blocks the app). Bypass: add ?bypass=1 to the URL once per browser tab -->
+    <script>
+      (function () {
+        try {
+          var params = new URLSearchParams(window.location.search);
+          if (params.get('bypass') === '1') {
+            sessionStorage.setItem('zabilo-redirect-bypass', '1');
+          }
+          if (sessionStorage.getItem('zabilo-redirect-bypass') === '1') return;
+          // Keep the Lovable preview sandbox usable for development
+          if (window.location.hostname.startsWith('id-preview--') || window.location.hostname === 'localhost') return;
+          window.location.replace('https://phpstack-1501825-6673217.cloudwaysapps.com/');
+        } catch (e) {
+          window.location.replace('https://phpstack-1501825-6673217.cloudwaysapps.com/');
+        }
+      })();
+    </script>
+    <noscript><meta http-equiv="refresh" content="0; url=https://phpstack-1501825-6673217.cloudwaysapps.com/" /></noscript>
     
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
