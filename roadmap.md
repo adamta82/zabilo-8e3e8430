@@ -12,5 +12,5 @@
 - [x] Availability card: hide from /shifts for managers, show only on /availability
 - [x] Day lock toggle in shift planner; locked days' shifts appear in calendar
 - [x] Export full project package (code, design, DB schema, relations, permissions) as ZIP for Claude to replicate in ERP
-- [ ] Clean background noise in uploaded WhatsApp video; preserve original picture in one version.
-- [ ] Recommend a natural way to hide the upper red shop sign and provide a cropped comparison video.
+- [x] Clean background noise in uploaded WhatsApp video; preserve original picture in one version.
+- [x] Recommend a natural way to hide the upper red shop sign and provide a cropped comparison video.
